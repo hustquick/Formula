@@ -19,7 +19,7 @@ for task_arch in arm64 x86_64; do
     -o "$task_stage/Formula-$task_arch"
 done
 lipo -create "$task_stage/Formula-arm64" "$task_stage/Formula-x86_64" -output "$task_app/Contents/MacOS/Formula"
-lipo -verify_arch arm64 x86_64 "$task_app/Contents/MacOS/Formula"
+lipo "$task_app/Contents/MacOS/Formula" -verify_arch arm64 x86_64
 iconutil -c icns macos/Formula.iconset -o "$task_app/Contents/Resources/Formula.icns"
 codesign --force --deep --sign - "$task_app"
 codesign --verify --deep --strict "$task_app"
