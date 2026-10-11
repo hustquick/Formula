@@ -1,5 +1,6 @@
 (() => {
-  const SOURCE='https://raw.githubusercontent.com/ubnm/LaTeXLive/master/json/map_input.json';
+  const LOCAL_SOURCE='vendor/latexlive/map_input.json';
+  const REMOTE_SOURCE='https://raw.githubusercontent.com/ubnm/LaTeXLive/master/json/map_input.json';
   const q=(s,r=document)=>r.querySelector(s), qa=(s,r=document)=>[...r.querySelectorAll(s)];
   const wait=(fn,timeout=12000)=>new Promise((resolve,reject)=>{const start=Date.now();(function tick(){const v=fn();if(v)return resolve(v);if(Date.now()-start>timeout)return reject(new Error('LaTeXLive exact catalog init timeout'));setTimeout(tick,40)})()});
   const matrixFallback={
@@ -31,7 +32,7 @@
     const byDescription=new Map((toolbar.layer1.cont||[]).map(x=>[x.descript,x.tag]));
     for(const group of qa('#tools>.tool-group')){
       const title=q('summary',group)?.getAttribute('aria-label')||q('summary',group)?.textContent.trim();const tag=byDescription.get(title);const src=tag&&toolbar.layer2.cont?.[tag]?.cont;if(!Array.isArray(src))continue;
-      const panel=q(':scope>div',group);panel.replaceChildren();panel.classList.add('ll-popup-grid');
+      const panel=q(':scope>div',group);panel.replaceChildren();panel.classList.add('ll-popup-grid');panel.dataset.exactCategory=tag;
       for(const entry of src){
         if(entry.tag==='divider'){const d=document.createElement('div');d.className='ll-divider';d.textContent=entry.name||entry.name_en||'';panel.append(d);continue;}
         if(usable(entry))panel.append(createItem(entry));
@@ -47,9 +48,9 @@
     browser.replaceChildren();const head=document.createElement('div');head.className='ll-template-head';head.innerHTML='<span>公式模板</span><small>LaTeX Live 完整模板库 · 点击分类或下三角展开</small>';browser.append(head);
     const nav=document.createElement('div');nav.className='ll-template-nav';const panel=document.createElement('div');panel.className='ll-template-panel';panel.hidden=true;browser.append(nav,panel);let active='';
     for(const category of template.layer1.cont||[]){
-      const entries=(template.layer2.cont?.[category.tag]?.cont||[]).filter(usable);const b=document.createElement('button');b.type='button';b.className='ll-template-category';if(category.tag==='physics')b.dataset.example='heat';
+      const entries=(template.layer2.cont?.[category.tag]?.cont||[]).filter(usable);const b=document.createElement('button');b.type='button';b.className='ll-template-category';b.dataset.templateTag=category.tag;if(category.tag==='physics')b.dataset.example='heat';
       const art=document.createElement('span');art.className='ll-category-art ll-preview';art.textContent='…';const text=document.createElement('span');text.textContent=category.descript||category.tag;const arrow=document.createElement('span');arrow.className='ll-category-arrow';arrow.textContent='⌄';b.append(art,text,arrow);nav.append(b);if(entries[0])render(art,normalizedLatex(entries[0]));
-      b.onclick=()=>{if(active===category.tag&&!panel.hidden){panel.hidden=true;active='';b.classList.remove('active');return;}qa('.ll-template-category',nav).forEach(x=>x.classList.toggle('active',x===b));active=category.tag;panel.hidden=false;panel.replaceChildren();const title=document.createElement('div');title.className='ll-panel-title';title.innerHTML=`<strong>${category.descript||category.tag}</strong><span>${entries.length} 个模板</span>`;const grid=document.createElement('div');grid.className='ll-template-grid';for(const entry of entries)grid.append(createItem(entry,'template'));panel.append(title,grid);};
+      b.onclick=()=>{if(active===category.tag&&!panel.hidden){panel.hidden=true;active='';b.classList.remove('active');return;}qa('.ll-template-category',nav).forEach(x=>x.classList.toggle('active',x===b));active=category.tag;panel.hidden=false;panel.dataset.templateTag=category.tag;panel.replaceChildren();const title=document.createElement('div');title.className='ll-panel-title';title.innerHTML=`<strong>${category.descript||category.tag}</strong><span>${entries.length} 个模板</span>`;const grid=document.createElement('div');grid.className='ll-template-grid';for(const entry of entries)grid.append(createItem(entry,'template'));panel.append(title,grid);};
     }
   }
   function bind(){
@@ -58,14 +59,20 @@
   function preserveLegacyTemplateProbe(){
     const buttons=qa('.ll-template-category');const physics=buttons.find(b=>b.textContent.includes('物理'))||buttons[0];if(physics)physics.dataset.example='heat';
   }
+  async function loadCatalog(url){
+    const response=await fetch(url,{cache:'no-cache'});if(!response.ok)throw new Error('HTTP '+response.status);const parsed=await response.json();const toolbar=extract(parsed,'toolbar'),template=extract(parsed,'template');if(!toolbar||!template)throw new Error('map_input structure changed');if(toolbar.layer1.cont?.length!==10||template.layer1.cont?.length!==10)throw new Error('unexpected category count');return {toolbar,template};
+  }
   async function start(){
     await wait(()=>document.documentElement.dataset.latexLiveMenus==='ready'&&q('.ll-template-browser'));
     bind();preserveLegacyTemplateProbe();
+    try{
+      const {toolbar,template}=await loadCatalog(LOCAL_SOURCE);rebuildShortcuts(toolbar);rebuildTemplates(template);document.documentElement.dataset.latexLiveExact='bundled';return;
+    }catch(localError){console.warn('Bundled LaTeXLive catalog unavailable:',localError);}
     const localTest=['127.0.0.1','localhost'].includes(location.hostname)||location.protocol==='file:';
     if(localTest){document.documentElement.dataset.latexLiveExact='fallback';return;}
     try{
-      const response=await fetch(SOURCE,{cache:'no-cache'});if(!response.ok)throw new Error('HTTP '+response.status);const parsed=await response.json();const toolbar=extract(parsed,'toolbar'),template=extract(parsed,'template');if(!toolbar||!template)throw new Error('map_input structure changed');rebuildShortcuts(toolbar);rebuildTemplates(template);document.documentElement.dataset.latexLiveExact='online';
-    }catch(error){console.warn('Using bundled LaTeXLive fallback catalog:',error);document.documentElement.dataset.latexLiveExact='fallback';}
+      const {toolbar,template}=await loadCatalog(REMOTE_SOURCE);rebuildShortcuts(toolbar);rebuildTemplates(template);document.documentElement.dataset.latexLiveExact='online';
+    }catch(error){console.warn('Using built-in LaTeXLive fallback catalog:',error);document.documentElement.dataset.latexLiveExact='fallback';}
   }
   start();
 })();
