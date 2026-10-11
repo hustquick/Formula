@@ -3,6 +3,7 @@ const fs=require('fs');
 const fsp=require('fs/promises');
 const path=require('path');
 const os=require('os');
+const sharp=require('sharp');
 const {spawnSync}=require('child_process');
 
 let win;
@@ -60,7 +61,12 @@ async function renderNative(data){
       const dvi=toolPaths.dvisvgm;if(!dvi)throw new Error('Windows 本机 LaTeX 预览需要 dvisvgm；也可切换到“内置排版”。');
       const s=run(dvi,['--pdf','--no-fonts','--output='+svg,pdf],dir);log+=s.text+'\n';if(s.code!==0)throw new Error('dvisvgm 转换 SVG 失败。');
     }
-    const pdfBytes=await fsp.readFile(pdf),svgText=await fsp.readFile(svg,'utf8'),size=svgSize(svgText);const result={engine:path.basename(exe),pdf:pdfBytes.toString('base64'),svg:Buffer.from(svgText).toString('base64'),width:size.width,height:size.height,log};
+    const pdfBytes=await fsp.readFile(pdf),svgText=await fsp.readFile(svg,'utf8'),size=svgSize(svgText);const svgBytes=Buffer.from(svgText);const scale=Math.max(1,Math.min(4,Number(o.scale||3)));
+    const raster=sharp(svgBytes).resize({width:Math.max(1,Math.ceil(size.width*scale))});
+    const png=await (o.transparent===false?raster.clone().flatten({background:'#ffffff'}):raster.clone()).png().toBuffer();
+    const jpeg=await raster.clone().flatten({background:'#ffffff'}).jpeg({quality:96}).toBuffer();
+    const tiff=await (o.transparent===false?raster.clone().flatten({background:'#ffffff'}):raster.clone()).tiff().toBuffer();
+    const result={engine:path.basename(exe),pdf:pdfBytes.toString('base64'),svg:svgBytes.toString('base64'),png:png.toString('base64'),jpeg:jpeg.toString('base64'),tiff:tiff.toString('base64'),width:Math.ceil(size.width*scale),height:Math.ceil(size.height*scale),log};
     if(toolPaths.pdftops){try{const eps=path.join(dir,'equation.eps'),e=run(toolPaths.pdftops,['-eps',pdf,eps],dir);log+=e.text+'\n';if(e.code===0)result.eps=(await fsp.readFile(eps)).toString('base64');}catch{}}
     result.log=log;return result;
   }finally{await fsp.rm(dir,{recursive:true,force:true});}
