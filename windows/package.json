@@ -1,0 +1,9 @@
+{
+  "name": "formula-windows",
+  "version": "1.1.0",
+  "private": true,
+  "main": "main.cjs",
+  "devDependencies": {
+    "electron": "44.7.0"
+  }
+}
