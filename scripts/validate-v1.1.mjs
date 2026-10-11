@@ -4,13 +4,16 @@ const read = path => readFile(path, 'utf8');
 const fail = message => { throw new Error(`v1.1.0 validation failed: ${message}`); };
 const expect = (condition, message) => { if (!condition) fail(message); };
 
-const [catalogText, exact, css, html, plist, build] = await Promise.all([
+const [catalogText, exact, css, html, plist, build, localBuild, readme, validation] = await Promise.all([
   read('web/vendor/latexlive/map_input.json'),
   read('web/latexlive-exact.js'),
   read('web/v1.1.css'),
   read('web/index.html'),
   read('macos/Info.plist'),
-  read('scripts/build-dmg.sh')
+  read('scripts/build-dmg.sh'),
+  read('Build-Mac.command'),
+  read('README.md'),
+  read('VALIDATION.md')
 ]);
 const catalog = JSON.parse(catalogText);
 const sections = Object.fromEntries((catalog.shortcut || []).map(section => [section.name, section]));
@@ -51,6 +54,10 @@ expect(html.includes('id="toolbar-display"'), 'toolbar icon/text display selecto
 expect(!/numeric[-_ ]?(keypad|keyboard)|数字键盘/i.test(html), 'numeric keypad should not be present');
 expect(plist.includes('<key>CFBundleShortVersionString</key><string>1.1.0</string>'), 'Info.plist is not v1.1.0');
 expect(build.includes('vendor/latexlive/catalog.js') && build.includes('vendor/latexlive/map_input.json'), 'DMG does not verify both offline catalog files');
+expect(build.includes('sed -E') && build.includes('task_version'), 'native About version is not synchronized from Info.plist during DMG build');
+expect(localBuild.includes('catalog.js') && localBuild.includes('v1.1.css') && localBuild.includes('task_version'), 'local Build-Mac.command is below v1.1.0 release standard');
+expect(readme.includes('Formula-1.1.0.dmg') && readme.includes('完整公式模板') && readme.includes('Finder 风格自定义工具栏'), 'README is not aligned with v1.1.0');
+expect(validation.includes('## v1.1.0 发布标准') && validation.includes('tests/v1.1.cjs'), 'VALIDATION.md is not aligned with v1.1.0');
 expect((await stat('web/v1.1.css')).size > 4000, 'v1.1 visual layer unexpectedly small');
 
-console.log(`PASS v1.1.0: ${shortcutNames.length} shortcut categories / ${shortcutItems} shortcut items; ${templateNames.length} template categories / ${templateItems} template items; floating menus, Finder toolbar customization, offline catalog and DMG gates verified.`);
+console.log(`PASS v1.1.0: ${shortcutNames.length} shortcut categories / ${shortcutItems} shortcut items; ${templateNames.length} template categories / ${templateItems} template items; floating menus, keyboard navigation, Finder toolbar customization, offline catalog, local build, docs and DMG gates verified.`);
