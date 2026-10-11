@@ -10,7 +10,7 @@
 
 ## DMG 安装与启动
 
-1. 在 Releases 下载 `Formula-1.0.4.dmg`（后续版本使用相应版本号）。
+1. 在 Releases 下载 `Formula-1.0.5.dmg`（后续版本使用相应版本号）。
 2. 打开磁盘映像，将 Formula.app 拖到 Applications 快捷链接。
 3. 从“应用程序”启动 Formula。DMG 内是预编译通用应用，无需 Command Line Tools、Node.js 或 npm。
 
@@ -111,3 +111,5 @@ Formula 生成的 SVG 含源码和排版元数据，导入可恢复。PDF 的 Su
 ## DMG 发布
 
 GitHub Actions 在 macOS 上执行 `npm ci`、离线资源打包和 `bash scripts/build-dmg.sh`，分别编译 arm64 / x86_64 后合并为通用应用。生成 `Formula-版本号.dmg` 和 SHA-256 校验文件，并上传对应 Release。镜像包含 Formula.app 与 Applications 快捷链接。当前使用临时签名，未 Apple 公证；实际 Finder 启动仍需 Mac 实机验收。
+
+可视化编辑器关闭字母序列自动替换：`in`、`pi`、`alpha`、`sin` 等保留为字母。需要符号或函数时显式输入 `\in`、`\pi`、`\alpha`、`\sin` 等命令并按回车；结构也可用工具栏插入。

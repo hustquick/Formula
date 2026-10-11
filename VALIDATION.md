@@ -39,3 +39,9 @@
 - hdiutil 实际创建 Formula-1.0.4.dmg，完整性校验通过；挂载后再次检查应用可执行权限、两个架构和签名，以及 Applications 链接。
 - DMG 和 SHA-256 校验文件已上传 v1.0.4 Release。
 - 以上为 macOS 构建与包内容验证，不代表 Finder 启动、Gatekeeper 或交互功能已完成实机验收。
+
+## 1.0.5 输入规则修复
+
+- 关闭字母序列自动转命令；键盘输入 in、pi、alpha、sin、sqrt、int、sum 保持字母，下标 Q_in 也保持字母。
+- 显式反斜杠命令 in、pi、alpha、sin、sqrt、frac 的键盘输入、确认和源码 / 预览同步测试通过。
+- 修复选中内容后开始命令时反斜杠丢失；命令尚未确认时暂停源码同步与排版。

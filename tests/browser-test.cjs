@@ -10,6 +10,21 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? proces
   await page.goto(process.env.MATHFORGE_URL||'http://127.0.0.1:8765');
   const ready=()=>page.waitForFunction(()=>document.querySelector('#preview svg')&&window.FormulaTest?.getSVG());
   await ready();assert.equal(await page.locator('#formula').count(),1);
+  // Alphabetic input stays literal; only explicit backslash commands expand.
+  for(const letters of ['in','pi','alpha','sin','sqrt','int','sum']){
+    await page.evaluate(()=>{const mf=document.getElementById('formula');mf.focus();mf.select();});await page.keyboard.type(letters);
+    await page.waitForFunction(letters=>document.getElementById('source').value.replace(/\s/g,'')===letters&&document.querySelector('#preview svg'),letters);
+  }
+  await page.evaluate(()=>{const mf=document.getElementById('formula');mf.focus();mf.select();});await page.keyboard.type('Q_in');await page.keyboard.press('ArrowRight');
+  await page.waitForFunction(()=>document.getElementById('source').value.replace(/\s/g,'')==='Q_{in}'&&document.querySelector('#preview svg'));
+  for(const command of ['in','pi','alpha','sin']){
+    await page.evaluate(()=>{const mf=document.getElementById('formula');mf.focus();mf.select();});await page.keyboard.type('\\'+command);await page.keyboard.press('Enter');
+    await page.waitForFunction(command=>document.getElementById('source').value.trim()==='\\'+command&&document.querySelector('#preview svg'),command);
+  }
+  await page.evaluate(()=>{const mf=document.getElementById('formula');mf.focus();mf.select();});await page.keyboard.type('\\sqrt');await page.keyboard.press('Enter');await page.keyboard.type('9');
+  await page.waitForFunction(()=>/^\\sqrt(?:\{9\}|9)$/.test(document.getElementById('source').value)&&document.querySelector('#preview svg'));
+  await page.evaluate(()=>{const mf=document.getElementById('formula');mf.focus();mf.select();});await page.keyboard.type('\\frac');await page.keyboard.press('Enter');await page.keyboard.type('1');await page.keyboard.press('Tab');await page.keyboard.type('2');
+  await page.waitForFunction(()=>['\\frac{1}{2}','\\frac12'].includes(document.getElementById('source').value)&&document.querySelector('#preview svg'));
   // Exercise the visual editor with keyboard events, rather than only source edits.
   await page.locator('#formula').click();await page.evaluate(()=>document.getElementById('formula').select());await page.keyboard.type('x^2+1');
   await page.waitForFunction(()=>document.getElementById('source').value==='x^2+1'&&document.querySelector('#preview svg'));

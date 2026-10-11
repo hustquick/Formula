@@ -171,8 +171,22 @@ window.FormulaTest={exportFile,readSource,stripDelimiters,getState:()=>state,get
 MathLive.MathfieldElement.fontsDirectory=new URL('vendor/mathlive/fonts',document.baseURI).href;
 MathLive.MathfieldElement.soundsDirectory=null;
 const mf=new MathLive.MathfieldElement();mf.id='formula';mf.setAttribute('aria-label','可视化公式编辑器');mf.mathVirtualKeyboardPolicy='manual';$('editor-mount').append(mf);
+// Require explicit LaTeX commands instead of silently rewriting typed letters.
+// Toolbar structures and backslash command entry remain available.
+mf.inlineShortcuts={};
+// MathLive command mode can lose the backslash when replacing a selection.
+// Delete the selected range first, then let its normal command handler run.
+mf.addEventListener('keydown',event=>{
+  if(event.key==='\\'&&!mf.readOnly&&mf.mode!=='latex'&&!mf.selectionIsCollapsed)mf.executeCommand('deleteBackward');
+},{capture:true});
+mf.addEventListener('keyup',event=>{
+  if(event.key==='Enter'&&mf.mode==='math'&&mf.getValue(mf.selection,'latex')==='\\sqrt{}'){
+    mf.insert('\\sqrt{#?}',{format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',silenceNotifications:false,focus:true});
+    syncVisual(true);
+  }
+});
 function syncVisual(force=false){
-  if(updating||mf.readOnly)return;
+  if(updating||mf.readOnly||mf.mode==='latex')return;
   try{
     const latex=mf.getValue('latex-without-placeholders');
     if(!force&&latex===state.latex)return;
