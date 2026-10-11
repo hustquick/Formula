@@ -1,5 +1,5 @@
 (() => {
-  const LOCAL_SOURCE='vendor/latexlive/map_input.json';
+  const LOCAL_SCRIPT='vendor/latexlive/catalog.js';
   const REMOTE_SOURCE='https://raw.githubusercontent.com/ubnm/LaTeXLive/master/json/map_input.json';
   const q=(s,r=document)=>r.querySelector(s), qa=(s,r=document)=>[...r.querySelectorAll(s)];
   const wait=(fn,timeout=12000)=>new Promise((resolve,reject)=>{const start=Date.now();(function tick(){const v=fn();if(v)return resolve(v);if(Date.now()-start>timeout)return reject(new Error('LaTeXLive exact catalog init timeout'));setTimeout(tick,40)})()});
@@ -25,8 +25,14 @@
     const art=document.createElement('span');art.className='ll-preview';art.textContent='…';const text=document.createElement('span');text.className='ll-label';text.textContent=label(entry);b.append(art,text);render(art,latex);return b;
   }
   function extract(parsed,name){
-    const groups=Array.isArray(parsed.shortcut)?parsed.shortcut:[];
+    const groups=Array.isArray(parsed?.shortcut)?parsed.shortcut:[];
     return groups.find(x=>x&&x.name===name&&x.layer1&&x.layer2)||null;
+  }
+  function validate(parsed){
+    const toolbar=extract(parsed,'toolbar'),template=extract(parsed,'template');
+    if(!toolbar||!template)throw new Error('map_input structure changed');
+    if(toolbar.layer1.cont?.length!==10||template.layer1.cont?.length!==10)throw new Error('unexpected category count');
+    return {toolbar,template};
   }
   function rebuildShortcuts(toolbar){
     const byDescription=new Map((toolbar.layer1.cont||[]).map(x=>[x.descript,x.tag]));
@@ -54,25 +60,28 @@
     }
   }
   function bind(){
-    document.addEventListener('click',e=>{const latex=e.target.closest('[data-exact-latex]');if(latex){e.preventDefault();e.stopPropagation();insertLatex(latex.dataset.exactLatex);return;}const cmd=e.target.closest('[data-exact-command]');if(cmd){e.preventDefault();e.stopPropagation();const mf=q('#editor-mount math-field');mf?.focus();mf?.executeCommand(cmd.dataset.exactCommand);mf?.dispatchEvent(new Event('input',{bubbles:true}));}} ,true);
+    document.addEventListener('click',e=>{const latex=e.target.closest('[data-exact-latex]');if(latex){e.preventDefault();e.stopPropagation();insertLatex(latex.dataset.exactLatex);return;}const cmd=e.target.closest('[data-exact-command]');if(cmd){e.preventDefault();e.stopPropagation();const mf=q('#editor-mount math-field');mf?.focus();mf?.executeCommand(cmd.dataset.exactCommand);mf?.dispatchEvent(new Event('input',{bubbles:true}));}},true);
   }
   function preserveLegacyTemplateProbe(){
     const buttons=qa('.ll-template-category');const physics=buttons.find(b=>b.textContent.includes('物理'))||buttons[0];if(physics)physics.dataset.example='heat';
   }
-  async function loadCatalog(url){
-    const response=await fetch(url,{cache:'no-cache'});if(!response.ok)throw new Error('HTTP '+response.status);const parsed=await response.json();const toolbar=extract(parsed,'toolbar'),template=extract(parsed,'template');if(!toolbar||!template)throw new Error('map_input structure changed');if(toolbar.layer1.cont?.length!==10||template.layer1.cont?.length!==10)throw new Error('unexpected category count');return {toolbar,template};
+  function loadBundledScript(){
+    if(window.LaTeXLiveCatalog)return Promise.resolve(window.LaTeXLiveCatalog);
+    return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=LOCAL_SCRIPT;script.onload=()=>window.LaTeXLiveCatalog?resolve(window.LaTeXLiveCatalog):reject(new Error('catalog.js loaded without data'));script.onerror=()=>reject(new Error('catalog.js not found'));document.head.append(script);});
+  }
+  async function loadRemote(){
+    const response=await fetch(REMOTE_SOURCE,{cache:'no-cache'});if(!response.ok)throw new Error('HTTP '+response.status);return response.json();
+  }
+  function applyCatalog(parsed,source){
+    const {toolbar,template}=validate(parsed);rebuildShortcuts(toolbar);rebuildTemplates(template);preserveLegacyTemplateProbe();document.documentElement.dataset.latexLiveExact=source;
   }
   async function start(){
     await wait(()=>document.documentElement.dataset.latexLiveMenus==='ready'&&q('.ll-template-browser'));
     bind();preserveLegacyTemplateProbe();
-    try{
-      const {toolbar,template}=await loadCatalog(LOCAL_SOURCE);rebuildShortcuts(toolbar);rebuildTemplates(template);document.documentElement.dataset.latexLiveExact='bundled';return;
-    }catch(localError){console.warn('Bundled LaTeXLive catalog unavailable:',localError);}
+    try{applyCatalog(await loadBundledScript(),'bundled');return;}catch(localError){console.warn('Bundled LaTeXLive catalog unavailable:',localError);}
     const localTest=['127.0.0.1','localhost'].includes(location.hostname)||location.protocol==='file:';
     if(localTest){document.documentElement.dataset.latexLiveExact='fallback';return;}
-    try{
-      const {toolbar,template}=await loadCatalog(REMOTE_SOURCE);rebuildShortcuts(toolbar);rebuildTemplates(template);document.documentElement.dataset.latexLiveExact='online';
-    }catch(error){console.warn('Using built-in LaTeXLive fallback catalog:',error);document.documentElement.dataset.latexLiveExact='fallback';}
+    try{applyCatalog(await loadRemote(),'online');}catch(error){console.warn('Using built-in LaTeXLive fallback catalog:',error);document.documentElement.dataset.latexLiveExact='fallback';}
   }
   start();
 })();
