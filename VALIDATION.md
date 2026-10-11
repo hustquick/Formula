@@ -163,3 +163,5 @@ GitHub Actions 能证明 macOS 编译、Universal Binary、代码签名验证、
 - 浏览器验证范围不代替 Windows / macOS 原生窗口实机验收。
 - 本次通过：静态 `validate:v1.1`、`compact-layout.cjs`、`reference-layout.cjs`、`v1.1.cjs`（含浮动菜单、键盘导航、工具栏自定义）。
 - 既有旧测试限制：`browser-test.cjs` 在把物理分类当作直接插入模板后等待预览超时；`visual-tools.cjs` 查询旧“分段公式”按钮超时；`custom-toolbar.cjs` 的旧拖拽/按钮名称检查失败。修改前 main 的独立副本同样不能通过这三个测试；综合测试中的八种导出在本次运行中均生成了文件。
+- 后续统一桌面收藏卡片、快捷分类和模板分类高度为 76px；移除模板面板内重复标题，保留选项卡名称。明确隐藏非当前模板面板，防止 display 样式覆盖 hidden。
+- `compact-layout.cjs` 追加验证收藏卡片等高、无重复模板标题、仅模板选项卡显示模板面板；静态验证、新版 E2E 和 reference-layout 回归均通过。

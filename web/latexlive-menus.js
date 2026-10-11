@@ -211,10 +211,6 @@
   function buildTemplateBrowser(examples) {
     examples.className = 'examples ll-template-browser';
     examples.replaceChildren();
-    const header = document.createElement('div'); header.className='ll-template-head';
-    const hint = document.createElement('span'); hint.textContent='公式模板';
-    const note = document.createElement('small'); note.textContent='点击分类右侧下三角展开全部模板；再次点击可收起';
-    header.append(hint,note); examples.append(header);
     const nav = document.createElement('div'); nav.className='ll-template-nav'; examples.append(nav);
     const panel = document.createElement('div'); panel.className='ll-template-panel'; panel.hidden=true; examples.append(panel);
     let active = '';

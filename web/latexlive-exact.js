@@ -104,7 +104,6 @@
 
   function rebuildTemplates(template){
     const browser=q('.ll-template-browser');if(!browser)return;browser.replaceChildren();
-    const head=document.createElement('div');head.className='ll-template-head';head.innerHTML='<span>公式模板</span><small>LaTeX Live 完整模板库 · 点击分类或下三角展开</small>';browser.append(head);
     const nav=document.createElement('div');nav.className='ll-template-nav';nav.setAttribute('role','toolbar');nav.setAttribute('aria-label','公式模板分类');
     const panel=document.createElement('div');panel.className='ll-template-panel';panel.hidden=true;panel.setAttribute('role','menu');browser.append(nav,panel);let active='';
     for(const category of template.layer1.cont||[]){
