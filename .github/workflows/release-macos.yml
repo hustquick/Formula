@@ -6,7 +6,7 @@ on:
     paths:
       - 'macos/**'
       - 'web/**'
-      - 'scripts/build-dmg.sh'
+      - 'scripts/**'
       - '.github/workflows/release-macos.yml'
       - 'package*.json'
       - 'build-vendor.mjs'
@@ -28,10 +28,11 @@ jobs:
         with:
           node-version: '22'
           cache: npm
-      - name: Bundle offline editor
+      - name: Bundle offline editor and LaTeXLive catalog
         run: |
           npm ci
           node build-vendor.mjs
+          node scripts/sync-latexlive-catalog.mjs
       - name: Compile universal app and verify DMG
         run: bash scripts/build-dmg.sh
       - name: Upload build artifacts
@@ -48,6 +49,6 @@ jobs:
           version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/Info.plist)
           tag="v$version"
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes '下载 DMG，打开后将 Formula.app 拖入 Applications。预编译通用应用支持 Apple Silicon 和 Intel；无需首次编译。应用采用临时签名，尚未 Apple 公证。'
+            gh release create "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes '下载 DMG，打开后将 Formula.app 拖入 Applications。预编译通用应用支持 Apple Silicon 和 Intel；无需首次编译。LaTeX Live 快捷工具与公式模板目录已随应用离线打包。应用采用临时签名，尚未 Apple 公证。'
           fi
           gh release upload "$tag" "dist/Formula-$version.dmg" "dist/Formula-$version.dmg.sha256" --clobber
