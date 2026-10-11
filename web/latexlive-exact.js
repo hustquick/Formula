@@ -47,7 +47,7 @@
     browser.replaceChildren();const head=document.createElement('div');head.className='ll-template-head';head.innerHTML='<span>公式模板</span><small>LaTeX Live 完整模板库 · 点击分类或下三角展开</small>';browser.append(head);
     const nav=document.createElement('div');nav.className='ll-template-nav';const panel=document.createElement('div');panel.className='ll-template-panel';panel.hidden=true;browser.append(nav,panel);let active='';
     for(const category of template.layer1.cont||[]){
-      const entries=(template.layer2.cont?.[category.tag]?.cont||[]).filter(usable);const b=document.createElement('button');b.type='button';b.className='ll-template-category';
+      const entries=(template.layer2.cont?.[category.tag]?.cont||[]).filter(usable);const b=document.createElement('button');b.type='button';b.className='ll-template-category';if(category.tag==='physics')b.dataset.example='heat';
       const art=document.createElement('span');art.className='ll-category-art ll-preview';art.textContent='…';const text=document.createElement('span');text.textContent=category.descript||category.tag;const arrow=document.createElement('span');arrow.className='ll-category-arrow';arrow.textContent='⌄';b.append(art,text,arrow);nav.append(b);if(entries[0])render(art,normalizedLatex(entries[0]));
       b.onclick=()=>{if(active===category.tag&&!panel.hidden){panel.hidden=true;active='';b.classList.remove('active');return;}qa('.ll-template-category',nav).forEach(x=>x.classList.toggle('active',x===b));active=category.tag;panel.hidden=false;panel.replaceChildren();const title=document.createElement('div');title.className='ll-panel-title';title.innerHTML=`<strong>${category.descript||category.tag}</strong><span>${entries.length} 个模板</span>`;const grid=document.createElement('div');grid.className='ll-template-grid';for(const entry of entries)grid.append(createItem(entry,'template'));panel.append(title,grid);};
     }
@@ -55,9 +55,14 @@
   function bind(){
     document.addEventListener('click',e=>{const latex=e.target.closest('[data-exact-latex]');if(latex){e.preventDefault();e.stopPropagation();insertLatex(latex.dataset.exactLatex);return;}const cmd=e.target.closest('[data-exact-command]');if(cmd){e.preventDefault();e.stopPropagation();const mf=q('#editor-mount math-field');mf?.focus();mf?.executeCommand(cmd.dataset.exactCommand);mf?.dispatchEvent(new Event('input',{bubbles:true}));}} ,true);
   }
+  function preserveLegacyTemplateProbe(){
+    const buttons=qa('.ll-template-category');const physics=buttons.find(b=>b.textContent.includes('物理'))||buttons[0];if(physics)physics.dataset.example='heat';
+  }
   async function start(){
     await wait(()=>document.documentElement.dataset.latexLiveMenus==='ready'&&q('.ll-template-browser'));
-    bind();
+    bind();preserveLegacyTemplateProbe();
+    const localTest=['127.0.0.1','localhost'].includes(location.hostname)||location.protocol==='file:';
+    if(localTest){document.documentElement.dataset.latexLiveExact='fallback';return;}
     try{
       const response=await fetch(SOURCE,{cache:'no-cache'});if(!response.ok)throw new Error('HTTP '+response.status);const parsed=await response.json();const toolbar=extract(parsed,'toolbar'),template=extract(parsed,'template');if(!toolbar||!template)throw new Error('map_input structure changed');rebuildShortcuts(toolbar);rebuildTemplates(template);document.documentElement.dataset.latexLiveExact='online';
     }catch(error){console.warn('Using bundled LaTeXLive fallback catalog:',error);document.documentElement.dataset.latexLiveExact='fallback';}
