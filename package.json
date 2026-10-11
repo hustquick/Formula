@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "sync:latexlive": "node scripts/sync-latexlive-catalog.mjs",
+    "validate:v1.1": "node scripts/validate-v1.1.mjs",
+    "build:vendor": "node build-vendor.mjs"
+  },
   "dependencies": {
     "@mathjax/mathjax-newcm-font": "4.1.0",
     "esbuild": "0.25.12",
