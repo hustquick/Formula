@@ -31,3 +31,11 @@
 - 实际浏览器键盘测试：输入 x^2+1、选中后添加根号、空根号输入 9、分数输入 1 和 2；每步检查源码及 SVG 预览。
 - 完整离线测试通过，包括 LaTeX / Typst、矩阵、多行公式、8 种导出、收藏、错误与设置。
 - 本次前端修复在 Chromium 中验证，未在本机 macOS WebKit 上执行。
+
+## 1.0.4 DMG 发布验证
+
+- GitHub macOS 15 构建实际通过 Swift 原生编译，分别生成 arm64 和 x86_64，并合并为 Universal 可执行文件。
+- 代码采用临时签名；codesign --verify --deep --strict 通过。
+- hdiutil 实际创建 Formula-1.0.4.dmg，完整性校验通过；挂载后再次检查应用可执行权限、两个架构和签名，以及 Applications 链接。
+- DMG 和 SHA-256 校验文件已上传 v1.0.4 Release。
+- 以上为 macOS 构建与包内容验证，不代表 Finder 启动、Gatekeeper 或交互功能已完成实机验收。
