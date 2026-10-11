@@ -1,0 +1,91 @@
+/* Formula v1.1.0 — LaTeX Live parity and macOS-quality interaction layer */
+:root{
+  --f-blue:#0d6efd;--f-blue-2:#0b5ed7;--f-blue-soft:#eaf2ff;--f-border:#d9dee7;
+  --f-text:#27364a;--f-muted:#7c8798;--f-panel:#fff;--f-bg:#f5f6f8;
+  --f-shadow:0 12px 34px rgba(24,35,47,.18),0 2px 8px rgba(24,35,47,.10);
+}
+body{background:var(--f-bg)}
+main{max-width:1220px}
+.input-tabs{display:flex;align-items:flex-end;gap:0;padding:0 18px;border-bottom:1px solid #e4e8ef;background:#fff;overflow-x:auto}
+.input-tabs button{border:0;border-radius:0;background:transparent;padding:12px 16px;margin:0;color:#677487;white-space:nowrap;border-bottom:2px solid transparent}
+.input-tabs button:hover:not(:disabled){background:transparent;color:var(--f-blue)}
+.input-tabs button.active{color:var(--f-blue);font-weight:600;border-bottom-color:var(--f-blue)}
+.input-tabs button:disabled{opacity:.38}
+
+/* Reference-style ten category strip */
+#tools[data-tab="quick"]{display:grid;grid-template-columns:repeat(10,minmax(72px,1fr));gap:8px;padding:14px 18px 9px;align-items:stretch}
+#tools[data-tab="quick"]>.tool-group{min-width:0;margin:0;position:relative}
+#tools[data-tab="quick"]>.tool-group>summary{height:86px;min-width:0;padding:8px 4px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:4px;border:1px solid #dce2eb;border-radius:5px;background:#fafbfc;color:#46566d;box-shadow:none}
+#tools[data-tab="quick"]>.tool-group>summary:hover,#tools[data-tab="quick"]>.tool-group[open]>summary{background:#edf4ff;border-color:#9fc0f4;color:var(--f-blue)}
+#tools[data-tab="quick"]>.tool-group>summary::after{content:'▾';font-size:9px;color:#8799b4;line-height:8px}
+#tools[data-tab="quick"] .category-art{height:42px;max-width:100%;display:flex;align-items:center;justify-content:center;color:#4a86df}
+#tools[data-tab="quick"] .category-art svg{max-width:78px;max-height:39px}
+#tools[data-tab="quick"] .category-label{font-size:11px;line-height:13px;text-align:center}
+#tools[data-tab="quick"]>.primary-tools,#tools[data-tab="quick"]>.visual-hint{grid-column:1/-1}
+
+/* Every secondary shortcut menu is a floating palette: opening never moves the editor. */
+.tool-group>div.ll-popup-grid{position:fixed!important;z-index:5000!important;width:min(690px,calc(100vw - 24px))!important;max-height:min(520px,calc(100vh - 30px))!important;overflow:auto!important;margin:0!important;padding:10px!important;background:#fff!important;border:1px solid #d7dde7!important;border-radius:7px!important;box-shadow:var(--f-shadow)!important;display:grid!important;grid-template-columns:repeat(6,minmax(88px,1fr))!important;gap:6px!important;overscroll-behavior:contain}
+.tool-group>div.ll-popup-grid::-webkit-scrollbar,.ll-template-panel::-webkit-scrollbar{width:7px;height:7px}
+.tool-group>div.ll-popup-grid::-webkit-scrollbar-thumb,.ll-template-panel::-webkit-scrollbar-thumb{background:#bcc5d1;border-radius:8px}
+.ll-divider{grid-column:1/-1;padding:7px 5px 4px;margin:2px 0 0;border-bottom:1px solid #e8ebf0;color:#667387;font-size:11px;font-weight:600;letter-spacing:.01em}
+.ll-item{min-width:0!important;min-height:62px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:5px!important;padding:7px 5px!important;border:1px solid transparent!important;background:#fff!important;border-radius:4px!important;color:#33455c!important;text-align:center!important}
+.ll-item:hover,.ll-item:focus-visible{background:#edf4ff!important;border-color:#b8cef1!important;color:#0d6efd!important}
+.ll-item .ll-preview{height:29px;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden;color:#253954}
+.ll-item .ll-preview svg{max-width:100%;max-height:29px}
+.ll-item .ll-label{font-size:9.5px;line-height:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%}
+.ll-command{min-height:42px!important;justify-content:center!important;font-size:10px!important;background:#f8fafc!important}
+
+/* Template top-level strip and detached drop-down panel. */
+.ll-template-browser{position:relative!important;display:block!important;margin:0!important;padding:12px 18px 10px!important;background:#fff!important;border:0!important;border-bottom:1px solid #e7ebf1!important;border-radius:0!important;box-shadow:none!important}
+.ll-template-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 9px;color:#536176;font-size:11px}
+.ll-template-head>span{font-weight:600}.ll-template-head small{font-size:10px;color:#98a2b0;font-weight:400}
+.ll-template-nav{display:grid;grid-template-columns:repeat(10,minmax(72px,1fr));gap:7px}
+.ll-template-category{position:relative;height:80px;min-width:0;padding:6px 4px 11px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border:1px solid #dde3eb;border-radius:5px;background:#fafbfc;color:#46566d}
+.ll-template-category:hover,.ll-template-category.active{background:#edf4ff;border-color:#9fc0f4;color:var(--f-blue)}
+.ll-template-category .ll-category-art{height:38px;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ll-template-category .ll-category-art svg{max-width:78px;max-height:36px}
+.ll-template-category>span:nth-child(2){font-size:11px;line-height:12px}
+.ll-category-arrow{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);font-size:12px;line-height:10px;color:#8799b4}
+.ll-template-panel{position:fixed!important;z-index:5200!important;width:min(820px,calc(100vw - 24px))!important;max-height:min(560px,calc(100vh - 30px))!important;overflow:auto!important;margin:0!important;padding:10px 12px 12px!important;background:#fff!important;border:1px solid #d7dde7!important;border-radius:7px!important;box-shadow:var(--f-shadow)!important;overscroll-behavior:contain}
+.ll-panel-title{position:sticky;top:-10px;z-index:2;display:flex;justify-content:space-between;align-items:center;padding:9px 4px 8px;margin:0 0 8px;background:#fff;border-bottom:1px solid #e5e9ef;color:#34465d}
+.ll-panel-title strong{font-size:13px}.ll-panel-title span{font-size:10px;color:#8b96a5}
+.ll-template-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.ll-template-item{min-width:0;height:94px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;padding:8px;border:1px solid #e0e5ec;border-radius:5px;background:#fff;color:#3c4c61;overflow:hidden}
+.ll-template-item:hover,.ll-template-item:focus-visible{background:#f0f6ff;border-color:#abc5ed;color:#0d6efd}
+.ll-template-item .ll-preview{height:55px;width:100%;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.ll-template-item .ll-preview svg{max-width:100%;max-height:55px}.ll-template-item .ll-label{font-size:10px;color:#697689;max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Finder-like toolbar customization palette */
+.toolbar-customize{min-height:38px}
+#customize-toolbar[aria-expanded="true"]{color:#0d6efd;background:#eef5ff;border-radius:5px}
+#toolbar-options:not([hidden]){display:grid!important;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:7px!important;padding:13px!important;border:1px solid #d8e0ec!important;background:#f7f9fc!important;border-radius:7px!important;box-shadow:inset 0 1px 0 #fff}
+#toolbar-options label{height:48px;padding:5px 7px;border:1px solid transparent;border-radius:5px;background:#fff;color:#536176;cursor:grab!important;user-select:none}
+#toolbar-options label:hover{border-color:#b8ccef;background:#edf4ff;color:#0d6efd}
+#toolbar-remove:not([hidden]){min-height:44px;margin:8px 18px 12px!important;display:flex!important;align-items:center;justify-content:center;border:1px dashed #c4a59d!important;background:#fff9f7!important;color:#9b675b!important}
+.primary-tools.customizing{min-height:48px!important;border:1px dashed #8bb0e8!important;background:#f7faff!important;border-radius:6px!important;padding:7px!important}
+.primary-tools.customizing:empty::after{content:'将按钮拖到这里';color:#8e9caf;font-size:11px;margin:auto}
+
+/* Input/editor stays fixed while any menu is open. */
+.editor-card{position:relative}.input-editors{transition:none!important}
+.input-actions{position:relative;z-index:5;background:#fff}
+body.formula-menu-open{overflow:hidden}
+
+/* Compact polish */
+.header-actions button{padding:7px 10px}.badge{padding:3px 7px;border:1px solid #dde5ef;border-radius:10px;background:#f8fafc}
+.preview-card #preview{min-height:200px}.exports{align-items:center}
+button{transition:background-color .12s,border-color .12s,color .12s,box-shadow .12s}
+
+@media(max-width:1050px){
+  #tools[data-tab="quick"],.ll-template-nav{grid-template-columns:repeat(5,minmax(82px,1fr))}
+  .tool-group>div.ll-popup-grid{grid-template-columns:repeat(5,minmax(84px,1fr))!important}
+}
+@media(max-width:760px){
+  #tools[data-tab="quick"],.ll-template-nav{grid-template-columns:repeat(2,minmax(120px,1fr))}
+  .tool-group>div.ll-popup-grid{grid-template-columns:repeat(3,minmax(82px,1fr))!important}
+  .ll-template-grid{grid-template-columns:1fr 1fr}
+  .ll-template-head small{display:none}
+}
+@media(max-width:460px){
+  .tool-group>div.ll-popup-grid{grid-template-columns:repeat(2,minmax(82px,1fr))!important}
+  .ll-template-grid{grid-template-columns:1fr}
+}
