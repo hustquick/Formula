@@ -18,14 +18,15 @@ if [[ ! -f web/vendor/latexlive/map_input.json ]]; then
     -o web/vendor/latexlive/map_input.json
 fi
 /usr/bin/python3 - <<'PY'
-import json
-with open('web/vendor/latexlive/map_input.json', encoding='utf-8') as f:
-    data=json.load(f)
+import json, pathlib
+p=pathlib.Path('web/vendor/latexlive/map_input.json')
+data=json.loads(p.read_text(encoding='utf-8'))
 sections={x.get('name'):x for x in data.get('shortcut',[])}
 assert len(sections['toolbar']['layer1']['cont'])==10
 assert len(sections['template']['layer1']['cont'])==10
+pathlib.Path('web/vendor/latexlive/catalog.js').write_text('window.LaTeXLiveCatalog='+json.dumps(data,ensure_ascii=False,separators=(',',':'))+';\n',encoding='utf-8')
 PY
-printf '正在构建 Formula Mac 应用；公式模板目录已离线打包…\n'
+printf '正在构建 Formula Mac 应用；完整公式目录已离线打包…\n'
 task_build_dir="$PWD/dist"
 task_app_path="$task_build_dir/Formula.app"
 mkdir -p "$task_app_path/Contents/MacOS" "$task_app_path/Contents/Resources"
