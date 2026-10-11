@@ -2,7 +2,8 @@ import {mkdir, writeFile} from 'node:fs/promises';
 import {dirname, resolve} from 'node:path';
 
 const source = 'https://raw.githubusercontent.com/ubnm/LaTeXLive/master/json/map_input.json';
-const output = resolve('web/vendor/latexlive/map_input.json');
+const jsonOutput = resolve('web/vendor/latexlive/map_input.json');
+const jsOutput = resolve('web/vendor/latexlive/catalog.js');
 
 function findSection(parsed, name) {
   const sections = Array.isArray(parsed?.shortcut) ? parsed.shortcut : [];
@@ -22,6 +23,8 @@ for (const category of [...toolbar.layer1.cont, ...template.layer1.cont]) {
   const items = (category.tag && (toolbar.layer2.cont[category.tag] || template.layer2.cont[category.tag]))?.cont;
   if (!Array.isArray(items) || !items.length) throw new Error(`Empty LaTeXLive category: ${category.tag}`);
 }
-await mkdir(dirname(output), {recursive: true});
-await writeFile(output, text, 'utf8');
-console.log(`Bundled LaTeXLive catalog: ${output} (${Buffer.byteLength(text)} bytes)`);
+await mkdir(dirname(jsonOutput), {recursive: true});
+await writeFile(jsonOutput, text, 'utf8');
+await writeFile(jsOutput, `window.LaTeXLiveCatalog=${JSON.stringify(parsed)};\n`, 'utf8');
+console.log(`Bundled LaTeXLive catalog: ${jsonOutput} (${Buffer.byteLength(text)} bytes)`);
+console.log(`Generated file-safe catalog: ${jsOutput}`);
