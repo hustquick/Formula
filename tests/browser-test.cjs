@@ -25,6 +25,16 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? proces
   await page.waitForFunction(()=>/^\\sqrt(?:\{9\}|9)$/.test(document.getElementById('source').value)&&document.querySelector('#preview svg'));
   await page.evaluate(()=>{const mf=document.getElementById('formula');mf.focus();mf.select();});await page.keyboard.type('\\frac');await page.keyboard.press('Enter');await page.keyboard.type('1');await page.keyboard.press('Tab');await page.keyboard.type('2');
   await page.waitForFunction(()=>['\\frac{1}{2}','\\frac12'].includes(document.getElementById('source').value)&&document.querySelector('#preview svg'));
+  for(const [name,expected] of [['下标','Q_{income}'],['上标','Q^{income}']]){
+    await page.evaluate(()=>{formula.focus();formula.select();});await page.keyboard.type('Qincome');
+    for(let i=0;i<6;i++)await page.keyboard.press('Shift+ArrowLeft');
+    assert.equal(await page.evaluate(()=>formula.getValue(formula.selection,'latex')),'income');
+    await page.locator('#tools').getByRole('button',{name}).click();await page.waitForFunction(expected=>document.getElementById('source').value.replace(/\s/g,'')===expected&&document.querySelector('#preview svg'),expected);
+  }
+  for(const [name,command] of [['分数','frac'],['积分','int'],['求和','sum'],['矩阵','begin{pmatrix}']]){
+    await page.evaluate(()=>{formula.focus();formula.select();});await page.keyboard.type('x+1');await page.evaluate(()=>formula.select());
+    await page.locator('#tools').getByRole('button',{name}).click();await page.waitForFunction(command=>document.getElementById('source').value.includes('\\'+command)&&document.getElementById('source').value.includes('x+1')&&document.querySelector('#preview svg'),command);
+  }
   // Exercise the visual editor with keyboard events, rather than only source edits.
   await page.locator('#formula').click();await page.evaluate(()=>document.getElementById('formula').select());await page.keyboard.type('x^2+1');
   await page.waitForFunction(()=>document.getElementById('source').value==='x^2+1'&&document.querySelector('#preview svg'));

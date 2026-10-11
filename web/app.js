@@ -214,6 +214,11 @@ $('tools').addEventListener('click',e=>{const b=e.target.closest('[data-insert]'
   if(mf.readOnly){status('当前原生 Typst 语法不支持可视化修改，请在源码区编辑。',true);return;}
   let template=b.dataset.insert;
   if(template.startsWith('\\sqrt'))template=mf.selectionIsCollapsed?'\\sqrt{#?}':'\\sqrt{#@}';
+  if(!mf.selectionIsCollapsed){
+    if(template.startsWith('#@_'))template='_{#@}';
+    else if(template.startsWith('#@^'))template='^{#@}';
+    else if(template.startsWith('\\int')||template.startsWith('\\sum')||template.startsWith('\\begin{pmatrix}'))template=template.replace('}#?','}#@');
+  }
   mf.focus();mf.insert(template,{format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',silenceNotifications:false,focus:true});syncVisual(true);
 }});
 $('keyboard').onclick=()=>{mf.focus();window.mathVirtualKeyboard.visible=!window.mathVirtualKeyboard.visible;};
