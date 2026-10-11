@@ -2,6 +2,12 @@
 
 面向 LaTeXiT 使用场景的首版 Mac 公式工具：结构化输入、LaTeX / Typst 源码、离线矢量导出，以及本机排版引擎。
 
+## 下载
+
+[下载最新 Formula Mac 安装包](https://github.com/hustquick/Formula/releases/latest) · [所有版本](https://github.com/hustquick/Formula/releases)
+
+请下载 Release 中的 `Formula-Mac.zip`；GitHub 自动生成的 Source code 压缩包是开发源码。
+
 ## 安装与启动
 
 1. 解压 `Formula-Mac.zip`，将 `Formula.app` 拖入“应用程序”。
