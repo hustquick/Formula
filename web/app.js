@@ -227,17 +227,80 @@ if(mf.shadowRoot){new MutationObserver(()=>{
 mf.addEventListener('pointerdown',()=>{if(!mf.readOnly)mf.focus();});
 $('source').addEventListener('input',()=>{clearTimeout(sourceTimer);svgResult=null;nativeResult=null;sourceTimer=setTimeout(readSource,state.engine==='embedded'?220:650);});
 $('mode-latex').onclick=()=>switchMode('latex');$('mode-typst').onclick=()=>switchMode('typst');
-$('tools').addEventListener('pointerdown',e=>{if(e.target.closest('[data-insert]'))e.preventDefault();});
-$('tools').addEventListener('click',e=>{const b=e.target.closest('[data-insert]');if(b){
+// A persistent, draggable primary toolbar; extended groups remain available.
+const toolbar=$('tools'), primaryToolbar=document.createElement('div');
+primaryToolbar.className='primary-tools';primaryToolbar.id='primary-tools';
+const originals=[...toolbar.querySelectorAll('[data-insert],[data-command],[data-style]')];
+const catalog=originals.map((button,index)=>({id:String(index),button,label:button.textContent.trim()}));
+const defaultToolbar=catalog.filter(entry=>entry.button.parentElement===toolbar).map(entry=>entry.id);
+let toolbarLayout=[...defaultToolbar],customizingToolbar=false,draggedTool=null;
+try{const saved=JSON.parse(localStorage.getItem('formula-toolbar-layout'));if(Array.isArray(saved))toolbarLayout=[...new Set(saved.filter(id=>catalog.some(entry=>entry.id===id)))];}catch{}
+// Stable keys include the action so future additions do not change saved meanings.
+for(const entry of catalog)entry.key=entry.button.dataset.insert||entry.button.dataset.command||entry.button.dataset.style;
+try{const saved=JSON.parse(localStorage.getItem('formula-toolbar-layout-v2'));if(Array.isArray(saved))toolbarLayout=saved.map(key=>catalog.find(entry=>entry.key===key)?.id).filter(Boolean);}catch{}
+toolbar.prepend(primaryToolbar);
+function renderToolbar(){
+  primaryToolbar.replaceChildren();
+  for(const entry of catalog)entry.button.hidden=toolbarLayout.includes(entry.id)||entry.button.parentElement===toolbar;
+  for(const id of toolbarLayout){
+    const entry=catalog.find(entry=>entry.id===id);if(!entry)continue;
+    const button=entry.button.cloneNode(true);button.hidden=false;button.dataset.toolId=id;
+    button.draggable=customizingToolbar;button.title=customizingToolbar?'拖拽调整顺序':entry.label;
+    primaryToolbar.append(button);
+  }
+  primaryToolbar.classList.toggle('customizing',customizingToolbar);
+  $('customize-toolbar').textContent=customizingToolbar?'完成自定义':'自定义工具栏';
+  $('customize-toolbar').setAttribute('aria-expanded',String(customizingToolbar));
+  $('toolbar-remove').hidden=!customizingToolbar;$('reset-toolbar').hidden=!customizingToolbar;$('toolbar-options').hidden=!customizingToolbar;
+  $('toolbar-options').replaceChildren();
+  if(customizingToolbar)for(const entry of catalog){
+    const label=document.createElement('label'),input=document.createElement('input');label.draggable=true;label.dataset.toolId=entry.id;label.title='拖到上方工具栏添加';input.type='checkbox';input.checked=toolbarLayout.includes(entry.id);
+    input.onchange=()=>{toolbarLayout=input.checked?[...toolbarLayout,entry.id]:toolbarLayout.filter(id=>id!==entry.id);saveToolbar();};
+    label.append(input,document.createTextNode(entry.label));$('toolbar-options').append(label);
+  }
+}
+function saveToolbar(){localStorage.setItem('formula-toolbar-layout-v2',JSON.stringify(toolbarLayout.map(id=>catalog.find(entry=>entry.id===id).key)));renderToolbar();}
+$('customize-toolbar').onclick=()=>{customizingToolbar=!customizingToolbar;renderToolbar();};
+$('reset-toolbar').onclick=()=>{toolbarLayout=[...defaultToolbar];saveToolbar();};
+function startToolDrag(e){const button=e.target.closest('[data-tool-id]');if(!customizingToolbar||!button)return;draggedTool=button.dataset.toolId;e.dataTransfer.setData('text/plain',draggedTool);e.dataTransfer.effectAllowed='move';}
+primaryToolbar.addEventListener('dragstart',startToolDrag);$('toolbar-options').addEventListener('dragstart',startToolDrag);
+primaryToolbar.addEventListener('dragover',e=>{if(customizingToolbar)e.preventDefault();});
+primaryToolbar.addEventListener('drop',e=>{
+  if(!customizingToolbar)return;e.preventDefault();const target=e.target.closest('[data-tool-id]');
+  if(!draggedTool||(target&&draggedTool===target.dataset.toolId))return;
+  toolbarLayout=toolbarLayout.filter(id=>id!==draggedTool);toolbarLayout.splice(target?toolbarLayout.indexOf(target.dataset.toolId):toolbarLayout.length,0,draggedTool);draggedTool=null;saveToolbar();
+});
+primaryToolbar.addEventListener('dragend',()=>{draggedTool=null;});
+$('toolbar-remove').addEventListener('dragover',e=>{if(customizingToolbar)e.preventDefault();});
+$('toolbar-remove').addEventListener('drop',e=>{if(!customizingToolbar||!draggedTool)return;e.preventDefault();toolbarLayout=toolbarLayout.filter(id=>id!==draggedTool);draggedTool=null;saveToolbar();});renderToolbar();
+$('tools').addEventListener('pointerdown',e=>{if(!customizingToolbar&&e.target.closest('[data-insert],[data-command],[data-style],summary'))e.preventDefault();});
+$('tools').addEventListener('click',e=>{
+  if(customizingToolbar&&e.target.closest('#primary-tools'))return;
+  const font=e.target.closest('[data-style]');
+  if(font){
+    if(mf.readOnly){status('此语法请在源码区编辑。',true);return;}
+    mf.focus();const [variant,variantStyle]=font.dataset.style.split(':');
+    mf.applyStyle({variant,variantStyle},{operation:'set'});syncVisual(true);return;
+  }
+  const action=e.target.closest('[data-command]');
+  if(action){
+    if(mf.readOnly){status('此语法请在源码区编辑。',true);return;}
+    mf.focus();
+    const result=mf.executeCommand(action.dataset.command);
+    if(result===false)status('请先点击分段公式或矩阵中的单元格，再增删行列。',true);
+    syncVisual(true);return;
+  }
+  const b=e.target.closest('[data-insert]');if(b){
   if(mf.readOnly){status('当前原生 Typst 语法不支持可视化修改，请在源码区编辑。',true);return;}
   let template=b.dataset.insert;
-  if(template.startsWith('\\sqrt'))template=mf.selectionIsCollapsed?'\\sqrt{#?}':'\\sqrt{#@}';
+  if(template==='\\sqrt{#?}')template=mf.selectionIsCollapsed?'\\sqrt{#?}':'\\sqrt{#@}';
   if(!mf.selectionIsCollapsed){
-    if(template.startsWith('#@_'))template='_{#@}';
+    if(template==='#@_{#?}^{#?}')template='_{#@}^{#?}';
+    else if(template.startsWith('#@_'))template='_{#@}';
     else if(template.startsWith('#@^'))template='^{#@}';
     else if(template.startsWith('\\int')||template.startsWith('\\sum')||template.startsWith('\\begin{pmatrix}'))template=template.replace('}#?','}#@');
   }
-  mf.focus();mf.insert(template,{format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',silenceNotifications:false,focus:true});syncVisual(true);
+  mf.focus();mf.insert(template,{mode:'math',format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',silenceNotifications:false,focus:true});syncVisual(true);
 }});
 $('keyboard').onclick=()=>{mf.focus();window.mathVirtualKeyboard.visible=!window.mathVirtualKeyboard.visible;};
 document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>loadLatex(examples[b.dataset.example]));

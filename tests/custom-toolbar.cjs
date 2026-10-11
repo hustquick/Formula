@@ -1,0 +1,9 @@
+const assert=require('node:assert/strict');const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright');
+(async()=>{const browser=await chromium.launch({executablePath:process.env.MATHFORGE_BROWSER||'/tmp/mathforge-chrome',args:['--no-sandbox']});const page=await browser.newPage();page.setDefaultTimeout(10000);await page.goto(process.env.MATHFORGE_URL||'http://127.0.0.1:8765');await page.waitForFunction(()=>window.FormulaTest&&document.querySelector('#preview svg'));
+const labels=()=>page.locator('#primary-tools button').allTextContents();const original=await labels();
+await page.getByRole('button',{name:'自定义工具栏',exact:true}).click();await page.locator('#toolbar-options label').filter({hasText:'绝对值'}).dragTo(page.locator('#primary-tools button').first());assert((await labels()).includes('绝对值'));
+await page.locator('#primary-tools').getByRole('button',{name:'积分'}).dragTo(page.locator('#toolbar-remove'));assert(!(await labels()).includes('积分 ∫'));
+await page.locator('#primary-tools').getByRole('button',{name:'绝对值',exact:true}).dragTo(page.locator('#primary-tools button').nth(2));const reordered=await labels();assert.equal(reordered[1],'绝对值');
+await page.getByRole('button',{name:'完成自定义',exact:true}).click();await page.reload();await page.waitForFunction(()=>window.FormulaTest);assert.deepEqual(await labels(),reordered);
+await page.evaluate(()=>{formula.setValue('x');formula.focus();formula.select()});await page.locator('#primary-tools').getByRole('button',{name:'绝对值',exact:true}).click();assert.equal(await page.locator('#source').inputValue(),'\\left|x\\right|');
+await page.getByRole('button',{name:'自定义工具栏',exact:true}).click();await page.getByRole('button',{name:'恢复默认',exact:true}).click();assert.deepEqual(await labels(),original);await browser.close();console.log('PASS: toolbar add/remove, actual drag, persistence, selection action, reset');})().catch(e=>{console.error(e);process.exit(1)});
