@@ -10,6 +10,7 @@ node scripts/validate-v1.1.mjs
 Write-Host 'Installing Windows desktop runtime...'
 Push-Location windows
 npm install --no-audit --no-fund
+npx --no-install install-electron --no
 Pop-Location
 
 $version = (Get-Content windows/package.json -Raw | ConvertFrom-Json).version
