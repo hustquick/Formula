@@ -10,7 +10,22 @@ if ! xcrun --find swiftc >/dev/null 2>&1; then
   xcode-select --install || true
   read -r -p '按回车关闭…'; exit 0
 fi
-printf '正在构建 Formula Mac 应用，无需 Node.js、npm 或联网下载依赖…\n'
+if [[ ! -f web/vendor/latexlive/map_input.json ]]; then
+  printf '正在同步 LaTeX Live 完整快捷工具与公式模板目录…\n'
+  mkdir -p web/vendor/latexlive
+  /usr/bin/curl --fail --location --silent --show-error \
+    https://raw.githubusercontent.com/ubnm/LaTeXLive/master/json/map_input.json \
+    -o web/vendor/latexlive/map_input.json
+fi
+/usr/bin/python3 - <<'PY'
+import json
+with open('web/vendor/latexlive/map_input.json', encoding='utf-8') as f:
+    data=json.load(f)
+sections={x.get('name'):x for x in data.get('shortcut',[])}
+assert len(sections['toolbar']['layer1']['cont'])==10
+assert len(sections['template']['layer1']['cont'])==10
+PY
+printf '正在构建 Formula Mac 应用；公式模板目录已离线打包…\n'
 task_build_dir="$PWD/dist"
 task_app_path="$task_build_dir/Formula.app"
 mkdir -p "$task_app_path/Contents/MacOS" "$task_app_path/Contents/Resources"
