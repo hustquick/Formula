@@ -5,6 +5,7 @@ cd "$(dirname "$0")/.."
 [[ -f web/vendor/app.bundle.js ]] || { echo '先运行 npm ci 和 node build-vendor.mjs。' >&2; exit 1; }
 [[ -f web/vendor/latexlive/map_input.json ]] || { echo '缺少 LaTeXLive 离线目录；请运行 node scripts/sync-latexlive-catalog.mjs。' >&2; exit 1; }
 [[ -f web/vendor/latexlive/catalog.js ]] || { echo '缺少 LaTeXLive file:// 目录脚本；请运行 node scripts/sync-latexlive-catalog.mjs。' >&2; exit 1; }
+[[ -f web/v1.1.css ]] || { echo '缺少 v1.1 视觉层。' >&2; exit 1; }
 node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('web/vendor/latexlive/map_input.json','utf8'));const s=x.shortcut||[];const t=n=>s.find(v=>v.name===n);if(t('toolbar')?.layer1?.cont?.length!==10||t('template')?.layer1?.cont?.length!==10)process.exit(1);const js=fs.readFileSync('web/vendor/latexlive/catalog.js','utf8');if(!js.startsWith('window.LaTeXLiveCatalog='))process.exit(1)"
 task_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/Info.plist)
 task_build_dir="$PWD/dist"
@@ -15,10 +16,13 @@ mkdir -p "$task_app/Contents/MacOS" "$task_app/Contents/Resources"
 cp macos/Info.plist "$task_app/Contents/Info.plist"
 cp -R web "$task_app/Contents/Resources/"
 cp THIRD-PARTY-NOTICES.txt "$task_app/Contents/Resources/"
+# Keep the native About panel in lock-step with Info.plist without duplicating release metadata.
+task_swift="$task_stage/Formula.swift"
+sed -E "s/Formula [0-9]+\.[0-9]+\.[0-9]+/Formula $task_version/g" macos/Formula.swift > "$task_swift"
 task_sdk=$(xcrun --sdk macosx --show-sdk-path)
 for task_arch in arm64 x86_64; do
   xcrun swiftc -swift-version 5 -O -sdk "$task_sdk" -target "$task_arch-apple-macosx12.0" \
-    -framework Cocoa -framework WebKit -framework PDFKit macos/Formula.swift \
+    -framework Cocoa -framework WebKit -framework PDFKit "$task_swift" \
     -o "$task_stage/Formula-$task_arch"
 done
 lipo -create "$task_stage/Formula-arm64" "$task_stage/Formula-x86_64" -output "$task_app/Contents/MacOS/Formula"
@@ -37,6 +41,7 @@ hdiutil attach -readonly -nobrowse -mountpoint "$task_stage/mounted" "$task_dmg"
 [[ -x "$task_stage/mounted/Formula.app/Contents/MacOS/Formula" ]]
 [[ -f "$task_stage/mounted/Formula.app/Contents/Resources/web/vendor/latexlive/map_input.json" ]]
 [[ -f "$task_stage/mounted/Formula.app/Contents/Resources/web/vendor/latexlive/catalog.js" ]]
+[[ -f "$task_stage/mounted/Formula.app/Contents/Resources/web/v1.1.css" ]]
 [[ "$(readlink "$task_stage/mounted/Applications")" == /Applications ]]
 codesign --verify --deep --strict "$task_stage/mounted/Formula.app"
 lipo "$task_stage/mounted/Formula.app/Contents/MacOS/Formula" -verify_arch arm64 x86_64
