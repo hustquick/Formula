@@ -7,6 +7,7 @@ on:
       - 'macos/**'
       - 'web/**'
       - 'scripts/**'
+      - 'tests/**'
       - '.github/workflows/release-macos.yml'
       - 'package*.json'
       - 'build-vendor.mjs'
@@ -17,7 +18,7 @@ permissions:
 
 concurrency:
   group: formula-macos-release
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   release:
@@ -31,8 +32,10 @@ jobs:
       - name: Bundle offline editor and LaTeXLive catalog
         run: |
           npm ci
-          node build-vendor.mjs
-          node scripts/sync-latexlive-catalog.mjs
+          npm run build:vendor
+          npm run sync:latexlive
+      - name: Validate Formula v1.1.0 release contract
+        run: npm run validate:v1.1
       - name: Compile universal app and verify DMG
         run: bash scripts/build-dmg.sh
       - name: Upload build artifacts
@@ -48,7 +51,10 @@ jobs:
         run: |
           version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/Info.plist)
           tag="v$version"
+          notes='Formula 1.1.0：完整离线打包 LaTeX Live 10 类快捷工具和 10 类公式模板；所有二级菜单采用浮动 palette，不改变主编辑区布局；矩阵/多行支持行列编辑；顶部工具栏支持 Finder 风格拖拽自定义和图标/文字显示模式；增加键盘导航、窗口边缘避让以及发布前自动验收。预编译通用应用支持 Apple Silicon 和 Intel。应用采用临时签名，尚未 Apple 公证。'
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes '下载 DMG，打开后将 Formula.app 拖入 Applications。预编译通用应用支持 Apple Silicon 和 Intel；无需首次编译。LaTeX Live 快捷工具与公式模板目录已随应用离线打包。应用采用临时签名，尚未 Apple 公证。'
+            gh release create "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes "$notes"
+          else
+            gh release edit "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes "$notes"
           fi
           gh release upload "$tag" "dist/Formula-$version.dmg" "dist/Formula-$version.dmg.sha256" --clobber
