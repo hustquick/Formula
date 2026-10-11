@@ -1,0 +1,224 @@
+import {tex2typst, typst2tex} from 'tex2typst';
+import {jsPDF} from 'jspdf';
+import 'svg2pdf.js';
+
+const $ = id => document.getElementById(id);
+const bridge = window.webkit?.messageHandlers?.mathforge;
+const examples = {
+  heat: String.raw`\mathrm{Nu}=0.023\,\mathrm{Re}^{0.8}\mathrm{Pr}^{0.4}`,
+  efficiency: String.raw`\eta=\frac{Q_{\mathrm{useful}}}{Q_{\mathrm{solar}}}`,
+  quadratic: String.raw`x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}`,
+  matrix: String.raw`\mathbf{A}=\begin{pmatrix}a&b\\c&d\end{pmatrix}`
+};
+let state = {latex: examples.efficiency, rawSource:'', mode:'latex', engine:'embedded', history:[], size:32, padding:12, color:'#18232f', transparent:true, scale:3, preamble:String.raw`\usepackage{amsmath,amssymb}
+\usepackage{xcolor}`,typstPreamble:'',displayMode:'display'};
+try { Object.assign(state, window.FormulaSavedState || JSON.parse(localStorage.getItem('mathforge') || '{}')); } catch {}
+state.history = Array.isArray(state.history) ? state.history.filter(x=>typeof x==='string'||(x&&typeof x.rawSource==='string')).slice(0,100) : [];
+if(!bridge)state.engine='embedded';
+state.mode = state.mode === 'typst' ? 'typst' : 'latex';
+let valid = true, updating = false, renderID = 0, renderQueue = Promise.resolve(), svgResult = null, nativeResult=null, sourceTimer, visualTimer, conversionAvailable=true,lastRenderKey='';
+const requests=new Map();
+function nativeRequest(action,data){return new Promise((resolve,reject)=>{const id=String(Date.now())+'-'+Math.random().toString(36).slice(2);const timer=setTimeout(()=>{requests.delete(id);reject(new Error(action==='render'?'本机排版超时，请查看编译日志':'保存操作超时'));},action==='render'?180000:600000);requests.set(id,{resolve,reject,timer});send(action,{...data,id});});}
+window.FormulaNativeReply=(id,result)=>{const req=requests.get(id);if(!req)return;clearTimeout(req.timer);requests.delete(id);if(result.log!==undefined)$('compile-log').textContent=result.log;if(result.error)req.reject(new Error(result.error));else req.resolve(result);};
+function status(text, error=false){ $('status').textContent=text; $('status').classList.toggle('error',error); }
+function send(action, data={}){ bridge?.postMessage({action,...data}); }
+function persist(){ try{localStorage.setItem('mathforge',JSON.stringify(state));}catch{} send('state',{state}); }
+function stripDelimiters(text){
+  text=text.trim();
+  if(text.startsWith('$$') && text.endsWith('$$'))return text.slice(2,-2).trim();
+  if(text.startsWith('$') && text.endsWith('$'))return text.slice(1,-1).trim();
+  if((text.startsWith('\\[')&&text.endsWith('\\]'))||(text.startsWith('\\(')&&text.endsWith('\\)')))return text.slice(2,-2).trim();
+  return text;
+}
+function typst(latex){ return tex2typst(latex,{nonStrict:false}); }
+function getModeSource(){return state.mode==='latex'?state.latex:typst(state.latex);}
+function invalidate(message){
+  valid=false;svgResult=null;nativeResult=null;$('source').classList.toggle('invalid',state.engine==='embedded');$('preview').replaceChildren();$('dimensions').textContent='排版失败';
+  const box=document.createElement('div');box.className='render-error';const text=document.createElement('p');text.textContent=message;box.append(text);
+  if(state.engine!=='embedded'){const log=document.createElement('button');log.textContent='查看完整编译日志';log.onclick=()=>{$('tool-dialog').showModal();$('compile-log').parentElement.open=true;$('compile-log').scrollIntoView({block:'nearest'});};const copyLog=document.createElement('button');copyLog.textContent='复制日志';copyLog.onclick=safe(()=>copy($('compile-log').textContent));const retry=document.createElement('button');retry.textContent='重试';retry.onclick=()=>readSource();box.append(log,copyLog,retry);}
+  $('preview').append(box);status(message,true);
+}
+function updateAlternates(){
+  $('other-label').textContent=state.mode==='latex'?'Typst':'LaTeX';
+  try{$('other-source').textContent=conversionAvailable?(state.mode==='latex'?typst(state.latex):state.latex):'本机可排版；此语法暂不支持转换为另一种源码。';}catch(e){$('other-source').textContent='此公式暂不支持转换为 Typst：'+e.message;}
+  try{$('mathml').textContent=conversionAvailable?mf.getValue('math-ml'):'此语法暂不支持 MathML 转换。';}catch{$('mathml').textContent='当前编辑结构尚未完成。';}
+}
+function updateMode(){
+  $('mode-latex').classList.toggle('active',state.mode==='latex');$('mode-typst').classList.toggle('active',state.mode==='typst');
+  $('source-hint').textContent=state.mode==='typst'?'Typst 数学模式，可粘贴 $…$；不支持整篇文档或自定义函数':'可粘贴带 $…$ 或 \\[ … \\] 的公式';
+  $('source').setAttribute('aria-label',state.mode+' 公式源码');
+}
+function settings(){for(const key of ['size','padding','scale'])state[key]=Number($(key).value);state.color=$('color').value;state.transparent=$('transparent').checked;}
+function scheduleRender(){
+  const key=JSON.stringify({latex:state.latex,rawSource:state.rawSource,engine:state.engine,size:state.size,padding:state.padding,color:state.color,transparent:state.transparent,scale:state.scale,preamble:state.preamble,typstPreamble:state.typstPreamble,displayMode:state.displayMode});
+  if(key===lastRenderKey&&valid&&(svgResult||nativeResult))return renderQueue;
+  const id=++renderID, latex=state.latex, opts={...state};
+  svgResult=null;nativeResult=null;
+  renderQueue=renderQueue.catch(()=>{}).then(async()=>{
+    if(id!==renderID)return;
+    if(opts.engine!=='embedded'){
+      if(!bridge)throw new Error('本机引擎需要在 Formula Mac 应用中使用');
+      status('正在调用本机 '+(opts.engine==='typst'?'Typst':'LaTeX')+'…');
+      const result=await nativeRequest('render',{engine:opts.engine,source:opts.rawSource,options:{size:opts.size,padding:opts.padding,color:opts.color,transparent:opts.transparent,scale:opts.scale,preamble:opts.preamble,typstPreamble:opts.typstPreamble,displayMode:opts.displayMode}});
+      if(id!==renderID)return;
+      nativeResult=result;lastRenderKey=key;valid=true;$('source').classList.remove('invalid');
+      const img=new Image();img.className='preview-image';img.src='data:image/png;base64,'+result.png;$('preview').replaceChildren(img);
+      $('dimensions').textContent=`${result.width} × ${result.height} px`;
+      status('本机排版完成 · '+result.engine);persist();return;
+    }
+    await MathJax.startup.promise;
+    const container=await MathJax.tex2svgPromise(latex,{display:opts.displayMode!=='inline'});
+    if(id!==renderID)return;
+    if(container.querySelector('[data-mml-node="merror"]'))throw new Error(container.textContent || '公式排版失败');
+    const raw=container.querySelector('svg');
+    if(!raw)throw new Error('没有生成公式图像');
+    const vb=raw.getAttribute('viewBox').split(/\s+/).map(Number);
+    const unit=opts.size*4/3/1000, pad=opts.padding/unit;
+    const width=vb[2]*unit+2*opts.padding, height=vb[3]*unit+2*opts.padding;
+    if(!Number.isFinite(width)||!Number.isFinite(height)||width<=0||height<=0)throw new Error('请输入非空公式');
+    const svg=raw.cloneNode(true);
+    svg.setAttribute('xmlns','http://www.w3.org/2000/svg');svg.setAttribute('xmlns:xlink','http://www.w3.org/1999/xlink');
+    svg.setAttribute('viewBox',`${vb[0]-pad} ${vb[1]-pad} ${vb[2]+2*pad} ${vb[3]+2*pad}`);
+    svg.setAttribute('width',String(width));svg.setAttribute('height',String(height));svg.removeAttribute('style');svg.removeAttribute('role');svg.removeAttribute('focusable');
+    svg.querySelectorAll('g').forEach(g=>{if(g.getAttribute('fill')==='currentColor')g.setAttribute('fill',opts.color);if(g.getAttribute('stroke')==='currentColor')g.setAttribute('stroke',opts.color);});
+    svg.setAttribute('color',opts.color);
+    if(!opts.transparent){const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');Object.entries({x:vb[0]-pad,y:vb[1]-pad,width:vb[2]+2*pad,height:vb[3]+2*pad,fill:'#ffffff'}).forEach(([k,v])=>rect.setAttribute(k,String(v)));svg.prepend(rect);}
+    const meta=document.createElementNS('http://www.w3.org/2000/svg','metadata');meta.textContent=JSON.stringify({generator:'Formula',latex,format:'mathforge-equation',version:1,state:{...opts,history:[]}});svg.prepend(meta);
+    svgResult={svg,width,height};lastRenderKey=key;valid=true;$('source').classList.remove('invalid');
+    $('preview').replaceChildren(svg.cloneNode(true));$('dimensions').textContent=`${Math.ceil(width)} × ${Math.ceil(height)} px`;
+    status(state.mode==='typst'?'Typst 已转换并同步；请核对预览':'已同步 · 可导出');persist();
+  }).catch(e=>{if(id===renderID)invalidate(e.message);});
+  return renderQueue;
+}
+function readSource(){
+  clearTimeout(sourceTimer);clearTimeout(visualTimer);
+  try {
+    const src=stripDelimiters($('source').value);
+    if(!src)throw new Error('请输入公式');
+    if(state.engine!=='typst'&&state.mode==='typst' && /#|\b(?:set|show|let|import|include)\b/.test(src))throw new Error('内置模式只支持 Typst 数学公式；文档指令或自定义函数请使用本机 Typst');
+    state.rawSource=src;
+    let latex;
+    try{latex=state.mode==='typst'?typst2tex(src):src;conversionAvailable=true;mf.readOnly=false;}
+    catch(e){if(state.engine!=='typst')throw e;conversionAvailable=false;mf.readOnly=true;latex='';}
+    updating=true;mf.setValue(latex,{silenceNotifications:true});updating=false;
+    state.latex=latex;valid=true;updateAlternates();return scheduleRender();
+  }catch(e){updating=false;++renderID;invalidate(e.message);return Promise.resolve();}
+}
+async function switchMode(mode){
+  if(state.engine==='latex'&&mode==='typst'){status('本机 LaTeX 使用 LaTeX 源码。请切换到内置排版或本机 Typst。',true);return;}
+  if(state.engine==='typst'&&mode==='latex'){status('本机 Typst 使用 Typst 源码。请切换到内置排版或本机 LaTeX。',true);return;}
+  await readSource();if(!valid)return;
+  try{const next=mode==='latex'?state.latex:typst(state.latex);state.mode=mode;$('source').value=next;updateMode();updateAlternates();persist();}
+  catch(e){status('无法切换：'+e.message,true);}
+}
+function loadLatex(latex){state.latex=latex;conversionAvailable=true;mf.readOnly=false;updating=true;mf.setValue(latex,{silenceNotifications:true});updating=false;try{$('source').value=getModeSource();}catch{state.mode='latex';$('source').value=latex;}state.rawSource=stripDelimiters($('source').value);updateMode();updateAlternates();scheduleRender();}
+function svgText(){return '<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(svgResult.svg);}
+async function bytesBase64(blob){const bytes=new Uint8Array(await blob.arrayBuffer());let s='';for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(s);}
+async function save(blob, name){
+  if(bridge){status('请选择保存位置');const result=await nativeRequest('save',{name,base64:await bytesBase64(blob)});status(result.cancelled?'已取消保存':'已保存 '+name);}
+  else{const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),30000);status('已导出 '+name);}
+}
+async function copy(text, format='text'){
+  if(bridge){send('copy',{text,format});status('已复制');return;}
+  try{await navigator.clipboard.writeText(text);}catch{const ta=document.createElement('textarea');ta.value=text;document.body.append(ta);ta.select();if(!document.execCommand('copy'))throw new Error('复制失败，请手动选择源码复制');ta.remove();}status('已复制');
+}
+async function exportFile(kind){
+  await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式再导出');
+  if(kind==='project'){return save(new Blob([JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}},null,2)],{type:'application/json'}),'equation.mathforge');}
+  if(['latex','typst','mathml'].includes(kind)){if(!conversionAvailable)throw new Error('此语法暂不支持跨格式转换，可保存为可恢复公式文件');const txt=kind==='latex'?state.latex:kind==='typst'?typst(state.latex):mf.getValue('math-ml');return save(new Blob([kind==='typst'?'$ '+txt+' $':txt],{type:'text/plain;charset=utf-8'}),'equation.'+({latex:'tex',typst:'typ',mathml:'mml'}[kind]));}
+  if(state.engine!=='embedded'){
+    if(!nativeResult)throw new Error('本机排版结果尚未就绪');
+    if(!nativeResult[kind])throw new Error(kind==='svg'?'本机 LaTeX 导出 SVG 需要可用的 dvisvgm。可在系统工具中指定路径。':kind==='eps'?'EPS 导出需要 pdftops，可在系统工具中指定路径。':'此格式未能生成，请查看编译日志');
+    return save(new Blob([Uint8Array.from(atob(nativeResult[kind]),c=>c.charCodeAt(0))],{type:({svg:'image/svg+xml',pdf:'application/pdf',png:'image/png',jpeg:'image/jpeg',tiff:'image/tiff',eps:'application/postscript'})[kind]}),'equation.'+(kind==='jpeg'?'jpg':kind));
+  }
+  if(!svgResult)throw new Error('请先修正公式再导出');
+  if(['tiff','eps'].includes(kind))throw new Error('TIFF / EPS 请使用本机 LaTeX 或 Typst 引擎');
+  const {width,height,svg}=svgResult;
+  if(kind==='svg')return save(new Blob([svgText()],{type:'image/svg+xml'}),'equation.svg');
+  if(kind==='pdf'){
+    const w=width*.75,h=height*.75;
+    const pdf=new jsPDF({orientation:w>h?'landscape':'portrait',unit:'pt',format:[w,h]});
+    pdf.setProperties({title:'Formula equation',subject:'MathForge:'+JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}})});
+    await pdf.svg(svg.cloneNode(true),{x:0,y:0,width:w,height:h});return save(pdf.output('blob'),'equation.pdf');
+  }
+  const scale=Number($('scale').value),w=Math.ceil(width*scale),h=Math.ceil(height*scale);
+  if(w*h>50000000||w>16000||h>16000)throw new Error('PNG 尺寸过大，请降低字号或清晰度');
+  const url=URL.createObjectURL(new Blob([svgText()],{type:'image/svg+xml'}));
+  try{const img=new Image();img.src=url;await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('图片渲染失败'));});const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(kind==='jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);}ctx.drawImage(img,0,0,w,h);const mime=kind==='jpeg'?'image/jpeg':'image/png';const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,.96));if(!blob)throw new Error('图片导出失败');return save(blob,'equation.'+(kind==='jpeg'?'jpg':'png'));}finally{URL.revokeObjectURL(url);}
+}
+function history(){
+  $('history').replaceChildren();state.history.forEach((item,i)=>{const text=typeof item==='string'?item:item.rawSource;const wrap=document.createElement('div');wrap.className='history-item';const b=document.createElement('button');b.textContent=text;b.title=text;b.onclick=()=>{if(typeof item==='string')loadLatex(item);else restore(item);};const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','删除收藏');del.onclick=()=>{state.history.splice(i,1);history();persist();};wrap.append(b,del);$('history').append(wrap);});
+}
+function applyUI(){for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];}$('engine').value=state.engine;$('preamble').value=state.preamble;$('typst-preamble').value=state.typstPreamble;$('display-mode').value=state.displayMode;$('engine-note').textContent=state.engine==='embedded'?'MathJax 矢量排版':'本机 '+(state.engine==='typst'?'Typst':'LaTeX');updateMode();}
+function restore(saved){
+  const keepHistory=state.history;for(const k of ['latex','rawSource','mode','engine','size','padding','color','transparent','scale','preamble','typstPreamble','displayMode'])if(saved[k]!==undefined)state[k]=saved[k];state.history=keepHistory;
+  if(!bridge)state.engine='embedded';applyUI();$('source').value=state.rawSource||getModeSource();readSource();
+}
+function importContent(text,ext){
+  if(['mathforge','json'].includes(ext)){const data=JSON.parse(text);if(data.format==='mathforge-library'){state.history=data.history.slice(0,100);history();persist();status('收藏已恢复');return;}if(data.format!=='mathforge-equation')throw new Error('无法识别的公式文件');restore(data.state);return;}
+  if(ext==='svg'){const meta=new DOMParser().parseFromString(text,'image/svg+xml').querySelector('metadata');if(!meta)throw new Error('SVG 中没有可恢复源码');const data=JSON.parse(meta.textContent);if(data.state)restore(data.state);else loadLatex(data.latex);return;}
+  if(ext==='tex'&&text.includes('\\begin{document}')){const body=text.match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/);if(!body)throw new Error('LaTeX 文档不完整');state.preamble=text.split('\\begin{document}')[0].replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/,'').trim();text=body[1];if(bridge)state.engine='latex';}
+  state.mode=ext==='typ'?'typst':'latex';if(state.engine!=='embedded')state.engine=state.mode==='typst'?'typst':'latex';$('source').value=text;applyUI();readSource();
+}
+let detectedTools={};
+window.FormulaTools=tools=>{detectedTools=tools;$('tool-paths').replaceChildren();for(const [key,label] of Object.entries({latex:'LaTeX',typst:'Typst',dvisvgm:'dvisvgm',pdftops:'pdftops'})){const row=document.createElement('div');row.className='tool-row';const name=document.createElement('span');name.textContent=label;const path=document.createElement('code');path.textContent=tools[key]?.path||'未检测到';const version=document.createElement('small');version.textContent=tools[key]?.version||'';path.append(version);const button=document.createElement('button');button.textContent='指定路径';button.onclick=()=>send('chooseTool',{tool:key});row.append(name,path,button);$('tool-paths').append(row);}};
+const safe=fn=>async(...args)=>{try{await fn(...args);}catch(e){status(e.message,true);}};
+window.FormulaNativeResult=(message,error=false)=>status(message,error);
+window.FormulaImport=(text,ext)=>safe(()=>importContent(text,ext))();
+window.FormulaAction=kind=>safe(async()=>{if(kind==='copy')await copy($('source').value);else if(kind==='import')$('import').click();else await exportFile(kind);})();
+window.FormulaTest={exportFile,readSource,stripDelimiters,getState:()=>state,getSVG:()=>svgResult?svgText():null};
+
+MathLive.MathfieldElement.fontsDirectory=new URL('vendor/mathlive/fonts',document.baseURI).href;
+MathLive.MathfieldElement.soundsDirectory=null;
+const mf=new MathLive.MathfieldElement();mf.id='formula';mf.setAttribute('aria-label','可视化公式编辑器');mf.mathVirtualKeyboardPolicy='manual';$('editor-mount').append(mf);
+function syncVisual(force=false){
+  if(updating||mf.readOnly)return;
+  try{
+    const latex=mf.getValue('latex-without-placeholders');
+    if(!force&&latex===state.latex)return;
+    clearTimeout(sourceTimer);clearTimeout(visualTimer);state.latex=latex;conversionAvailable=true;
+    try{$('source').value=getModeSource();}catch{state.mode='latex';state.engine='embedded';$('source').value=latex;applyUI();}
+    state.rawSource=stripDelimiters($('source').value);updateAlternates();persist();
+    ++renderID;svgResult=null;nativeResult=null;
+    if(!state.rawSource){$('preview').replaceChildren();$('dimensions').textContent='等待输入';status('请输入公式');return;}
+    status('源码已同步 · 正在准备预览…');
+    visualTimer=setTimeout(scheduleRender,state.engine==='embedded'?100:650);
+  }catch(e){status('编辑同步失败：'+e.message,true);}
+}
+for(const event of ['input','change','keyup','compositionend','blur'])mf.addEventListener(event,()=>syncVisual());
+// WebKit may repaint its editable shadow tree before delivering an input event.
+// Read the editor value after such changes, but only while the editor has focus.
+if(mf.shadowRoot){new MutationObserver(()=>{
+  if(document.activeElement===mf&&!updating)syncVisual();
+}).observe(mf.shadowRoot,{childList:true,subtree:true,characterData:true});}
+// A click in the editor's whitespace should focus its keyboard sink too.
+mf.addEventListener('pointerdown',()=>{if(!mf.readOnly)mf.focus();});
+$('source').addEventListener('input',()=>{clearTimeout(sourceTimer);svgResult=null;nativeResult=null;sourceTimer=setTimeout(readSource,state.engine==='embedded'?220:650);});
+$('mode-latex').onclick=()=>switchMode('latex');$('mode-typst').onclick=()=>switchMode('typst');
+$('tools').addEventListener('pointerdown',e=>{if(e.target.closest('[data-insert]'))e.preventDefault();});
+$('tools').addEventListener('click',e=>{const b=e.target.closest('[data-insert]');if(b){
+  if(mf.readOnly){status('当前原生 Typst 语法不支持可视化修改，请在源码区编辑。',true);return;}
+  let template=b.dataset.insert;
+  if(template.startsWith('\\sqrt'))template=mf.selectionIsCollapsed?'\\sqrt{#?}':'\\sqrt{#@}';
+  mf.focus();mf.insert(template,{format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',silenceNotifications:false,focus:true});syncVisual(true);
+}});
+$('keyboard').onclick=()=>{mf.focus();window.mathVirtualKeyboard.visible=!window.mathVirtualKeyboard.visible;};
+document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>loadLatex(examples[b.dataset.example]));
+for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];$(key).addEventListener('change',()=>{settings();if(state.size<10||state.size>160||state.padding<0||state.padding>80){status('字号范围 10–160 pt，留白范围 0–80 px',true);return;}scheduleRender();});}
+for(const kind of ['svg','pdf','png','jpeg'])$(kind).onclick=safe(()=>exportFile(kind));
+$('extra-format').onchange=safe(async()=>{const kind=$('extra-format').value;$('extra-format').value='';if(kind)await exportFile(kind);});
+$('copy-svg').onclick=safe(async()=>{await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式');if(nativeResult){if(!nativeResult.svg)throw new Error('本机 LaTeX 的 SVG 复制需要 dvisvgm');await copy(new TextDecoder().decode(Uint8Array.from(atob(nativeResult.svg),c=>c.charCodeAt(0))),'svg');}else if(svgResult)await copy(svgText(),'svg');});
+$('copy-image').onclick=safe(async()=>{await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式');if(!bridge)throw new Error('图片复制请在 Mac 应用中使用，网页可通过导出 PNG 保存');if(nativeResult){send('copyImage',{png:nativeResult.png,pdf:nativeResult.pdf});status('已复制图片及矢量 PDF');}else{const url=URL.createObjectURL(new Blob([svgText()],{type:'image/svg+xml'}));try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=Math.ceil(svgResult.width*state.scale);c.height=Math.ceil(svgResult.height*state.scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const blob=await new Promise(resolve=>c.toBlob(resolve));send('copyImage',{png:await bytesBase64(blob),svg:await bytesBase64(new Blob([svgText()]))});status('已复制图片及矢量 SVG');}finally{URL.revokeObjectURL(url);}}});
+$('copy-source').onclick=safe(()=>copy($('source').value));$('copy-other').onclick=safe(()=>copy($('other-source').textContent));$('copy-mathml').onclick=safe(()=>copy($('mathml').textContent));
+$('remember').onclick=async()=>{await readSource();if(!valid)return;const item={...state,history:undefined};state.history=[item,...state.history.filter(x=>(typeof x==='string'?x:x.rawSource)!==state.rawSource)].slice(0,100);history();persist();status('已收藏当前公式及排版设置');};
+$('save-library').onclick=safe(()=>save(new Blob([JSON.stringify({format:'mathforge-library',version:1,history:state.history},null,2)],{type:'application/json'}),'formula-library.json'));
+$('import').onclick=()=>{if(bridge){send('import');return;}const f=document.createElement('input');f.type='file';f.accept='.tex,.typ,.txt,.svg,.mathforge,.json';f.onchange=safe(async()=>{const file=f.files[0];if(file)importContent(await file.text(),file.name.split('.').pop());});f.click();};
+$('system-tools').onclick=()=>{$('tool-dialog').showModal();if(bridge)send('scanTools');else{$('tool-paths').textContent='本机路径检测仅在 Mac 应用中可用。';}};
+$('close-tools').onclick=()=>{$('tool-dialog').close();};$('scan-tools').onclick=()=>send('scanTools');
+for(const [id,key] of [['preamble','preamble'],['typst-preamble','typstPreamble'],['display-mode','displayMode']])$(id).addEventListener('change',()=>{state[key]=$(id).value;persist();readSource();});
+$('engine').onchange=safe(async()=>{const engine=$('engine').value;if(engine!=='embedded'&&!bridge){$('engine').value=state.engine;throw new Error('本机排版需要 Mac 应用');}if(engine==='latex'&&state.mode==='typst'){if(!conversionAvailable)throw new Error('此 Typst 语法无法转换为 LaTeX');$('source').value=state.latex;state.mode='latex';}else if(engine==='typst'&&state.mode==='latex'){$('source').value=typst(state.latex);state.mode='typst';}state.engine=engine;applyUI();await readSource();});
+for(const kind of ['svg','pdf'])$('batch-'+kind).onclick=safe(async()=>{const lines=$('batch-source').value.split('\n').map(x=>x.trim()).filter(Boolean);if(!lines.length)throw new Error('请输入待导出的公式');if(lines.length>100)throw new Error('每次最多批量导出 100 条');const original={...state};try{for(const line of lines){$('source').value=line;await exportFile(kind);if(!valid)throw new Error('批量导出已停止，请核对公式');}}finally{restore(original);}});
+$('preview').title='Mac 应用中按住 Option 拖动，可将公式文件拖到桌面或其他应用';
+$('preview').addEventListener('mousedown',safe(async e=>{if(!e.altKey||!bridge||!valid)return;e.preventDefault();if(nativeResult){const kind=nativeResult.svg?'svg':'pdf';send('drag',{name:'equation.'+kind,base64:nativeResult[kind]});}else if(svgResult){send('drag',{name:'equation.svg',base64:await bytesBase64(new Blob([svgText()]))});}}));
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='e'){e.preventDefault();safe(()=>exportFile('svg'))();}if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='c'){e.preventDefault();safe(()=>copy($('source').value))();}});
+applyUI();history();if(state.rawSource){$('source').value=state.rawSource;readSource();}else loadLatex(state.latex);if(bridge)send('scanTools');
