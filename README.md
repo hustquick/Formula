@@ -8,7 +8,15 @@
 
 优先下载 Release 中的 `Formula-版本号.dmg`，打开后将 Formula.app 拖入 Applications；该预编译通用应用支持 Apple Silicon 和 Intel，无需安装编译工具。`Formula-Mac.zip` 为旧式首次编译包；GitHub 自动生成的 Source code 压缩包是开发源码。
 
-## 安装与启动
+## DMG 安装与启动
+
+1. 在 Releases 下载 `Formula-1.0.4.dmg`（后续版本使用相应版本号）。
+2. 打开磁盘映像，将 Formula.app 拖到 Applications 快捷链接。
+3. 从“应用程序”启动 Formula。DMG 内是预编译通用应用，无需 Command Line Tools、Node.js 或 npm。
+
+此版本采用临时签名，尚未 Apple 开发者公证。
+
+## 旧式 ZIP 包安装与启动
 
 1. 解压 `Formula-Mac.zip`，将 `Formula.app` 拖入“应用程序”。
 2. 首次打开可使用右键 → 打开。若 macOS 阻止启动，进入“系统设置 → 隐私与安全性”，对该应用选择“仍要打开”。此版本没有 Apple 开发者公证。
