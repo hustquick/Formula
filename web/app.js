@@ -294,6 +294,25 @@ primaryToolbar.addEventListener('drop',e=>{
 primaryToolbar.addEventListener('dragend',()=>{draggedTool=null;});
 $('toolbar-remove').addEventListener('dragover',e=>{if(customizingToolbar)e.preventDefault();});
 $('toolbar-remove').addEventListener('drop',e=>{if(!customizingToolbar||!draggedTool)return;e.preventDefault();toolbarLayout=toolbarLayout.filter(id=>id!==draggedTool);draggedTool=null;saveToolbar();});renderToolbar();
+const toolMenus=[...toolbar.querySelectorAll('.tool-group')];
+function closeToolMenus(){for(const menu of toolMenus)menu.open=false;}
+for(const menu of toolMenus){
+  const trigger=menu.querySelector('summary'),panel=menu.querySelector(':scope>div');
+  trigger.setAttribute('aria-haspopup','true');trigger.setAttribute('aria-expanded','false');
+  panel.setAttribute('aria-label',trigger.textContent+'选项');
+  menu.addEventListener('toggle',()=>{
+    trigger.setAttribute('aria-expanded',String(menu.open));if(!menu.open)return;
+    for(const other of toolMenus)if(other!==menu)other.open=false;
+    const rect=trigger.getBoundingClientRect();
+    panel.style.left=Math.max(8,Math.min(rect.left,innerWidth-Math.min(360,innerWidth-16)-8))+'px';
+    panel.style.top=Math.min(rect.bottom+6,innerHeight-panel.offsetHeight-8)+'px';
+  });
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.tool-group')||e.target.closest('[data-insert],[data-style],[data-command]'))closeToolMenus();
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&toolMenus.some(menu=>menu.open)){closeToolMenus();mf.focus();}});
+window.addEventListener('resize',closeToolMenus);window.addEventListener('scroll',e=>{if(!e.target.closest?.('.tool-group'))closeToolMenus();},true);
 $('tools').addEventListener('pointerdown',e=>{if(!customizingToolbar&&e.target.closest('[data-insert],[data-command],[data-style],summary'))e.preventDefault();});
 $('tools').addEventListener('click',e=>{
   if(customizingToolbar&&e.target.closest('#primary-tools'))return;
@@ -323,7 +342,7 @@ $('tools').addEventListener('click',e=>{
   }
   mf.focus();mf.insert(template,{mode:'math',format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',silenceNotifications:false,focus:true});syncVisual(true);
 }});
-$('keyboard').onclick=()=>{mf.focus();window.mathVirtualKeyboard.visible=!window.mathVirtualKeyboard.visible;};
+
 document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>loadLatex(examples[b.dataset.example]));
 for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];$(key).addEventListener('change',()=>{settings();if(state.size<10||state.size>160||state.padding<0||state.padding>80){status('字号范围 10–160 pt，留白范围 0–80 px',true);return;}scheduleRender();});}
 for(const kind of ['svg','pdf','png','jpeg'])$(kind).onclick=safe(()=>exportFile(kind));

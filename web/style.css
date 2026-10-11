@@ -11,3 +11,5 @@
 .tools button{display:inline-flex;align-items:center;gap:5px}.tool-icon{width:34px;height:25px;flex:none;fill:currentColor;font-family:Georgia,"Times New Roman",serif}#toolbar-options .tool-icon{width:30px;height:23px}
 
 #tools[data-display="icons"] .tool-caption{display:none}#tools[data-display="text"] .tool-icon{display:none}.toolbar-display{font-size:11px;display:flex;align-items:center;gap:6px}.toolbar-display select{padding:5px;font-size:11px}
+
+.tool-group{margin:0;align-self:center}.tool-group[open]{flex-basis:auto}.tool-group>div{position:fixed;z-index:1000;width:min(360px,calc(100vw - 16px));box-sizing:border-box;max-height:min(420px,calc(100vh - 24px));overflow:auto;margin:0;padding:12px;background:#fff;border:1px solid #dce2df;border-radius:11px;box-shadow:0 8px 30px #18232f26;gap:8px}.tool-group>div button{justify-content:flex-start;flex:1 0 135px}.tool-group summary::after{content:" ▾";color:#84909a}
