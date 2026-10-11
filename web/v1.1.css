@@ -89,3 +89,42 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
   .tool-group>div.ll-popup-grid{grid-template-columns:repeat(2,minmax(82px,1fr))!important}
   .ll-template-grid{grid-template-columns:1fr}
 }
+
+/* A stable tool shelf keeps tab changes from moving or resizing the editor. */
+@media(min-width:821px){
+  main{padding:12px 24px}
+  .editor-card>.section-head,.preview-card>.section-head{height:38px;padding:6px 16px}
+  .section-head h2,.heading-en{font-size:16px}
+  .input-tabs{margin:0 16px;padding:0}
+  .input-tabs button{padding:8px 14px;font-size:12px}
+  .tool-deck{height:100px;overflow:auto;overscroll-behavior:contain}
+  #tools[data-tab="quick"]{padding:8px 16px;gap:7px}
+  #tools[data-tab="quick"]>.tool-group>summary{height:76px;padding:5px 4px}
+  #tools[data-tab="quick"] .category-art{height:34px}
+  #tools[data-tab="quick"] .category-art svg{max-height:32px}
+  .ll-template-browser{padding:6px 16px!important}
+  .ll-template-head{margin-bottom:4px}
+  .ll-template-category{height:64px;padding:3px 4px 9px;gap:2px}
+  .ll-template-category .ll-category-art{height:28px}
+  .ll-template-category .ll-category-art svg{max-height:27px}
+  .tool-deck .history{margin:8px 16px;min-height:0}
+  .toolbar-customize{padding:0 16px 6px;min-height:30px}
+  .tools[data-tab="custom"]{padding:6px 16px;gap:6px}
+  .tools[data-tab="custom"] .primary-tools{padding-top:0}
+  .input-actions{padding:7px 0;gap:8px}
+  .input-format>button,.input-format>label,.input-format .segmented{height:30px;padding:4px 8px}
+  .input-mode button{padding:6px 11px}
+  .input-editors{padding:0 16px 10px}
+  .input-editors .visual-pane{height:144px;min-height:144px;overflow:auto}
+  .input-editors math-field{min-height:142px;padding:12px;font-size:28px}
+  .source-card textarea{height:144px;min-height:144px;padding:12px;resize:vertical}
+  .workspace{margin:12px 0}
+  .preview-card #preview{height:144px;min-height:144px;margin:10px 16px 0;overflow:auto}
+  .preview-card .settings{padding:7px 16px;gap:12px}
+  .exports{gap:7px}
+  .exports button{padding:6px 11px}
+}
+@media(min-width:821px){
+  #toolbar-options:not([hidden]){position:fixed;z-index:5300;top:300px;right:24px;width:min(620px,calc(100vw - 48px));max-height:calc(100vh - 390px);overflow:auto;box-shadow:var(--f-shadow)!important}
+  #toolbar-remove:not([hidden]){position:fixed;z-index:5300;bottom:18px;right:24px;width:min(620px,calc(100vw - 48px));margin:0!important}
+}

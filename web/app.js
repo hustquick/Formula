@@ -335,7 +335,7 @@ $('input-settings').onclick=()=>$('system-tools').click();
 $('input-color').oninput=()=>{$('color').value=$('input-color').value;$('color').dispatchEvent(new Event('change'));};
 $('input-size').onchange=()=>{$('size').value=$('input-size').value;$('size').dispatchEvent(new Event('change'));};
 let currentTab='quick';
-function selectToolTab(tab){currentTab=tab;document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));toolbar.dataset.tab=tab;document.querySelector('.toolbar-customize').hidden=tab!=='custom';document.querySelector('.examples').hidden=tab!=='templates';$('history').hidden=tab!=='favorites';if(tab==='templates')document.querySelector('.input-tabs').after(document.querySelector('.examples'));if(tab==='favorites')document.querySelector('.input-tabs').after($('history'));}
+function selectToolTab(tab){currentTab=tab;document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));toolbar.dataset.tab=tab;document.querySelector('.toolbar-customize').hidden=tab!=='custom';document.querySelector('.examples').hidden=tab!=='templates';$('history').hidden=tab!=='favorites';if(tab==='templates')document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));if(tab==='favorites')document.querySelector('.tool-deck').prepend($('history'));}
 document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>selectToolTab(button.dataset.tab));selectToolTab('quick');document.querySelector('.preview-card>.section-head').append($('remember'));
 const toolMenus=[...toolbar.querySelectorAll('.tool-group')];
 function closeToolMenus(){for(const menu of toolMenus)menu.open=false;}
