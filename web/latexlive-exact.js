@@ -3,85 +3,140 @@
   const REMOTE_SOURCE='https://raw.githubusercontent.com/ubnm/LaTeXLive/master/json/map_input.json';
   const q=(s,r=document)=>r.querySelector(s), qa=(s,r=document)=>[...r.querySelectorAll(s)];
   const wait=(fn,timeout=12000)=>new Promise((resolve,reject)=>{const start=Date.now();(function tick(){const v=fn();if(v)return resolve(v);if(Date.now()-start>timeout)return reject(new Error('LaTeXLive exact catalog init timeout'));setTimeout(tick,40)})()});
+
+  if(!q('link[data-formula-v11]')){
+    const link=document.createElement('link');link.rel='stylesheet';link.href='v1.1.css';link.dataset.formulaV11='';document.head.append(link);
+  }
+
   const matrixFallback={
-    matrix:'\\begin{matrix}#@&#?\\\\#?&#?\\end{matrix}',bmatrix:'\\begin{bmatrix}#@&#?\\\\#?&#?\\end{bmatrix}',pmatrix:'\\begin{pmatrix}#@&#?\\\\#?&#?\\end{pmatrix}',Bmatrix:'\\begin{Bmatrix}#@&#?\\\\#?&#?\\end{Bmatrix}',vmatrix:'\\begin{vmatrix}#@&#?\\\\#?&#?\\end{vmatrix}',Vmatrix:'\\begin{Vmatrix}#@&#?\\\\#?&#?\\end{Vmatrix}',leftmatrix:'\\left\\{\\begin{matrix}#@&#?\\\\#?&#?\\end{matrix}\\right.',rightmatrix:'\\left.\\begin{matrix}#@&#?\\\\#?&#?\\end{matrix}\\right\\}',case:'\\begin{cases}#@&#?\\\\#?&#?\\end{cases}',align:'\\begin{aligned}#@&#?\\\\#?&#?\\end{aligned}'
+    matrix:'\\begin{matrix}#@&#?\\\\#?&#?\\end{matrix}',
+    bmatrix:'\\begin{bmatrix}#@&#?\\\\#?&#?\\end{bmatrix}',
+    pmatrix:'\\begin{pmatrix}#@&#?\\\\#?&#?\\end{pmatrix}',
+    Bmatrix:'\\begin{Bmatrix}#@&#?\\\\#?&#?\\end{Bmatrix}',
+    vmatrix:'\\begin{vmatrix}#@&#?\\\\#?&#?\\end{vmatrix}',
+    Vmatrix:'\\begin{Vmatrix}#@&#?\\\\#?&#?\\end{Vmatrix}',
+    leftmatrix:'\\left\\{\\begin{matrix}#@&#?\\\\#?&#?\\end{matrix}\\right.',
+    rightmatrix:'\\left.\\begin{matrix}#@&#?\\\\#?&#?\\end{matrix}\\right\\}',
+    case:'\\begin{cases}#@&#?\\\\#?&#?\\end{cases}',
+    align:'\\begin{aligned}#@&#?\\\\#?&#?\\end{aligned}'
   };
+
   function normalizedLatex(entry){
-    if(matrixFallback[entry.tag])return matrixFallback[entry.tag];
-    return String(entry.latex||'').replace(/\r\n/g,'\n').trim();
+    if(matrixFallback[entry?.tag])return matrixFallback[entry.tag];
+    return String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
   }
   function usable(entry){return entry&&entry.tag!=='divider'&&normalizedLatex(entry);}
-  function label(entry){return String(entry.zh||entry.en||entry.tag||'公式').replace(/-/g,'—');}
-  function insertLatex(latex){
-    const mf=q('#editor-mount math-field');if(!mf||mf.readOnly)return;
-    mf.focus();mf.insert(latex,{mode:'math',format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',focus:true});mf.dispatchEvent(new Event('input',{bubbles:true}));q('#input-visual')?.click();
-  }
-  async function render(node,latex){
-    if(!window.MathJax?.tex2svgPromise)return;
-    try{const safe=latex.replaceAll('#@','x').replaceAll('#?','y').replace(/\\begin\{equation\}|\\end\{equation\}/g,'');const out=await MathJax.tex2svgPromise('\\displaystyle '+safe,{display:false});node.replaceChildren(out);}catch{node.textContent=latex.replace(/\\[A-Za-z]+/g,'').slice(0,24)||'ƒ';}
-  }
-  function createItem(entry,kind='shortcut'){
-    const b=document.createElement('button');b.type='button';b.className=kind==='template'?'ll-template-item':'ll-item';b.title=label(entry);const latex=normalizedLatex(entry);b.dataset.exactLatex=latex;
-    const art=document.createElement('span');art.className='ll-preview';art.textContent='…';const text=document.createElement('span');text.className='ll-label';text.textContent=label(entry);b.append(art,text);render(art,latex);return b;
-  }
+  function label(entry){return String(entry?.zh||entry?.en||entry?.tag||'公式').replace(/-/g,'—');}
   function extract(parsed,name){
     const groups=Array.isArray(parsed?.shortcut)?parsed.shortcut:[];
     return groups.find(x=>x&&x.name===name&&x.layer1&&x.layer2)||null;
   }
   function validate(parsed){
     const toolbar=extract(parsed,'toolbar'),template=extract(parsed,'template');
-    if(!toolbar||!template)throw new Error('map_input structure changed');
-    if(toolbar.layer1.cont?.length!==10||template.layer1.cont?.length!==10)throw new Error('unexpected category count');
+    if(!toolbar||!template)throw new Error('LaTeX Live map_input structure changed');
+    if(toolbar.layer1.cont?.length!==10)throw new Error(`Expected 10 shortcut categories, got ${toolbar.layer1.cont?.length||0}`);
+    if(template.layer1.cont?.length!==10)throw new Error(`Expected 10 template categories, got ${template.layer1.cont?.length||0}`);
+    for(const category of toolbar.layer1.cont){if(!Array.isArray(toolbar.layer2.cont?.[category.tag]?.cont))throw new Error('Missing shortcut category '+category.tag);}
+    for(const category of template.layer1.cont){if(!Array.isArray(template.layer2.cont?.[category.tag]?.cont))throw new Error('Missing template category '+category.tag);}
     return {toolbar,template};
   }
+
+  function insertLatex(latex){
+    const mf=q('#editor-mount math-field');if(!mf||mf.readOnly)return;
+    mf.focus();mf.insert(latex,{mode:'math',format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',focus:true});
+    mf.dispatchEvent(new Event('input',{bubbles:true}));q('#input-visual')?.click();
+  }
+  function executeMatrixCommand(command){
+    const mf=q('#editor-mount math-field');if(!mf||mf.readOnly)return;
+    mf.focus();const ok=mf.executeCommand(command);mf.dispatchEvent(new Event('input',{bubbles:true}));
+    if(ok===false&&q('#status'))q('#status').textContent='请先点击矩阵或多行公式中的单元格';
+  }
+  function previewLatex(latex){return latex.replaceAll('#@','x').replaceAll('#?','y').replace(/\\begin\{equation\*?\}|\\end\{equation\*?\}/g,'').replace(/\\label\{[^}]*\}/g,'');}
+  async function render(node,latex){
+    if(!window.MathJax?.tex2svgPromise)return;
+    try{const out=await MathJax.tex2svgPromise('\\displaystyle '+previewLatex(latex),{display:false});node.replaceChildren(out);node.dataset.rendered='1';}
+    catch{node.textContent=latex.replace(/\\[A-Za-z]+/g,'').replace(/[{}]/g,'').trim().slice(0,28)||'ƒ';node.dataset.rendered='fallback';}
+  }
+  function createItem(entry,kind='shortcut'){
+    const b=document.createElement('button');b.type='button';b.className=kind==='template'?'ll-template-item':'ll-item';
+    const latex=normalizedLatex(entry);b.dataset.exactLatex=latex;b.dataset.exactTag=entry.tag||'';b.title=label(entry);b.setAttribute('role','menuitem');
+    const art=document.createElement('span');art.className='ll-preview';art.setAttribute('aria-hidden','true');art.textContent='…';
+    const text=document.createElement('span');text.className='ll-label';text.textContent=label(entry);b.append(art,text);render(art,latex);return b;
+  }
+
+  function viewportPlace(panel,anchor,{gap=6}={}){
+    if(!panel||!anchor||panel.hidden)return;
+    panel.style.visibility='hidden';panel.style.left='8px';panel.style.top='8px';
+    requestAnimationFrame(()=>{
+      const ar=anchor.getBoundingClientRect(),pr=panel.getBoundingClientRect();let left=ar.left,top=ar.bottom+gap;
+      if(left+pr.width>innerWidth-8)left=Math.max(8,innerWidth-pr.width-8);
+      if(top+pr.height>innerHeight-8){const above=ar.top-pr.height-gap;top=above>=8?above:Math.max(8,innerHeight-pr.height-8);}
+      panel.style.left=Math.round(left)+'px';panel.style.top=Math.round(top)+'px';panel.style.visibility='visible';
+    });
+  }
+  function focusableItems(panel){return qa('button:not([disabled])',panel).filter(x=>x.offsetParent!==null);}
+  function gridMove(panel,current,key){
+    const items=focusableItems(panel);if(!items.length)return;let i=Math.max(0,items.indexOf(current));
+    const cols=Math.max(1,Math.round(panel.clientWidth/Math.max(88,current?.getBoundingClientRect().width||100)));
+    if(key==='ArrowRight')i=(i+1)%items.length;else if(key==='ArrowLeft')i=(i-1+items.length)%items.length;else if(key==='ArrowDown')i=Math.min(items.length-1,i+cols);else if(key==='ArrowUp')i=Math.max(0,i-cols);else if(key==='Home')i=0;else if(key==='End')i=items.length-1;else return;items[i].focus();
+  }
+  function closeAllFloating({focusEditor=false}={}){
+    for(const group of qa('#tools>.tool-group'))group.open=false;
+    const panel=q('.ll-template-panel');if(panel)panel.hidden=true;
+    qa('.ll-template-category').forEach(b=>{b.classList.remove('active');b.setAttribute('aria-expanded','false');});document.body.classList.remove('formula-menu-open');
+    if(focusEditor)q('#editor-mount math-field')?.focus();
+  }
+
   function rebuildShortcuts(toolbar){
     const byDescription=new Map((toolbar.layer1.cont||[]).map(x=>[x.descript,x.tag]));
     for(const group of qa('#tools>.tool-group')){
-      const title=q('summary',group)?.getAttribute('aria-label')||q('summary',group)?.textContent.trim();const tag=byDescription.get(title);const src=tag&&toolbar.layer2.cont?.[tag]?.cont;if(!Array.isArray(src))continue;
-      const panel=q(':scope>div',group);panel.replaceChildren();panel.classList.add('ll-popup-grid');panel.dataset.exactCategory=tag;
-      for(const entry of src){
-        if(entry.tag==='divider'){const d=document.createElement('div');d.className='ll-divider';d.textContent=entry.name||entry.name_en||'';panel.append(d);continue;}
-        if(usable(entry))panel.append(createItem(entry));
-      }
+      const summary=q('summary',group),title=summary?.getAttribute('aria-label')||summary?.textContent.trim();const tag=byDescription.get(title),src=tag&&toolbar.layer2.cont?.[tag]?.cont;if(!Array.isArray(src))continue;
+      const panel=q(':scope>div',group);panel.replaceChildren();panel.classList.add('ll-popup-grid');panel.dataset.exactCategory=tag;panel.setAttribute('role','menu');panel.setAttribute('aria-label',title+'选项');summary?.setAttribute('aria-haspopup','menu');
+      for(const entry of src){if(entry.tag==='divider'){const d=document.createElement('div');d.className='ll-divider';d.textContent=entry.name||entry.name_en||'';d.setAttribute('role','presentation');panel.append(d);continue;}if(usable(entry))panel.append(createItem(entry));}
       if(tag==='matrix'){
-        const d=document.createElement('div');d.className='ll-divider';d.textContent='矩阵编辑 Matrix editing';panel.append(d);
-        for(const [command,name] of [['addRowBefore','上方加行'],['addRowAfter','下方加行'],['removeRow','删除行'],['addColumnBefore','左侧加列'],['addColumnAfter','右侧加列'],['removeColumn','删除列']]){const b=document.createElement('button');b.type='button';b.className='ll-item ll-command';b.dataset.exactCommand=command;b.textContent=name;panel.append(b);}
+        const d=document.createElement('div');d.className='ll-divider';d.textContent='矩阵编辑 Matrix editing';d.setAttribute('role','presentation');panel.append(d);
+        for(const [command,name] of [['addRowBefore','上方加行'],['addRowAfter','下方加行'],['removeRow','删除行'],['addColumnBefore','左侧加列'],['addColumnAfter','右侧加列'],['removeColumn','删除列']]){const b=document.createElement('button');b.type='button';b.className='ll-item ll-command';b.dataset.exactCommand=command;b.textContent=name;b.setAttribute('role','menuitem');panel.append(b);}
       }
+      group.addEventListener('toggle',()=>{summary?.setAttribute('aria-expanded',String(group.open));if(!group.open)return;for(const other of qa('#tools>.tool-group'))if(other!==group)other.open=false;document.body.classList.add('formula-menu-open');viewportPlace(panel,summary);});
+      panel.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)){e.preventDefault();gridMove(panel,e.target.closest('button'),e.key);}if(e.key==='Escape'){e.preventDefault();closeAllFloating();summary?.focus();}});
     }
   }
+
   function rebuildTemplates(template){
-    const browser=q('.ll-template-browser');if(!browser)return;
-    browser.replaceChildren();const head=document.createElement('div');head.className='ll-template-head';head.innerHTML='<span>公式模板</span><small>LaTeX Live 完整模板库 · 点击分类或下三角展开</small>';browser.append(head);
-    const nav=document.createElement('div');nav.className='ll-template-nav';const panel=document.createElement('div');panel.className='ll-template-panel';panel.hidden=true;browser.append(nav,panel);let active='';
+    const browser=q('.ll-template-browser');if(!browser)return;browser.replaceChildren();
+    const head=document.createElement('div');head.className='ll-template-head';head.innerHTML='<span>公式模板</span><small>LaTeX Live 完整模板库 · 点击分类或下三角展开</small>';browser.append(head);
+    const nav=document.createElement('div');nav.className='ll-template-nav';nav.setAttribute('role','toolbar');nav.setAttribute('aria-label','公式模板分类');
+    const panel=document.createElement('div');panel.className='ll-template-panel';panel.hidden=true;panel.setAttribute('role','menu');browser.append(nav,panel);let active='';
     for(const category of template.layer1.cont||[]){
-      const entries=(template.layer2.cont?.[category.tag]?.cont||[]).filter(usable);const b=document.createElement('button');b.type='button';b.className='ll-template-category';b.dataset.templateTag=category.tag;if(category.tag==='physics')b.dataset.example='heat';
-      const art=document.createElement('span');art.className='ll-category-art ll-preview';art.textContent='…';const text=document.createElement('span');text.textContent=category.descript||category.tag;const arrow=document.createElement('span');arrow.className='ll-category-arrow';arrow.textContent='⌄';b.append(art,text,arrow);nav.append(b);if(entries[0])render(art,normalizedLatex(entries[0]));
-      b.onclick=()=>{if(active===category.tag&&!panel.hidden){panel.hidden=true;active='';b.classList.remove('active');return;}qa('.ll-template-category',nav).forEach(x=>x.classList.toggle('active',x===b));active=category.tag;panel.hidden=false;panel.dataset.templateTag=category.tag;panel.replaceChildren();const title=document.createElement('div');title.className='ll-panel-title';title.innerHTML=`<strong>${category.descript||category.tag}</strong><span>${entries.length} 个模板</span>`;const grid=document.createElement('div');grid.className='ll-template-grid';for(const entry of entries)grid.append(createItem(entry,'template'));panel.append(title,grid);};
+      const entries=(template.layer2.cont?.[category.tag]?.cont||[]).filter(usable);const b=document.createElement('button');b.type='button';b.className='ll-template-category';b.dataset.templateTag=category.tag;b.setAttribute('aria-haspopup','menu');b.setAttribute('aria-expanded','false');if(category.tag==='physics')b.dataset.example='heat';
+      const art=document.createElement('span');art.className='ll-category-art ll-preview';art.setAttribute('aria-hidden','true');art.textContent='…';const text=document.createElement('span');text.textContent=category.descript||category.tag;const arrow=document.createElement('span');arrow.className='ll-category-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='⌄';b.append(art,text,arrow);nav.append(b);if(entries[0])render(art,normalizedLatex(entries[0]));
+      b.onclick=e=>{e.preventDefault();e.stopPropagation();if(active===category.tag&&!panel.hidden){panel.hidden=true;active='';b.classList.remove('active');b.setAttribute('aria-expanded','false');document.body.classList.remove('formula-menu-open');return;}qa('.ll-template-category',nav).forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-expanded',String(x===b));});active=category.tag;panel.hidden=false;panel.dataset.templateTag=category.tag;panel.replaceChildren();const title=document.createElement('div');title.className='ll-panel-title';title.innerHTML=`<strong>${category.descript||category.tag}</strong><span>${entries.length} 个模板</span>`;const grid=document.createElement('div');grid.className='ll-template-grid';for(const entry of entries)grid.append(createItem(entry,'template'));panel.append(title,grid);document.body.classList.add('formula-menu-open');viewportPlace(panel,b);};
+      b.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();const buttons=qa('.ll-template-category',nav),i=buttons.indexOf(b),next=e.key==='ArrowRight'?(i+1)%buttons.length:(i-1+buttons.length)%buttons.length;buttons[next].focus();}if(e.key==='ArrowDown'&&!panel.hidden){e.preventDefault();focusableItems(panel)[0]?.focus();}});
     }
+    panel.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)){e.preventDefault();gridMove(panel,e.target.closest('button'),e.key);}if(e.key==='Escape'){e.preventDefault();const trigger=q(`.ll-template-category[data-template-tag="${panel.dataset.templateTag}"]`);closeAllFloating();trigger?.focus();}});
   }
-  function bind(){
-    document.addEventListener('click',e=>{const latex=e.target.closest('[data-exact-latex]');if(latex){e.preventDefault();e.stopPropagation();insertLatex(latex.dataset.exactLatex);return;}const cmd=e.target.closest('[data-exact-command]');if(cmd){e.preventDefault();e.stopPropagation();const mf=q('#editor-mount math-field');mf?.focus();mf?.executeCommand(cmd.dataset.exactCommand);mf?.dispatchEvent(new Event('input',{bubbles:true}));}},true);
+
+  function bindGlobalEvents(){
+    document.addEventListener('click',e=>{const latex=e.target.closest('[data-exact-latex]');if(latex){e.preventDefault();e.stopPropagation();insertLatex(latex.dataset.exactLatex);closeAllFloating();return;}const cmd=e.target.closest('[data-exact-command]');if(cmd){e.preventDefault();e.stopPropagation();executeMatrixCommand(cmd.dataset.exactCommand);closeAllFloating();return;}if(!e.target.closest('.tool-group,.ll-template-browser'))closeAllFloating();},true);
+    document.addEventListener('keydown',e=>{const panel=q('.ll-template-panel');if(e.key==='Escape'&&(qa('#tools>.tool-group').some(x=>x.open)||(panel&&!panel.hidden))){e.preventDefault();closeAllFloating({focusEditor:true});}});
+    window.addEventListener('resize',()=>closeAllFloating());window.addEventListener('blur',()=>closeAllFloating());document.addEventListener('scroll',e=>{if(!e.target.closest?.('.ll-popup-grid,.ll-template-panel'))closeAllFloating();},true);
   }
-  function preserveLegacyTemplateProbe(){
-    const buttons=qa('.ll-template-category');const physics=buttons.find(b=>b.textContent.includes('物理'))||buttons[0];if(physics)physics.dataset.example='heat';
+  function enhanceToolbarCustomization(){
+    const button=q('#customize-toolbar'),options=q('#toolbar-options'),remove=q('#toolbar-remove');if(!button)return;const sync=()=>{const active=button.getAttribute('aria-expanded')==='true';document.body.classList.toggle('formula-customizing-toolbar',active);button.textContent=active?'完成':'自定义工具栏';if(active){options?.setAttribute('aria-label','可用工具');remove?.setAttribute('aria-label','拖到这里移除工具');}};new MutationObserver(sync).observe(button,{attributes:true,attributeFilter:['aria-expanded']});button.addEventListener('click',()=>requestAnimationFrame(sync));sync();
   }
-  function loadBundledScript(){
-    if(window.LaTeXLiveCatalog)return Promise.resolve(window.LaTeXLiveCatalog);
-    return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=LOCAL_SCRIPT;script.onload=()=>window.LaTeXLiveCatalog?resolve(window.LaTeXLiveCatalog):reject(new Error('catalog.js loaded without data'));script.onerror=()=>reject(new Error('catalog.js not found'));document.head.append(script);});
-  }
-  async function loadRemote(){
-    const response=await fetch(REMOTE_SOURCE,{cache:'no-cache'});if(!response.ok)throw new Error('HTTP '+response.status);return response.json();
-  }
+  function preserveLegacyTemplateProbe(){const buttons=qa('.ll-template-category');const physics=buttons.find(b=>b.textContent.includes('物理'))||buttons[0];if(physics)physics.dataset.example='heat';}
+  function loadBundledScript(){if(window.LaTeXLiveCatalog)return Promise.resolve(window.LaTeXLiveCatalog);return new Promise((resolve,reject)=>{const script=document.createElement('script');script.src=LOCAL_SCRIPT;script.onload=()=>window.LaTeXLiveCatalog?resolve(window.LaTeXLiveCatalog):reject(new Error('catalog.js loaded without data'));script.onerror=()=>reject(new Error('catalog.js not found'));document.head.append(script);});}
+  async function loadRemote(){const response=await fetch(REMOTE_SOURCE,{cache:'no-cache'});if(!response.ok)throw new Error('HTTP '+response.status);return response.json();}
   function applyCatalog(parsed,source){
-    const {toolbar,template}=validate(parsed);rebuildShortcuts(toolbar);rebuildTemplates(template);preserveLegacyTemplateProbe();document.documentElement.dataset.latexLiveExact=source;
+    const {toolbar,template}=validate(parsed);rebuildShortcuts(toolbar);rebuildTemplates(template);preserveLegacyTemplateProbe();enhanceToolbarCustomization();document.documentElement.dataset.latexLiveExact=source;document.documentElement.dataset.formulaVersion='1.1.0';
+    window.FormulaCatalogInfo={source,shortcutCategories:toolbar.layer1.cont.length,templateCategories:template.layer1.cont.length,shortcutItems:toolbar.layer1.cont.reduce((n,c)=>n+(toolbar.layer2.cont[c.tag]?.cont||[]).filter(usable).length,0),templateItems:template.layer1.cont.reduce((n,c)=>n+(template.layer2.cont[c.tag]?.cont||[]).filter(usable).length,0)};
   }
   async function start(){
-    await wait(()=>document.documentElement.dataset.latexLiveMenus==='ready'&&q('.ll-template-browser'));
-    bind();preserveLegacyTemplateProbe();
+    await wait(()=>document.documentElement.dataset.latexLiveMenus==='ready'&&q('.ll-template-browser'));bindGlobalEvents();preserveLegacyTemplateProbe();
     try{applyCatalog(await loadBundledScript(),'bundled');return;}catch(localError){console.warn('Bundled LaTeXLive catalog unavailable:',localError);}
     const localTest=['127.0.0.1','localhost'].includes(location.hostname)||location.protocol==='file:';
-    if(localTest){document.documentElement.dataset.latexLiveExact='fallback';return;}
-    try{applyCatalog(await loadRemote(),'online');}catch(error){console.warn('Using built-in LaTeXLive fallback catalog:',error);document.documentElement.dataset.latexLiveExact='fallback';}
+    if(localTest){document.documentElement.dataset.latexLiveExact='fallback';enhanceToolbarCustomization();return;}
+    try{applyCatalog(await loadRemote(),'online');}catch(error){console.warn('Using built-in LaTeXLive fallback catalog:',error);document.documentElement.dataset.latexLiveExact='fallback';enhanceToolbarCustomization();}
   }
   start();
 })();
