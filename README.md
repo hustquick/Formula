@@ -6,7 +6,7 @@
 
 [下载最新 Formula Mac 安装包](https://github.com/hustquick/Formula/releases/latest) · [所有版本](https://github.com/hustquick/Formula/releases)
 
-请下载 Release 中的 `Formula-Mac.zip`；GitHub 自动生成的 Source code 压缩包是开发源码。
+优先下载 Release 中的 `Formula-版本号.dmg`，打开后将 Formula.app 拖入 Applications；该预编译通用应用支持 Apple Silicon 和 Intel，无需安装编译工具。`Formula-Mac.zip` 为旧式首次编译包；GitHub 自动生成的 Source code 压缩包是开发源码。
 
 ## 安装与启动
 
@@ -99,3 +99,7 @@ Formula 生成的 SVG 含源码和排版元数据，导入可恢复。PDF 的 Su
 运行 `npm ci` 和 `node build-vendor.mjs` 更新离线资源。在 macOS 上运行 `bash Build-Mac.command` 构建原生应用。保留旧版 MathForge 的数据目录、文件格式和应用标识，以继续使用已有收藏与公式。
 
 仓库保存应用源码和依赖锁定文件，不提交生成的 `web/vendor/`。从 GitHub 下载源码后，先执行 `npm ci`、`node build-vendor.mjs`，再构建 Mac 应用。打包后的应用包含全部离线资源，使用时无需联网。
+
+## DMG 发布
+
+GitHub Actions 在 macOS 上执行 `npm ci`、离线资源打包和 `bash scripts/build-dmg.sh`，分别编译 arm64 / x86_64 后合并为通用应用。生成 `Formula-版本号.dmg` 和 SHA-256 校验文件，并上传对应 Release。镜像包含 Formula.app 与 Applications 快捷链接。当前使用临时签名，未 Apple 公证；实际 Finder 启动仍需 Mac 实机验收。
