@@ -7,3 +7,7 @@
 [hidden]{display:none!important}.primary-tools{display:flex;flex-wrap:wrap;gap:7px}.primary-tools.customizing{padding:8px;border:1px dashed #366b59;border-radius:8px;min-width:150px;min-height:34px}.primary-tools.customizing button{cursor:grab}.toolbar-customize{display:flex;gap:8px;margin-top:10px}.toolbar-customize button{font-size:11px;padding:6px 9px}#toolbar-options{display:flex;flex-wrap:wrap;gap:10px 15px;padding:12px;background:#f4f7f5;border-radius:8px;margin-top:8px}#toolbar-options label{display:flex;align-items:center;gap:5px;font-size:11px}
 
 #toolbar-options label{cursor:grab}#toolbar-remove{border:1px dashed #b78176;color:#966251;border-radius:8px;text-align:center;padding:12px;margin-top:8px;font-size:12px}
+
+.tools button{display:inline-flex;align-items:center;gap:5px}.tool-icon{width:34px;height:25px;flex:none;fill:currentColor;font-family:Georgia,"Times New Roman",serif}#toolbar-options .tool-icon{width:30px;height:23px}
+
+#tools[data-display="icons"] .tool-caption{display:none}#tools[data-display="text"] .tool-icon{display:none}.toolbar-display{font-size:11px;display:flex;align-items:center;gap:6px}.toolbar-display select{padding:5px;font-size:11px}

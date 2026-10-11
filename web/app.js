@@ -232,6 +232,23 @@ const toolbar=$('tools'), primaryToolbar=document.createElement('div');
 primaryToolbar.className='primary-tools';primaryToolbar.id='primary-tools';
 const originals=[...toolbar.querySelectorAll('[data-insert],[data-command],[data-style]')];
 const catalog=originals.map((button,index)=>({id:String(index),button,label:button.textContent.trim()}));
+function toolIcon(label){
+  const name=label.replace(/\s.*$/,'');
+  const glyphs={'分数':'½','上标':'x²','下标':'x₁','根号':'√x','积分':'∫','求和':'∑','圆括号':'(x)','方括号':'[x]','大括号':'{x}','绝对值':'|x|','范数':'‖x‖','n':'ⁿ√x','极限':'lim','连乘':'∏','定积分':'∫ₐᵇ','偏导':'∂y/∂x','导数':'dy/dx','上下标':'xᵢ²','正体':'Aa','粗体':'𝐀','黑板体':'ℝ','花体':'ℒ','文本':'abc','向量':'x⃗','帽号':'x̂','上划线':'x̅','下划线':'x̲','上方加行':'↑＋','下方加行':'↓＋','删除行':'↔−','左侧加列':'←＋','右侧加列':'→＋','删除列':'↕−','撤销':'↶','重做':'↷'};
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');svg.setAttribute('viewBox','0 0 44 30');svg.setAttribute('aria-hidden','true');svg.classList.add('tool-icon');
+  const text=(value,x,y,size=17)=>{const node=document.createElementNS(svg.namespaceURI,'text');node.setAttribute('x',x);node.setAttribute('y',y);node.setAttribute('font-size',size);node.setAttribute('text-anchor','middle');node.textContent=value;svg.append(node);};
+  if(name==='分段公式'){text('{',8,24,29);text('x, x≥0',28,12,8);text('−x, x<0',28,24,8);}
+  else if(/矩阵|行列式|多行对齐/.test(label)){const bracket=label==='行列式'?'|':label==='方括号矩阵'?'[':label==='无括号矩阵'||label==='多行对齐'?'':'(';text(bracket,5,23,26);text(bracket==='['?']':bracket==='('?')':bracket,39,23,26);text('a  b',22,12,10);text('c  d',22,24,10);}
+  else text(glyphs[name]||label,22,22,/导数|偏导/.test(name)?11:17);
+  return svg;
+}
+for(const entry of catalog){
+  entry.button.dataset.toolLabel=entry.label;
+  entry.button.setAttribute('aria-label',entry.label);
+  entry.button.querySelectorAll('b').forEach(node=>node.remove());
+  const caption=document.createElement('span');caption.className='tool-caption';caption.textContent=entry.button.textContent.trim();
+  entry.button.replaceChildren(toolIcon(entry.label),caption);
+}
 const defaultToolbar=catalog.filter(entry=>entry.button.parentElement===toolbar).map(entry=>entry.id);
 let toolbarLayout=[...defaultToolbar],customizingToolbar=false,draggedTool=null;
 try{const saved=JSON.parse(localStorage.getItem('formula-toolbar-layout'));if(Array.isArray(saved))toolbarLayout=[...new Set(saved.filter(id=>catalog.some(entry=>entry.id===id)))];}catch{}
@@ -239,6 +256,10 @@ try{const saved=JSON.parse(localStorage.getItem('formula-toolbar-layout'));if(Ar
 for(const entry of catalog)entry.key=entry.button.dataset.insert||entry.button.dataset.command||entry.button.dataset.style;
 try{const saved=JSON.parse(localStorage.getItem('formula-toolbar-layout-v2'));if(Array.isArray(saved))toolbarLayout=saved.map(key=>catalog.find(entry=>entry.key===key)?.id).filter(Boolean);}catch{}
 toolbar.prepend(primaryToolbar);
+let toolbarDisplay=localStorage.getItem('formula-toolbar-display')||'both';
+if(!['both','icons','text'].includes(toolbarDisplay))toolbarDisplay='both';
+function applyToolbarDisplay(){toolbar.dataset.display=toolbarDisplay;$('toolbar-display').value=toolbarDisplay;}
+$('toolbar-display').onchange=()=>{toolbarDisplay=$('toolbar-display').value;localStorage.setItem('formula-toolbar-display',toolbarDisplay);applyToolbarDisplay();};applyToolbarDisplay();
 function renderToolbar(){
   primaryToolbar.replaceChildren();
   for(const entry of catalog)entry.button.hidden=toolbarLayout.includes(entry.id)||entry.button.parentElement===toolbar;
@@ -256,7 +277,7 @@ function renderToolbar(){
   if(customizingToolbar)for(const entry of catalog){
     const label=document.createElement('label'),input=document.createElement('input');label.draggable=true;label.dataset.toolId=entry.id;label.title='拖到上方工具栏添加';input.type='checkbox';input.checked=toolbarLayout.includes(entry.id);
     input.onchange=()=>{toolbarLayout=input.checked?[...toolbarLayout,entry.id]:toolbarLayout.filter(id=>id!==entry.id);saveToolbar();};
-    label.append(input,document.createTextNode(entry.label));$('toolbar-options').append(label);
+    label.append(input,toolIcon(entry.label),document.createTextNode(entry.label));$('toolbar-options').append(label);
   }
 }
 function saveToolbar(){localStorage.setItem('formula-toolbar-layout-v2',JSON.stringify(toolbarLayout.map(id=>catalog.find(entry=>entry.id===id).key)));renderToolbar();}
