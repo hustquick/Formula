@@ -29,5 +29,12 @@ ln -s /Applications "$task_stage/image/Applications"
 task_dmg="$task_build_dir/Formula-$task_version.dmg"
 hdiutil create -volname "Formula $task_version" -srcfolder "$task_stage/image" -format UDZO -ov "$task_dmg"
 hdiutil verify "$task_dmg"
+mkdir "$task_stage/mounted"
+hdiutil attach -readonly -nobrowse -mountpoint "$task_stage/mounted" "$task_dmg"
+[[ -x "$task_stage/mounted/Formula.app/Contents/MacOS/Formula" ]]
+[[ "$(readlink "$task_stage/mounted/Applications")" == /Applications ]]
+codesign --verify --deep --strict "$task_stage/mounted/Formula.app"
+lipo "$task_stage/mounted/Formula.app/Contents/MacOS/Formula" -verify_arch arm64 x86_64
+hdiutil detach "$task_stage/mounted"
 (cd "$task_build_dir" && shasum -a 256 "Formula-$task_version.dmg" > "Formula-$task_version.dmg.sha256")
 printf '已生成：%s\n' "$task_dmg"
