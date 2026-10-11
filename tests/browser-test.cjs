@@ -10,10 +10,17 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? proces
   await page.goto(process.env.MATHFORGE_URL||'http://127.0.0.1:8765');
   const ready=()=>page.waitForFunction(()=>document.querySelector('#preview svg')&&window.FormulaTest?.getSVG());
   await ready();assert.equal(await page.locator('#formula').count(),1);
+  for(const [input,expected] of [
+    ['Q_{i n c o m e} + x ^ { 2 }','Q_{income}+x^{2}'],
+    ['\\alpha x + \\sin x','\\alpha x+\\sin x'],
+    ['\\frac { a + b } { c }','\\frac{a+b}{c}'],
+    ['\\text{net income { per year }} + x','\\text{net income { per year }}+x'],
+    ['a \\, b + c \\ d','a\\,b+c\\ d']
+  ])assert.equal(await page.evaluate(input=>FormulaTest.compactVisualLatex(input),input),expected);
   // Alphabetic input stays literal; only explicit backslash commands expand.
   for(const letters of ['in','pi','alpha','sin','sqrt','int','sum']){
     await page.evaluate(()=>{const mf=document.getElementById('formula');mf.focus();mf.select();});await page.keyboard.type(letters);
-    await page.waitForFunction(letters=>document.getElementById('source').value.replace(/\s/g,'')===letters&&document.querySelector('#preview svg'),letters);
+    await page.waitForFunction(letters=>document.getElementById('source').value===letters&&document.querySelector('#preview svg'),letters);
   }
   await page.evaluate(()=>{const mf=document.getElementById('formula');mf.focus();mf.select();});await page.keyboard.type('Q_in');await page.keyboard.press('ArrowRight');
   await page.waitForFunction(()=>document.getElementById('source').value.replace(/\s/g,'')==='Q_{in}'&&document.querySelector('#preview svg'));
@@ -29,7 +36,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? proces
     await page.evaluate(()=>{formula.focus();formula.select();});await page.keyboard.type('Qincome');
     for(let i=0;i<6;i++)await page.keyboard.press('Shift+ArrowLeft');
     assert.equal(await page.evaluate(()=>formula.getValue(formula.selection,'latex')),'income');
-    await page.locator('#tools').getByRole('button',{name}).click();await page.waitForFunction(expected=>document.getElementById('source').value.replace(/\s/g,'')===expected&&document.querySelector('#preview svg'),expected);
+    await page.locator('#tools').getByRole('button',{name}).click();await page.waitForFunction(expected=>document.getElementById('source').value===expected&&document.querySelector('#preview svg'),expected);
   }
   for(const [name,command] of [['分数','frac'],['积分','int'],['求和','sum'],['矩阵','begin{pmatrix}']]){
     await page.evaluate(()=>{formula.focus();formula.select();});await page.keyboard.type('x+1');await page.evaluate(()=>formula.select());

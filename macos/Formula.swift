@@ -71,7 +71,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let settings=NSMenuItem(title:"系统排版工具…",action:#selector(showTools),keyEquivalent:",");settings.target=self;appMenu.insertItem(settings,at:1)
         NSApp.mainMenu=bar
     }
-    @objc func about() { let alert=NSAlert();alert.messageText="Formula 1.0.6";alert.informativeText="本地公式工坊\nMathLive 可视化编辑 · LaTeX / Typst\n内置与系统排版引擎 · 矢量导出\n\n第三方许可见应用资源 THIRD-PARTY-NOTICES.txt。";alert.runModal() }
+    @objc func about() { let alert=NSAlert();alert.messageText="Formula 1.0.7";alert.informativeText="本地公式工坊\nMathLive 可视化编辑 · LaTeX / Typst\n内置与系统排版引擎 · 矢量导出\n\n第三方许可见应用资源 THIRD-PARTY-NOTICES.txt。";alert.runModal() }
     @objc func showTools() {js("document.getElementById('system-tools').click();")}
     @objc func copySource() {js("window.FormulaAction('copy');")}
     @objc func menuAction(_ item:NSMenuItem) {let actions=["import","svg","pdf","png","project"];js("window.FormulaAction('\(actions[item.tag])');")}

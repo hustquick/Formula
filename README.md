@@ -10,7 +10,7 @@
 
 ## DMG 安装与启动
 
-1. 在 Releases 下载 `Formula-1.0.6.dmg`（后续版本使用相应版本号）。
+1. 在 Releases 下载 `Formula-1.0.7.dmg`（后续版本使用相应版本号）。
 2. 打开磁盘映像，将 Formula.app 拖到 Applications 快捷链接。
 3. 从“应用程序”启动 Formula。DMG 内是预编译通用应用，无需 Command Line Tools、Node.js 或 npm。
 
@@ -115,3 +115,5 @@ GitHub Actions 在 macOS 上执行 `npm ci`、离线资源打包和 `bash script
 可视化编辑器关闭字母序列自动替换：`in`、`pi`、`alpha`、`sin` 等保留为字母。需要符号或函数时显式输入 `\in`、`\pi`、`\alpha`、`\sin` 等命令并按回车；结构也可用工具栏插入。
 
 选中公式后可点击工具栏套用结构：下标/上标附加到选中内容前的基底（例如 Qincome 中选中 income 得到 Q_{income}）；根号包住选中内容，分数将其放入分子，积分/求和将其作为主体，矩阵将其放入第一个单元格。无选区时插入带占位的结构。
+
+可视化生成的 LaTeX 自动移除数学表达式中的冗余空格；保留反斜杠命令与字母之间的分隔、文本内容和显式间距命令。Typst 的必要空格由转换器独立生成。手动输入的 LaTeX 源码不会被自动重排。

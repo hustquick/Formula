@@ -30,6 +30,24 @@ function stripDelimiters(text){
   if((text.startsWith('\\[')&&text.endsWith('\\]'))||(text.startsWith('\\(')&&text.endsWith('\\)')))return text.slice(2,-2).trim();
   return text;
 }
+// Compact generated math source without changing text or control-word boundaries.
+function compactVisualLatex(source){
+  const tokens=source.match(/\\[A-Za-z]+|\\[\s\S]|%[^\n]*(?:\n|$)|\s+|[\s\S]/g)||[];
+  let result='',depth=0,textDepth=0,pendingText=false,controlWord=false;
+  for(let i=0;i<tokens.length;i++){
+    const token=tokens[i];
+    if(/^\s+$/.test(token)&&!textDepth){
+      if(controlWord&&/^[A-Za-z]/.test(tokens[i+1]||''))result+=' ';
+      continue;
+    }
+    result+=token;
+    if(token==='{'){depth++;if(pendingText&&!textDepth)textDepth=depth;pendingText=false;}
+    else if(token==='}'){if(depth===textDepth)textDepth=0;depth=Math.max(0,depth-1);pendingText=false;}
+    else if(token!=='*'||!pendingText)pendingText=/^\\(?:text|textnormal|textrm|textsf|texttt|textbf|textmd|textit|textsl|textsc|textup|operatorname|mbox|hbox)$/.test(token);
+    controlWord=/^\\[A-Za-z]+$/.test(token);
+  }
+  return result;
+}
 function typst(latex){ return tex2typst(latex,{nonStrict:false}); }
 function getModeSource(){return state.mode==='latex'?state.latex:typst(state.latex);}
 function invalidate(message){
@@ -166,7 +184,7 @@ const safe=fn=>async(...args)=>{try{await fn(...args);}catch(e){status(e.message
 window.FormulaNativeResult=(message,error=false)=>status(message,error);
 window.FormulaImport=(text,ext)=>safe(()=>importContent(text,ext))();
 window.FormulaAction=kind=>safe(async()=>{if(kind==='copy')await copy($('source').value);else if(kind==='import')$('import').click();else await exportFile(kind);})();
-window.FormulaTest={exportFile,readSource,stripDelimiters,getState:()=>state,getSVG:()=>svgResult?svgText():null};
+window.FormulaTest={compactVisualLatex,exportFile,readSource,stripDelimiters,getState:()=>state,getSVG:()=>svgResult?svgText():null};
 
 MathLive.MathfieldElement.fontsDirectory=new URL('vendor/mathlive/fonts',document.baseURI).href;
 MathLive.MathfieldElement.soundsDirectory=null;
@@ -188,7 +206,7 @@ mf.addEventListener('keyup',event=>{
 function syncVisual(force=false){
   if(updating||mf.readOnly||mf.mode==='latex')return;
   try{
-    const latex=mf.getValue('latex-without-placeholders');
+    const latex=compactVisualLatex(mf.getValue('latex-without-placeholders'));
     if(!force&&latex===state.latex)return;
     clearTimeout(sourceTimer);clearTimeout(visualTimer);state.latex=latex;conversionAvailable=true;
     try{$('source').value=getModeSource();}catch{state.mode='latex';state.engine='embedded';$('source').value=latex;applyUI();}
