@@ -1,72 +1,155 @@
-# 验证记录
+# Formula 验证记录
 
-- 离线页面直接从 file:// 运行，无需本地服务器；无外部 HTTP / HTTPS 请求。
-- 自动测试通过 LaTeX 与 Typst 双向输入、矩阵、多行公式、无效公式、收藏与设置。
-- 实际导出并读取 SVG、PDF、PNG、JPEG、LaTeX、Typst、MathML 与可恢复公式 JSON。
-- PDF 检查：单页，公式为矢量内容，图像 XObject 数量为 0。
-- PNG 检查：RGBA，透明区域 alpha 为 0；JPEG 背景为白色。
-- LaTeX 原生模板使用 pdfLaTeX 实际编译成功，单页、自动裁切。
-- Typst 0.15.1 使用原生模板实际生成 PDF 与 SVG；SVG 包含字形路径。
-- pdftops 实际将 LaTeX PDF 转为 EPS 成功。
-- 两个 Mac 启动 / 构建脚本通过 bash 语法检查；Info.plist 可解析。
-- Swift 的 Cocoa / WebKit / PDFKit 原生部分、启动包装器、系统路径检测、Mac 剪贴板、文件拖出与 Gatekeeper 未在 macOS 上编译或实机验证。首次启动会在用户的 Mac 上构建；构建错误写入 Application Support/Formula/build.log。
+## v1.1.0 发布标准
 
-测试入口：tests/browser-test.cjs。浏览器验证覆盖最新交付包；不能替代 Mac 实机验收。
+v1.1.0 不以“界面看起来接近”为验收标准，而以完整数据、稳定交互、布局不变、离线运行和可发布 DMG 五项同时满足为准。
 
-## 1.0.1 兼容修复
+### 1. LaTeX Live 数据完整性
 
-- 缺少 standalone.cls 时，普通公式使用 article 公式盒裁切回退。该模板在 pdfLaTeX、XeLaTeX、LuaLaTeX 三种引擎上实际生成单页、裁切正确的 PDF。
-- 预览区显示本机排版的具体错误，并支持查看 / 复制完整日志和重试；前端原生桥模拟错误测试通过。
-- 用户截图没有包含编译日志，因此尚不能确认其 Mac 上此次失败的实际原因。
+发布构建从 LaTeX Live 官方仓库同步 `json/map_input.json`，并校验快捷工具与公式模板的 layer1 / layer2 结构。
 
-## 1.0.2 打包修复
+快捷工具必须严格包含 10 类：
 
-- 修复 1.0.1 启动包装器在复制时变为 644 的权限错误。
-- 使用统一的 package-mac.py 入口，在所有复制完成后设置 755，并检查 ZIP 内启动器、构建脚本的权限及 shebang。
+1. 常用符号
+2. 希腊字母
+3. 分数微分
+4. 根式角标
+5. 极限对数
+6. 三角函数
+7. 积分运算
+8. 大型运算
+9. 括号取整
+10. 数组矩阵
 
-## 1.0.3 双向编辑修复
+公式模板必须严格包含 10 类：
 
-- 修复 HTML 工具栏命令多余的反斜杠，根号与分数按钮插入真实公式结构。
-- 可视化输入、删除和工具栏修改同步到源码，并使旧导出结果失效、更新预览；补充焦点、输入法及 WebKit 重绘同步处理。
-- 实际浏览器键盘测试：输入 x^2+1、选中后添加根号、空根号输入 9、分数输入 1 和 2；每步检查源码及 SVG 预览。
-- 完整离线测试通过，包括 LaTeX / Typst、矩阵、多行公式、8 种导出、收藏、错误与设置。
-- 本次前端修复在 Chromium 中验证，未在本机 macOS WebKit 上执行。
+1. 代数
+2. 几何
+3. 不等式
+4. 积分
+5. 矩阵
+6. 三角
+7. 统计
+8. 数列
+9. 物理
+10. 化学
 
-## 1.0.4 DMG 发布验证
+`npm run validate:v1.1` 还检查二级项目总量，防止上游结构变化或同步异常导致“只有第一页”式的不完整目录被发布。
 
-- GitHub macOS 15 构建实际通过 Swift 原生编译，分别生成 arm64 和 x86_64，并合并为 Universal 可执行文件。
-- 代码采用临时签名；codesign --verify --deep --strict 通过。
-- hdiutil 实际创建 Formula-1.0.4.dmg，完整性校验通过；挂载后再次检查应用可执行权限、两个架构和签名，以及 Applications 链接。
-- DMG 和 SHA-256 校验文件已上传 v1.0.4 Release。
-- 以上为 macOS 构建与包内容验证，不代表 Finder 启动、Gatekeeper 或交互功能已完成实机验收。
+### 2. 完全离线目录
 
-## 1.0.5 输入规则修复
+构建时同时生成：
 
-- 关闭字母序列自动转命令；键盘输入 in、pi、alpha、sin、sqrt、int、sum 保持字母，下标 Q_in 也保持字母。
-- 显式反斜杠命令 in、pi、alpha、sin、sqrt、frac 的键盘输入、确认和源码 / 预览同步测试通过。
-- 修复选中内容后开始命令时反斜杠丢失；命令尚未确认时暂停源码同步与排版。
+- `web/vendor/latexlive/map_input.json`
+- `web/vendor/latexlive/catalog.js`
 
-## 1.0.6 选区工具栏
+第二个文件用于 macOS WKWebView 的 `file://` 场景，避免应用运行时依赖远端 HTTP 请求。DMG 挂载后再次验证这两个文件确实存在于最终应用包。
 
-- 实际键盘选中 Qincome 的 income 后，点击上标/下标得到 Q^{income} / Q_{income}，同步检查源码及预览。
-- 选中 x+1 后点击分数、积分、求和和矩阵，验证对应结构保留 x+1；根号保留此前选区包裹测试。
+### 3. 二级菜单与主窗口布局
 
-## 1.0.7 可视化 LaTeX 空格
+以下功能必须使用浮动 palette，不得打开后把主输入区、源码区或输出区向下撑开：
 
-- 字母与选区生成源码使用精确字符串断言，确保 income / Q_{income} 中没有多余空格。
-- 验证数学空格精简、命令分隔、嵌套文本空格、显式间距保留；完整编辑与八类导出回归测试通过。
+- 10 类快捷工具的全部二级内容
+- 符号
+- 希腊字母
+- 分数 / 微分 / 导数
+- 根式 / 角标
+- 极限 / 对数
+- 三角函数
+- 积分
+- 大型运算
+- 括号
+- 矩阵与多行公式
+- 10 类公式模板及其二级内容
 
-## 1.0.8 可视化结构工具
+浮动面板必须：
 
-- tests/visual-tools.cjs 验证分段、括号、根式、上下限、导数、矩阵、多行、字体、标记等按钮保留选区并生成可预览源码。
-- 用键盘填写分段表达式和条件，验证增删行列恢复原结构。
-- 验证文本编辑后使用结构按钮仍按数学模式插入，不输出字面 LaTeX 指令。
+- 使用固定定位；
+- 根据触发按钮定位；
+- 自动避让窗口右侧、底部边缘；
+- 支持点击空白处关闭；
+- 支持 Esc 关闭；
+- 支持方向键、Home、End 在菜单项目间导航。
 
-- tests/custom-toolbar.cjs 实际拖拽验证添加、排序、移除、重载后的配置保存、选区操作和恢复默认。
+`tests/v1.1.cjs` 会在打开快捷二级菜单和模板二级菜单前后比较 `.input-editors` 的 bounding box，验证主编辑区域几何尺寸不变。
 
-## 1.0.11 界面复刻
+### 4. 矩阵与多行编辑
 
-- 直接查看 LaTeXLive 的桌面页面及数组矩阵弹层，按十个分类入口、单框源码/可视化切换、输入/输出卡片重做界面。Formula 品牌、本机引擎和 Typst 切换继续保留。
-- 图片和文档识别入口暂未实现，禁用并标注提示；自定义拖拽放入独立页签。
-- 浏览器回归通过可视化输入、选中文字应用结构、分段/矩阵行列、字体、工具栏真实拖拽与持久化、八种导出。
-- 截图按 1348px 桌面视口核对，输入卡片高度与参考页面一致；不代表 macOS 实机验收。
+LaTeX Live 数据中的矩阵“…”示意项不会直接插入。Formula 将其映射成 MathLive 可编辑占位结构，并提供：
+
+- 上方加行
+- 下方加行
+- 删除行
+- 左侧加列
+- 右侧加列
+- 删除列
+
+已有 `tests/visual-tools.cjs` 继续覆盖分段公式、矩阵、多行、字体、标记和选区结构操作。
+
+### 5. Finder 风格自定义工具栏
+
+`tests/custom-toolbar.cjs` 覆盖：
+
+- 拖入工具栏；
+- 工具栏内排序；
+- 拖到移除区；
+- 配置持久化；
+- 恢复默认。
+
+v1.1.0 额外保留“图标＋文字 / 仅图标 / 仅文字”三种显示模式，并在自定义状态显示独立的可用工具 palette 与移除区。
+
+数字键盘不得重新出现；Formula 保留 MathLive 编辑区自身的输入能力，避免右侧功能重复。
+
+### 6. 编辑、排版和导出回归
+
+既有自动测试继续覆盖：
+
+- LaTeX / Typst 输入；
+- 可视化与源码双向同步；
+- 显式反斜杠数学命令；
+- 选区套用结构；
+- 分段 / 矩阵 / 多行；
+- 无效公式错误处理；
+- 收藏与设置；
+- SVG / PDF / PNG / JPEG；
+- LaTeX / Typst / MathML；
+- `.mathforge` 可恢复文件。
+
+本机排版支持 XeLaTeX / pdfLaTeX / LuaLaTeX 与 Typst；dvisvgm 用于 SVG，pdftops 用于 EPS。LaTeX 进程使用 `-no-shell-escape`。
+
+### 7. macOS DMG 发布门槛
+
+GitHub Actions 的发布顺序为：
+
+1. `npm ci`
+2. `npm run build:vendor`
+3. `npm run sync:latexlive`
+4. `npm run validate:v1.1`
+5. `bash scripts/build-dmg.sh`
+6. 上传 DMG 与 SHA-256
+7. 创建 / 更新 `v1.1.0` Release
+
+`build-dmg.sh` 必须验证：
+
+- arm64 和 x86_64 均成功编译；
+- `lipo` 合并后的程序同时包含两个架构；
+- 临时签名通过 `codesign --verify --deep --strict`；
+- DMG 通过 `hdiutil verify`；
+- 挂载后应用可执行；
+- `Applications` 快捷链接正确；
+- 完整 LaTeX Live JSON、file-safe catalog 和 `v1.1.css` 均进入最终 `.app`。
+
+原生 About 窗口版本在构建时从 `Info.plist` 同步，因此发布包内版本信息不会与 DMG 文件名不一致。
+
+## 自动测试入口
+
+- `tests/browser-test.cjs`：编辑、排版、错误、收藏、导出综合回归。
+- `tests/visual-tools.cjs`：结构化公式工具。
+- `tests/custom-toolbar.cjs`：工具栏拖拽与持久化。
+- `tests/reference-layout.cjs`：10 分类、源码 / 可视化切换、浮动菜单布局。
+- `tests/v1.1.cjs`：完整目录、浮动菜单、模板、键盘导航、自定义工具栏与数字键盘移除。
+- `scripts/validate-v1.1.mjs`：发布前静态硬门槛。
+
+## 尚需区分的验证范围
+
+GitHub Actions 能证明 macOS 编译、Universal Binary、代码签名验证、DMG 创建和包内容完整性；浏览器测试能证明前端交互逻辑。由于应用目前采用临时签名且未 Apple 公证，Finder 首次启动时的 Gatekeeper 体验、不同 macOS 版本上的系统剪贴板 / 文件拖出手感仍属于实机体验验收，而不是 CI 可以完全替代的项目。
