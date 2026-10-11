@@ -27,7 +27,7 @@
 
 压缩包另附 `Build-Mac.command`，可以在终端显示编译过程并生成可独立移动的原生 `Formula.app`。首次启动版本的原生缓存位于 `~/Library/Application Support/MathForge/Builds/`；可将其中生成的 `.app` 拷出作为独立应用。
 
-**验证范围：** 当前制作环境是 Linux，未进行 macOS 原生编译、Gatekeeper、剪贴板、文件拖出或 Finder 启动的实机验证。离线编辑器及八类文件导出已经自动验证；本机引擎使用的 LaTeX、Typst 和 EPS 命令已在 Linux 上实际执行。当前交付的是“首次启动在 Mac 本机编译”的完整项目包，不是预编译、公证过的 DMG。
+**验证范围：** GitHub Actions 已在 macOS 上编译通用应用，并验证 DMG 完整性、挂载后的两个架构、临时签名和 Applications 链接。离线编辑器及八类文件导出已经自动验证；本机引擎使用的 LaTeX、Typst 和 EPS 命令已在 Linux 上实际执行。Gatekeeper、剪贴板、文件拖出和 Finder 启动仍需 Mac 实机验收。
 
 ## 输入与编辑
 
@@ -100,7 +100,7 @@ Formula 生成的 SVG 含源码和排版元数据，导入可恢复。PDF 的 Su
 
 自动测试 `tests/browser-test.cjs` 覆盖 LaTeX / Typst、矩阵、多行公式、八类文件导出、收藏、无效语法、设置和零外部请求。第三方许可随包提供 `THIRD-PARTY-NOTICES.txt`。
 
-首版未包含全局菜单栏热键、macOS Services、自动更新、公式计算，以及完整 LaTeXiT 公式库格式兼容。Mac 原生编译和实际交互需要在 Mac 上进一步验收。
+首版未包含全局菜单栏热键、macOS Services、自动更新、公式计算，以及完整 LaTeXiT 公式库格式兼容。实际交互需要在 Mac 上进一步验收。
 
 ## 开发
 
