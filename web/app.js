@@ -262,7 +262,7 @@ function applyToolbarDisplay(){toolbar.dataset.display=toolbarDisplay;$('toolbar
 $('toolbar-display').onchange=()=>{toolbarDisplay=$('toolbar-display').value;localStorage.setItem('formula-toolbar-display',toolbarDisplay);applyToolbarDisplay();};applyToolbarDisplay();
 function renderToolbar(){
   primaryToolbar.replaceChildren();
-  for(const entry of catalog)entry.button.hidden=toolbarLayout.includes(entry.id)||entry.button.parentElement===toolbar;
+  for(const entry of catalog)entry.button.hidden=entry.button.parentElement===toolbar;
   for(const id of toolbarLayout){
     const entry=catalog.find(entry=>entry.id===id);if(!entry)continue;
     const button=entry.button.cloneNode(true);button.hidden=false;button.dataset.toolId=id;
@@ -294,6 +294,49 @@ primaryToolbar.addEventListener('drop',e=>{
 primaryToolbar.addEventListener('dragend',()=>{draggedTool=null;});
 $('toolbar-remove').addEventListener('dragover',e=>{if(customizingToolbar)e.preventDefault();});
 $('toolbar-remove').addEventListener('drop',e=>{if(!customizingToolbar||!draggedTool)return;e.preventDefault();toolbarLayout=toolbarLayout.filter(id=>id!==draggedTool);draggedTool=null;saveToolbar();});renderToolbar();
+
+// Match the reference editor's ten categories without changing saved action keys.
+const categorySpecs=[
+ ['常用符号',String.raw`\begin{matrix}\times&{\color{#64a6df}\cap}\\{\color{#64a6df}\therefore}&\propto\end{matrix}`,['∞','≤','≥','≠','≈','∈','→','×','±']],
+ ['希腊字母',String.raw`\begin{matrix}\alpha&{\color{#64a6df}\beta}\\{\color{#64a6df}\gamma}&\delta\end{matrix}`,['α','β','γ','θ','π']],
+ ['分数微分',String.raw`\frac{x}{{\color{#64a6df}y}}`,['分数 ½','偏导','导数']],
+ ['根式角标',String.raw`{\color{#64a6df}\sqrt{\color{black}e^{\color{#64a6df}x}}}`,['根号 √','上标 x²','下标 x₁','n 次根','上下标']],
+ ['极限对数',String.raw`{\color{#64a6df}\lim}_{n\to\infty}`,['极限']],
+ ['三角函数',String.raw`{\color{#64a6df}\sin}\,\alpha`,[]],
+ ['积分运算',String.raw`{\color{#64a6df}\int}_a^b`,['积分 ∫','定积分']],
+ ['大型运算',String.raw`{\color{#64a6df}\sum}_{i=0}^n`,['求和 ∑','连乘']],
+ ['括号取整',String.raw`{\color{#64a6df}\{}[(\,)]{\color{#64a6df}\}}`,['圆括号','方括号','大括号','绝对值','范数']],
+ ['数组矩阵',String.raw`\begin{bmatrix}0&1\\1&0\end{bmatrix}`,['矩阵','分段公式','方括号矩阵','行列式','无括号矩阵','多行对齐','上方加行','下方加行','删除行','左侧加列','右侧加列','删除列']]
+];
+const allOriginals=catalog.map(entry=>entry.button);
+for(const old of toolbar.querySelectorAll('.tool-group,.table-tools'))old.remove();
+for(const [name,demo,labels] of categorySpecs){
+ const group=document.createElement('details');group.className='tool-group';const summary=document.createElement('summary');summary.setAttribute('aria-label',name);
+ const art=document.createElement('span');art.className='category-art';art.setAttribute('aria-hidden','true');
+ const label=document.createElement('span');label.className='category-label';label.textContent=name;summary.append(art,label);const panel=document.createElement('div');
+ for(const title of labels){const entry=catalog.find(entry=>entry.label===title);if(entry){entry.button.hidden=false;panel.append(entry.button);}}
+ if(name==='三角函数'||name==='极限对数')for(const command of name==='三角函数'?['sin','cos','tan','cot','arcsin','arccos','arctan']:['log','ln','exp']){const button=document.createElement('button');button.dataset.insert='\\'+command+' #@';button.setAttribute('aria-label',command);button.append(toolIcon(command));panel.append(button);}
+ group.append(summary,panel);toolbar.append(group);
+ (async()=>{while(!window.MathJax?.tex2svgPromise)await new Promise(resolve=>setTimeout(resolve,50));try{art.append(await MathJax.tex2svgPromise('\\displaystyle '+demo,{display:false}));}catch{art.append(toolIcon(labels[0]||name));}})();
+}
+const formatting=document.createElement('div');formatting.className='format-popup';formatting.hidden=true;
+for(const title of ['正体','粗体','黑板体','花体','文本','向量','帽号','上划线','下划线','撤销','重做']){const entry=catalog.find(entry=>entry.label===title);entry.button.hidden=false;formatting.append(entry.button);}
+toolbar.append(formatting);
+$('font-menu').addEventListener('pointerdown',e=>e.preventDefault());
+$('font-menu').onclick=()=>{formatting.hidden=!formatting.hidden;const r=$('font-menu').getBoundingClientRect();formatting.style.left=r.left+'px';formatting.style.top=r.bottom+6+'px';};
+formatting.addEventListener('click',()=>formatting.hidden=true);
+const inputEditors=document.querySelector('.input-editors');
+function setInputPane(mode){inputEditors.dataset.inputMode=mode;$('input-source').classList.toggle('active',mode==='source');$('input-visual').classList.toggle('active',mode==='visual');}
+$('input-source').onclick=()=>{setInputPane('source');$('source').focus();};
+$('input-visual').onclick=()=>{clearTimeout(sourceTimer);readSource();setInputPane('visual');mf.focus();};
+const originalFocus=mf.focus.bind(mf);mf.focus=(...args)=>{setInputPane('visual');return originalFocus(...args);};
+$('clear-input').onclick=()=>{clearTimeout(sourceTimer);clearTimeout(visualTimer);mf.setValue('');syncVisual(true);svgResult=null;nativeResult=null;valid=false;state.latex='';state.rawSource='';persist();$('source').value='';$('preview').replaceChildren();status('请输入公式');};
+$('input-settings').onclick=()=>$('system-tools').click();
+$('input-color').oninput=()=>{$('color').value=$('input-color').value;$('color').dispatchEvent(new Event('change'));};
+$('input-size').onchange=()=>{$('size').value=$('input-size').value;$('size').dispatchEvent(new Event('change'));};
+let currentTab='quick';
+function selectToolTab(tab){currentTab=tab;document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));toolbar.dataset.tab=tab;document.querySelector('.toolbar-customize').hidden=tab!=='custom';document.querySelector('.examples').hidden=tab!=='templates';$('history').hidden=tab!=='favorites';if(tab==='templates')document.querySelector('.input-tabs').after(document.querySelector('.examples'));if(tab==='favorites')document.querySelector('.input-tabs').after($('history'));}
+document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>selectToolTab(button.dataset.tab));selectToolTab('quick');document.querySelector('.preview-card>.section-head').append($('remember'));
 const toolMenus=[...toolbar.querySelectorAll('.tool-group')];
 function closeToolMenus(){for(const menu of toolMenus)menu.open=false;}
 for(const menu of toolMenus){
@@ -304,17 +347,19 @@ for(const menu of toolMenus){
     trigger.setAttribute('aria-expanded',String(menu.open));if(!menu.open)return;
     for(const other of toolMenus)if(other!==menu)other.open=false;
     const rect=trigger.getBoundingClientRect();
-    panel.style.left=Math.max(8,Math.min(rect.left,innerWidth-Math.min(360,innerWidth-16)-8))+'px';
+    panel.style.left=Math.max(8,Math.min(rect.left,innerWidth-Math.min(435,innerWidth-16)-8))+'px';
     panel.style.top=Math.min(rect.bottom+6,innerHeight-panel.offsetHeight-8)+'px';
   });
 }
 document.addEventListener('click',e=>{
+  if(!e.target.closest('.format-popup,#font-menu'))formatting.hidden=true;
   if(!e.target.closest('.tool-group')||e.target.closest('[data-insert],[data-style],[data-command]'))closeToolMenus();
 });
-document.addEventListener('keydown',e=>{if(e.key==='Escape'&&toolMenus.some(menu=>menu.open)){closeToolMenus();mf.focus();}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(toolMenus.some(menu=>menu.open)||!formatting.hidden)){formatting.hidden=true;closeToolMenus();mf.focus();}});
 window.addEventListener('resize',closeToolMenus);window.addEventListener('scroll',e=>{if(!e.target.closest?.('.tool-group'))closeToolMenus();},true);
 $('tools').addEventListener('pointerdown',e=>{if(!customizingToolbar&&e.target.closest('[data-insert],[data-command],[data-style],summary'))e.preventDefault();});
 $('tools').addEventListener('click',e=>{
+  if(e.target.closest('[data-insert],[data-command],[data-style]'))setInputPane('visual');
   if(customizingToolbar&&e.target.closest('#primary-tools'))return;
   const font=e.target.closest('[data-style]');
   if(font){

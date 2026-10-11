@@ -10,7 +10,7 @@
 
 ## DMG 安装与启动
 
-1. 在 Releases 下载 `Formula-1.0.10.dmg`（后续版本使用相应版本号）。
+1. 在 Releases 下载 `Formula-1.0.11.dmg`（后续版本使用相应版本号）。
 2. 打开磁盘映像，将 Formula.app 拖到 Applications 快捷链接。
 3. 从“应用程序”启动 Formula。DMG 内是预编译通用应用，无需 Command Line Tools、Node.js 或 npm。
 
