@@ -94,12 +94,12 @@
   function updateState(){
     const info=engineInfo();
     const installed=!!info.installed;
-    recognize.disabled=!installed||!!lastStatus?.busy||(mode==='page'&&!lastStatus?.detectorInstalled);
+    recognize.disabled=!installed||(!!lastStatus?.busy&&!lastStatus?.installing)||(!!lastStatus?.installing&&engine.value!=='pix2text')||(mode==='page'&&!lastStatus?.detectorInstalled);
     install.disabled=!!lastStatus?.busy;
     const enhanced=engine.value==='unimernet';
     const label=enhanced?'专业识别（UniMERNet Tiny）':'基础识别（Pix2Text）';
     syncInstallChoices();
-    if(lastStatus?.busy){status.textContent='识别组件正在执行任务；安装阶段可在当前窗口查看。';return;}
+    if(lastStatus?.busy){status.textContent=lastStatus.installing?'专业版安装期间，已安装的基础识别仍可使用。':'识别组件正在执行任务。';return;}
     if(installed){
       status.textContent=`${label} 已安装 · 总占用约 ${fmt(lastStatus?.bytes||0)} · ${lastStatus?.detectorInstalled?'MFD 整页公式检测已就绪':'MFD 尚未就绪，请验证/修复识别组件'}`;
     }else if(lastStatus?.environmentExists){
