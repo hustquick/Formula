@@ -38,6 +38,10 @@ extension AppDelegate {
         if DispatchQueue.main.sync(execute:{self.documentCancelled}) { throw ToolFailure(message:"已取消文档识别。") }
     }
 
+    func legacyWordNotice(_ source:URL) -> String? {
+        source.pathExtension.lowercased()=="doc" ? "暂不支持旧版 .doc 文档。请用 Word 或 WPS 打开文件，选择“另存为”保存成 .docx 格式后重新选择。请勿只修改文件扩展名。" : nil
+    }
+
     func handleDocumentRecognize(_ data:[String:Any]) {
         let id=data["id"] as? String ?? ""
         let engine=validOCREngine(data["engine"])
@@ -47,9 +51,10 @@ extension AppDelegate {
         guard ocrInstalled(engine),FileManager.default.fileExists(atPath:ocrMFDReady.path) else {reply(id,["error":"请先安装基础识别与 MFD；专业识别需安装专业版。"]);return}
         ocrBusy=true;documentCancelled=false
         let panel=NSOpenPanel();panel.title="选择 PDF 或 Word 文档";panel.canChooseDirectories=false;panel.canChooseFiles=true;panel.allowsMultipleSelection=false
-        panel.allowedContentTypes=[.pdf,UTType(filenameExtension:"docx")!]
+        panel.allowedContentTypes=[.pdf,UTType(filenameExtension:"docx")!,UTType(filenameExtension:"doc")!]
         panel.beginSheetModal(for:window){response in
             guard response == .OK,let url=panel.url else {self.ocrBusy=false;self.reply(id,["cancelled":true]);return}
+            if let notice=self.legacyWordNotice(url) {self.ocrBusy=false;self.reply(id,["error":notice]);return}
             self.ocrWorker.async {
                 let result=self.recognizeDocument(url,engine:engine,first:first,last:last,id:id)
                 DispatchQueue.main.async {self.ocrBusy=false;self.reply(id,result)}
@@ -75,6 +80,7 @@ extension AppDelegate {
         let temp=ocrRoot.appendingPathComponent("document-"+UUID().uuidString,isDirectory:true)
         var formulas:[[String:Any]]=[],warnings:[String]=[],log=""
         do {
+            if let notice=legacyWordNotice(source) {throw ToolFailure(message:notice)}
             guard let size=try source.resourceValues(forKeys:[.fileSizeKey]).fileSize,size<=100*1024*1024 else {throw ToolFailure(message:"文档超过 100 MB，请拆分后重试。")}
             try fm.createDirectory(at:temp,withIntermediateDirectories:true)
             defer {try? fm.removeItem(at:temp)}
