@@ -12,14 +12,15 @@ cd "$(dirname "$0")/.."
 node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('web/vendor/latexlive/map_input.json','utf8'));const s=x.shortcut||[];const t=n=>s.find(v=>v.name===n);if(t('toolbar')?.layer1?.cont?.length!==10||t('template')?.layer1?.cont?.length!==10)process.exit(1);const js=fs.readFileSync('web/vendor/latexlive/catalog.js','utf8');if(!js.startsWith('window.LaTeXLiveCatalog='))process.exit(1)"
 task_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/Info.plist)
 task_build_dir="$PWD/dist"
-task_app="$task_build_dir/Formula.app"
 task_stage=$(mktemp -d)
+task_app="$task_stage/Formula.app"
 trap 'rm -rf "$task_stage"' EXIT
 mkdir -p "$task_app/Contents/MacOS" "$task_app/Contents/Resources"
 cp macos/Info.plist "$task_app/Contents/Info.plist"
 cp -R web "$task_app/Contents/Resources/"
 cp THIRD-PARTY-NOTICES.txt "$task_app/Contents/Resources/"
 cp macos/formula-ocr-runner.py "$task_app/Contents/Resources/formula-ocr-runner.py"
+cp macos/ocr-requirements.txt "$task_app/Contents/Resources/ocr-requirements.txt"
 # Keep the native About panel in lock-step with Info.plist without duplicating release metadata.
 task_swift="$task_stage/Formula.swift"
 sed -E "s/Formula [0-9]+\.[0-9]+\.[0-9]+/Formula $task_version/g" macos/Formula.swift > "$task_swift"
@@ -68,4 +69,6 @@ codesign --verify --deep --strict "$task_stage/mounted/Formula.app"
 [[ "$(lipo -archs "$task_stage/mounted/Formula.app/Contents/MacOS/Formula")" == "x86_64 arm64" || "$(lipo -archs "$task_stage/mounted/Formula.app/Contents/MacOS/Formula")" == "arm64 x86_64" ]]
 hdiutil detach "$task_stage/mounted"
 (cd "$task_build_dir" && shasum -a 256 "Formula-$task_version.dmg" > "Formula-$task_version.dmg.sha256")
+mkdir -p "$task_build_dir"
+ditto --noextattr --noqtn "$task_app" "$task_build_dir/Formula.app"
 printf '已生成：%s\n' "$task_dmg"

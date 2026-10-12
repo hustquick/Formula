@@ -4,18 +4,32 @@ import base64
 import sys
 
 
-def build_engine():
+def build_engine(warmup=False):
     from pix2text.latex_ocr import LatexOCR
-    return LatexOCR(device='cpu')
+    from pix2text.consts import MODEL_VERSION, AVAILABLE_MODELS
+    from pix2text.utils import data_dir, prepare_model_files2
+    from pathlib import Path
+    info = AVAILABLE_MODELS.get_info('mfr-1.5', 'onnx')
+    model_dir = Path(data_dir()) / MODEL_VERSION / info['local_model_id']
+    if warmup:
+        # Resume an interrupted download even when config files already exist.
+        prepare_model_files2(model_dir, info['hf_model_id'], file_or_dir='dir')
+    return LatexOCR(device='cpu', model_dir=str(model_dir))
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('image', nargs='?')
     parser.add_argument('--warmup', action='store_true')
+    parser.add_argument('--check', action='store_true')
     args = parser.parse_args()
 
-    engine = build_engine()
+    if args.check:
+        from pix2text.latex_ocr import LatexOCR
+        print('FORMULA_OCR_DEPENDENCIES_READY=1')
+        return 0
+
+    engine = build_engine(warmup=args.warmup)
     if args.warmup:
         print('FORMULA_OCR_READY=1')
         return 0
