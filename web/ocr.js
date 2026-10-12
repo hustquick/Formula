@@ -208,7 +208,7 @@
         setTimeout(()=>dialog.close(),500);
       }
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
-    finally{recognize.disabled=false;if(mode!=='page')updateState();}
+    finally{recognize.disabled=false;}
   };
 
   const imageTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='图片识别');
