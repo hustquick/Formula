@@ -1,5 +1,6 @@
 import Cocoa
 import WebKit
+import UniformTypeIdentifiers
 
 extension AppDelegate {
     private var ocrRoot: URL { support.appendingPathComponent("OCR", isDirectory: true).standardizedFileURL.resolvingSymlinksInPath() }
@@ -34,30 +35,45 @@ extension AppDelegate {
         return fm.isExecutableFile(atPath:python.path) && compatibleOCRPython(python.path) && fm.fileExists(atPath:ocrReadyURL(engine).path)
     }
 
+    // A multi-gigabyte dependency tree must never be scanned on the UI thread.
     func handleOCRStatus(_ data:[String:Any]) {
         let id=data["id"] as? String ?? ""
-        let fm=FileManager.default
-        let python=discoverPython3()
-        var size:Int64=0
-        if let e=fm.enumerator(at:ocrRoot, includingPropertiesForKeys:[.fileSizeKey], options:[.skipsHiddenFiles]) {
-            for case let url as URL in e { if let n=try? url.resourceValues(forKeys:[.fileSizeKey]).fileSize { size += Int64(n) } }
+        if !ocrSizeCalculating && Date().timeIntervalSince(ocrSizeUpdated)>60 {
+            ocrSizeCalculating=true
+            let root=ocrRoot
+            DispatchQueue.global(qos:.utility).async {
+                var size:Int64=0
+                if let files=FileManager.default.enumerator(at:root,includingPropertiesForKeys:[.fileSizeKey],options:[.skipsHiddenFiles]) {
+                    for case let url as URL in files {
+                        if let n=try? url.resourceValues(forKeys:[.fileSizeKey]).fileSize { size+=Int64(n) }
+                    }
+                }
+                let bytes=size
+                DispatchQueue.main.async { self.ocrCachedBytes=bytes;self.ocrSizeUpdated=Date();self.ocrSizeCalculating=false }
+            }
         }
-        reply(id,[
-            "installed":ocrInstalled("pix2text"),
-            "busy":ocrBusy || ocrInstallBusy,
-            "installing":ocrInstallBusy,
-            "installingEngine":ocrBasicInstalling ? "pix2text" : ocrInstallingEngine,
-            "environmentExists":fm.isExecutableFile(atPath:ocrPython.path),
-            "pythonAvailable":python != nil,
-            "pythonPath":python ?? "",
-            "bytes":size,
-            "root":ocrRoot.path,
-            "detectorInstalled":fm.fileExists(atPath:ocrMFDReady.path),
-            "engines":[
-                "pix2text":["installed":ocrInstalled("pix2text"),"label":"Pix2Text","description":"标准识别：MFD + Pix2Text，适合普通印刷公式"],
-                "unimernet":["installed":ocrInstalled("unimernet"),"label":"UniMERNet Tiny","description":"增强识别：包含标准识别基础组件，并增加 UniMERNet Tiny"]
-            ]
-        ])
+        DispatchQueue.global(qos:.utility).async {
+            let fm=FileManager.default
+            let python=self.discoverPython3()
+            let pixReady=self.ocrInstalled("pix2text")
+            let uniReady=self.ocrInstalled("unimernet")
+            let environmentExists=fm.isExecutableFile(atPath:self.ocrPython.path)
+            let detectorReady=fm.fileExists(atPath:self.ocrMFDReady.path)
+            DispatchQueue.main.async {
+                self.reply(id,[
+                    "installed":pixReady,"busy":self.ocrBusy || self.ocrInstallBusy,
+                    "installing":self.ocrInstallBusy,
+                    "installingEngine":self.ocrBasicInstalling ? "pix2text" : self.ocrInstallingEngine,
+                    "environmentExists":environmentExists,"pythonAvailable":python != nil,"pythonPath":python ?? "",
+                    "bytes":self.ocrCachedBytes,"bytesCalculating":self.ocrSizeCalculating,
+                    "root":self.ocrRoot.path,"detectorInstalled":detectorReady,
+                    "engines":[
+                        "pix2text":["installed":pixReady,"label":"Pix2Text","description":"基础识别：MFD + Pix2Text"],
+                        "unimernet":["installed":uniReady,"label":"UniMERNet Tiny","description":"专业识别：基础版 + UniMERNet Tiny"]
+                    ]
+                ])
+            }
+        }
     }
 
     func handleOCRInstall(_ data:[String:Any]) {
@@ -66,11 +82,11 @@ extension AppDelegate {
         guard !ocrBusy && !ocrInstallBusy else { reply(id,["error":"已有 OCR 任务正在运行。"]);return }
         ocrInstallBusy=true
         ocrInstallingEngine=engine
-        ocrBasicInstalling=engine == "pix2text" || !ocrInstalled("pix2text") || !FileManager.default.fileExists(atPath:ocrMFDReady.path)
+        ocrBasicInstalling=true
         ocrInstallCancelled=false
         DispatchQueue.global(qos:.utility).async {
             let result=self.installOCR(engine)
-            DispatchQueue.main.async { self.ocrInstallBusy=false;self.ocrInstallingEngine="";self.ocrBasicInstalling=false;self.ocrInstallProcess=nil;self.reply(id,result) }
+            DispatchQueue.main.async { self.ocrInstallBusy=false;self.ocrInstallingEngine="";self.ocrBasicInstalling=false;self.ocrInstallProcess=nil;self.ocrSizeUpdated=Date.distantPast;self.reply(id,result) }
         }
     }
 
@@ -96,8 +112,8 @@ extension AppDelegate {
             reply(id,["error":"整页公式检测模型尚未安装。请对当前识别能力执行一次“安装/验证”。"]);return
         }
         ocrBusy=true
-        let panel=NSOpenPanel();panel.title=page ? "选择包含公式的整页图片" : "选择公式图片";panel.canChooseDirectories=false;panel.allowsMultipleSelection=false
-        panel.allowedFileTypes=["png","jpg","jpeg","webp","tif","tiff","bmp","heic"]
+        let panel=NSOpenPanel();panel.title=page ? "选择包含公式的整页图片" : "选择公式图片";panel.canChooseDirectories=false;panel.canChooseFiles=true;panel.allowsMultipleSelection=false
+        panel.allowedContentTypes=[.image]
         panel.beginSheetModal(for:window){response in
             guard response == .OK,let url=panel.url else { self.ocrBusy=false;self.reply(id,["cancelled":true]);return }
             let engineLabel=engine == "unimernet" ? "UniMERNet Tiny" : "Pix2Text"
@@ -199,7 +215,9 @@ extension AppDelegate {
         }
         do {
             // A Pro upgrade reuses a verified baseline without touching its packages.
-            if engine == "pix2text" || !ocrInstalled("pix2text") || !fm.fileExists(atPath:ocrMFDReady.path) {
+            let needsBase=engine == "pix2text" || !ocrInstalled("pix2text") || !fm.fileExists(atPath:ocrMFDReady.path)
+            DispatchQueue.main.sync { self.ocrBasicInstalling=needsBase }
+            if needsBase {
                 reportOCRPhase("正在准备基础识别独立环境…")
                 let python=try prepareOCREnvironment(stage,requirements:bundledOCRRequirements,log:&log)
                 reportOCRPhase("正在下载并验证 Pix2Text 与 MFD 模型…")

@@ -60,6 +60,7 @@ jobs:
         run: |
           node tests/ocr-static.cjs
           node tests/ocr-process.cjs
+          node tests/ocr-status.cjs
           node tests/ocr-install.cjs
           node tests/ocr-transaction.cjs
           python tests/ocr-runner.py

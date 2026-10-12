@@ -108,7 +108,7 @@
     if(preserveStatus)return;
     if(lastStatus?.busy){status.textContent=lastStatus.installing?(lastStatus.installingEngine==='pix2text'?'基础识别正在安装或修复。':'专业版安装期间，已安装的基础识别仍可使用。'):'识别组件正在执行任务。';return;}
     if(installed){
-      status.textContent=`${label} 已安装 · 总占用约 ${fmt(lastStatus?.bytes||0)} · ${lastStatus?.detectorInstalled?'MFD 整页公式检测已就绪':'MFD 尚未就绪，请验证/修复识别组件'}`;
+      status.textContent=`${label} 已安装 · ${lastStatus?.bytesCalculating&& !lastStatus?.bytes ? "正在统计占用空间" : "总占用约 "+fmt(lastStatus?.bytes||0)} · ${lastStatus?.detectorInstalled?'MFD 整页公式检测已就绪':'MFD 尚未就绪，请验证/修复识别组件'}`;
     }else if(lastStatus?.environmentExists){
       status.textContent=`${label} 尚未安装；现有 Python 识别环境可复用。`;
     }else if(lastStatus?.pythonAvailable){

@@ -231,6 +231,8 @@ def main():
             build_pix2text_engine(warmup=True)
         else:
             build_unimernet_engine(root, warmup=True)
+        if args.warmup_detector:
+            print('FORMULA_MFD_READY=1')
         print(f'FORMULA_OCR_READY={args.engine}')
         return 0
 

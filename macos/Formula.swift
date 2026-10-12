@@ -23,6 +23,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     var ocrInstallBusy = false
     var ocrInstallingEngine = ""
     var ocrBasicInstalling = false
+    var ocrCachedBytes:Int64 = 0
+    var ocrSizeUpdated = Date.distantPast
+    var ocrSizeCalculating = false
     var ocrInstallCancelled = false
     var ocrInstallProcess: Process?
 
