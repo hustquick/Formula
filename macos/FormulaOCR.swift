@@ -51,8 +51,8 @@ extension AppDelegate {
             "root":ocrRoot.path,
             "detectorInstalled":fm.fileExists(atPath:ocrMFDReady.path),
             "engines":[
-                "pix2text":["installed":ocrInstalled("pix2text"),"label":"Pix2Text","description":"轻量、快速，适合普通印刷公式"],
-                "unimernet":["installed":ocrInstalled("unimernet"),"label":"UniMERNet Tiny","description":"高精度，适合复杂、手写和截图公式"]
+                "pix2text":["installed":ocrInstalled("pix2text"),"label":"Pix2Text","description":"标准识别：MFD + Pix2Text，适合普通印刷公式"],
+                "unimernet":["installed":ocrInstalled("unimernet"),"label":"UniMERNet Tiny","description":"增强识别：包含标准识别基础组件，并增加 UniMERNet Tiny"]
             ]
         ])
     }
@@ -74,10 +74,10 @@ extension AppDelegate {
         let page=(data["mode"] as? String) == "page"
         guard !ocrBusy else { reply(id,["error":"识别组件正在安装或识别，请稍后重试。"]);return }
         guard ocrInstalled(engine) else {
-            reply(id,["error":"所选识别模型尚未安装。请先安装 \(engine == "unimernet" ? "UniMERNet Tiny" : "Pix2Text")。"]);return
+            reply(id,["error":"所选识别模型尚未安装。请先安装 \(engine == "unimernet" ? "增强识别（UniMERNet Tiny）" : "标准识别（Pix2Text）")。"]);return
         }
         guard !page || FileManager.default.fileExists(atPath:ocrMFDReady.path) else {
-            reply(id,["error":"整页公式检测模型尚未安装。请对当前识别模型执行一次“安装/验证”。"]);return
+            reply(id,["error":"整页公式检测模型尚未安装。请对当前识别能力执行一次“安装/验证”。"]);return
         }
         ocrBusy=true
         let panel=NSOpenPanel();panel.title=page ? "选择包含公式的整页图片" : "选择公式图片";panel.canChooseDirectories=false;panel.allowsMultipleSelection=false
@@ -127,19 +127,30 @@ extension AppDelegate {
             let fm=FileManager.default
             try? fm.removeItem(at:ocrReadyURL(engine))
             try ensureBaseOCR(&log)
+
             if engine == "unimernet" {
                 var r=try run(ocrPython.path,["-m","pip","install","unimernet==0.2.3","huggingface_hub>=0.23,<1"],cwd:ocrRoot,timeout:1800);log+=r.1
                 if r.0 != 0 { throw ToolFailure(message:"安装 UniMERNet 依赖失败。UniMERNet 需要 Python 3.10+。") }
             }
+
             var r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup-detector","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200);log+=r.1
             if r.0 != 0 || !r.1.contains("FORMULA_MFD_READY=1") { throw ocrFailure("数学公式区域检测（MFD）模型初始化失败。",r.1) }
             try "ready".write(to:ocrMFDReady,atomically:true,encoding:.utf8)
-            r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine",engine,"--root",ocrRoot.path],cwd:ocrRoot,timeout:engine == "unimernet" ? 2400 : 1200);log+=r.1
-            let readyToken="FORMULA_OCR_READY="+engine
-            if r.0 != 0 || !r.1.contains(readyToken) { throw ocrFailure("\(engine == "unimernet" ? "UniMERNet Tiny" : "Pix2Text") 已安装，但模型初始化失败。",r.1) }
-            try "ready".write(to:ocrReadyURL(engine),atomically:true,encoding:.utf8)
-            if engine == "pix2text" { try? "ready".write(to:ocrLegacyReady,atomically:true,encoding:.utf8) }
-            return ["installed":true,"engine":engine,"message":"\(engine == "unimernet" ? "UniMERNet Tiny" : "Pix2Text") 与 MFD 公式区域检测已安装，可离线使用。","log":String(log.suffix(20000))]
+
+            // 标准识别是所有 OCR 能力的基础。即使用户直接安装增强识别，也必须先完成 Pix2Text MFR 初始化。
+            r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","pix2text","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200);log+=r.1
+            if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=pix2text") { throw ocrFailure("标准识别（Pix2Text）模型初始化失败。",r.1) }
+            try "ready".write(to:ocrPixReady,atomically:true,encoding:.utf8)
+            try? "ready".write(to:ocrLegacyReady,atomically:true,encoding:.utf8)
+
+            if engine == "unimernet" {
+                r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","unimernet","--root",ocrRoot.path],cwd:ocrRoot,timeout:2400);log+=r.1
+                if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=unimernet") { throw ocrFailure("增强识别（UniMERNet Tiny）已安装，但模型初始化失败。",r.1) }
+                try "ready".write(to:ocrUniReady,atomically:true,encoding:.utf8)
+                return ["installed":true,"engine":engine,"message":"增强识别已安装：标准识别（MFD + Pix2Text）与 UniMERNet Tiny 均已就绪，可离线使用。","log":String(log.suffix(20000))]
+            }
+
+            return ["installed":true,"engine":engine,"message":"标准识别已安装：MFD 公式区域检测与 Pix2Text 均已就绪，可离线使用。","log":String(log.suffix(20000))]
         } catch let e as ToolFailure { return ["error":e.message,"log":String((log+"\n"+e.message).suffix(20000))] }
         catch { return ["error":error.localizedDescription,"log":String((log+"\n"+error.localizedDescription).suffix(20000))] }
     }
