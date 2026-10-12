@@ -126,10 +126,10 @@
   };
 
   install.onclick=async()=>{
-    install.disabled=true;recognize.disabled=true;results.hidden=true;
-    cancelInstall.hidden=false;cancelInstall.disabled=false;
     const installEngine=install.dataset.installEngine;
     if(!installEngine)return;
+    install.disabled=true;results.hidden=true;
+    cancelInstall.hidden=false;cancelInstall.disabled=false;
     const enhanced=installEngine==='unimernet';
     const label=enhanced?'专业版':'基础版';
     const startedAt=Date.now();
@@ -139,7 +139,6 @@
       const r=await request('ocrInstall',{engine:installEngine});
       if(r.log)log.textContent=r.log;
       status.textContent=r.message||`${label}安装完成`;
-      await refresh();
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
     finally{clearInterval(ticker);installPhase="";cancelInstall.hidden=true;install.disabled=false;await refresh();}
   };
