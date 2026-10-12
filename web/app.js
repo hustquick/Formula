@@ -325,7 +325,7 @@ for(const [name,demo,labels] of categorySpecs){
 }
 const formatting=document.createElement('div');formatting.className='format-popup';formatting.hidden=true;
 for(const title of ['正体','粗体','黑板体','花体','文本','向量','帽号','上划线','下划线','撤销','重做']){const entry=catalog.find(entry=>entry.label===title);entry.button.hidden=false;formatting.append(entry.button);}
-toolbar.append(formatting);
+toolbar.parentElement.append(formatting);
 $('font-menu').addEventListener('pointerdown',e=>e.preventDefault());
 $('font-menu').onclick=()=>{formatting.hidden=!formatting.hidden;const r=$('font-menu').getBoundingClientRect();formatting.style.left=r.left+'px';formatting.style.top=r.bottom+6+'px';};
 formatting.addEventListener('click',()=>formatting.hidden=true);
@@ -338,6 +338,7 @@ $('clear-input').onclick=()=>{clearTimeout(sourceTimer);clearTimeout(visualTimer
 $('input-settings').onclick=()=>$('system-tools').click();
 $('input-color').oninput=()=>{$('color').value=$('input-color').value;$('color').dispatchEvent(new Event('change'));};
 $('input-size').onchange=()=>{$('size').value=$('input-size').value;$('size').dispatchEvent(new Event('change'));};
+for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('input-size').value);$('input-size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('input-size').dispatchEvent(new Event('change'));};
 let currentTab='quick';
 function selectToolTab(tab){currentTab=tab;document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));toolbar.dataset.tab=tab;document.querySelector('.toolbar-customize').hidden=tab!=='custom';document.querySelector('.examples').hidden=tab!=='templates';$('history').hidden=tab!=='favorites';if(tab==='templates')document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));if(tab==='favorites')document.querySelector('.tool-deck').prepend($('history'));}
 document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>selectToolTab(button.dataset.tab));selectToolTab('quick');document.querySelector('.preview-card>.section-head').append($('remember'));
@@ -361,8 +362,22 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&(toolMenus.some(menu=>menu.open)||!formatting.hidden)){formatting.hidden=true;closeToolMenus();mf.focus();}});
 window.addEventListener('resize',closeToolMenus);window.addEventListener('scroll',e=>{if(!e.target.closest?.('.tool-group'))closeToolMenus();},true);
+formatting.addEventListener('pointerdown',e=>e.preventDefault());
 $('tools').addEventListener('pointerdown',e=>{if(!customizingToolbar&&e.target.closest('[data-insert],[data-command],[data-style],summary'))e.preventDefault();});
-$('tools').addEventListener('click',e=>{
+function handleToolClick(e){
+  if(e.target.closest('.format-popup')&&inputEditors.dataset.inputMode==='source'){
+    const source=$('source');let start=source.selectionStart,end=source.selectionEnd;
+    if(start===end){start=0;end=source.value.length;}
+    readSource();
+    if(state.mode==='latex'&&end>start){
+      const button=e.target.closest('[data-style],[data-insert]');
+      const commands={'normal:up':'mathrm','normal:bold':'mathbf','double-struck:up':'mathbb','calligraphic:up':'mathcal'};
+      const command=commands[button?.dataset.style];
+      const template=command?'\\'+command+'{#@}':button?.dataset.insert;
+      if(template){source.setRangeText(template.replace('#@',source.value.slice(start,end)),start,end,'select');readSource();return;}
+    }
+    mf.select();
+  }
   if(e.target.closest('[data-insert],[data-command],[data-style]'))setInputPane('visual');
   if(customizingToolbar&&e.target.closest('#primary-tools'))return;
   const font=e.target.closest('[data-style]');
@@ -390,7 +405,9 @@ $('tools').addEventListener('click',e=>{
     else if(template.startsWith('\\int')||template.startsWith('\\sum')||template.startsWith('\\begin{pmatrix}'))template=template.replace('}#?','}#@');
   }
   mf.focus();mf.insert(template,{mode:'math',format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',silenceNotifications:false,focus:true});syncVisual(true);
-}});
+}}
+$('tools').addEventListener('click',handleToolClick);
+formatting.addEventListener('click',handleToolClick);
 
 document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>loadLatex(examples[b.dataset.example]));
 for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];$(key).addEventListener('change',()=>{settings();if(state.size<10||state.size>160||state.padding<0||state.padding>80){status('字号范围 10–160 pt，留白范围 0–80 px',true);return;}scheduleRender();});}
