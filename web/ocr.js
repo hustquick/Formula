@@ -11,6 +11,7 @@
     if(result?.error)req.reject(Object.assign(new Error(result.error),{log:result.log}));else req.resolve(result||{});
   };
   window.FormulaOCRProgress=(id,result)=>{if(pending.has(id))status.textContent=result.message;};
+  window.FormulaOCRInstallPhase=(message)=>{status.textContent=message;};
   function request(action,data={}){
     return new Promise((resolve,reject)=>{
       const id='ocr-'+Date.now()+'-'+Math.random().toString(36).slice(2);
@@ -96,7 +97,7 @@
     const enhanced=engine.value==='unimernet';
     const label=enhanced?'专业识别（UniMERNet Tiny）':'基础识别（Pix2Text）';
     syncInstallChoices();
-    if(lastStatus?.busy){status.textContent='本地识别组件正在安装或识别，请稍后刷新状态。';return;}
+    if(lastStatus?.busy){status.textContent='识别组件正在执行任务；安装阶段可在当前窗口查看。';return;}
     if(installed){
       status.textContent=`${label} 已安装 · 总占用约 ${fmt(lastStatus?.bytes||0)} · ${lastStatus?.detectorInstalled?'MFD 整页公式检测已就绪':'MFD 尚未就绪，请验证/修复识别组件'}`;
     }else if(lastStatus?.environmentExists){
