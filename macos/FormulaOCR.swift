@@ -133,7 +133,7 @@ extension AppDelegate {
             let backup=ocrRoot.appendingPathComponent("venv-backup-"+UUID().uuidString)
             try fm.moveItem(at:ocrVenv,to:backup)
             do {
-                let rebuilt=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120)
+                let rebuilt=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120,ocrInstall:true)
                 log+=rebuilt.1
                 guard rebuilt.0 == 0 && compatibleOCRPython(ocrPython.path) else {
                     throw ToolFailure(message:"无法创建兼容 Python 3.10+ 的 OCR 环境。原环境将恢复。")
@@ -146,12 +146,12 @@ extension AppDelegate {
             }
         }
         if !fm.isExecutableFile(atPath:ocrPython.path) {
-            let r=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120);log+=r.1
+            let r=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120,ocrInstall:true);log+=r.1
             if r.0 != 0 { throw ToolFailure(message:"创建公式识别独立环境失败。") }
         }
-        var r=try run(ocrPython.path,["-m","pip","install","--upgrade","pip","setuptools","wheel"],cwd:ocrRoot,timeout:300);log+=r.1
+        var r=try run(ocrPython.path,["-m","pip","install","--upgrade","pip","setuptools","wheel"],cwd:ocrRoot,timeout:300,ocrInstall:true);log+=r.1
         if r.0 != 0 { throw ToolFailure(message:"更新 OCR 安装工具失败。") }
-        r=try run(ocrPython.path,["-m","pip","install","-r",bundledOCRRequirements.path],cwd:ocrRoot,timeout:1200);log+=r.1
+        r=try run(ocrPython.path,["-m","pip","install","-r",bundledOCRRequirements.path],cwd:ocrRoot,timeout:1200,ocrInstall:true);log+=r.1
         if r.0 != 0 { throw ToolFailure(message:"安装 Pix2Text/MFD 基础组件失败，请检查网络后重试。") }
         guard fm.fileExists(atPath:bundledOCRRunner.path) else { throw ToolFailure(message:"Formula 安装包缺少公式识别启动脚本。") }
     }
@@ -172,25 +172,25 @@ extension AppDelegate {
 
             if engine == "unimernet" {
                 reportOCRPhase("正在安装 UniMERNet 依赖，可能需要较长时间…")
-                var r=try run(ocrPython.path,["-m","pip","install","unimernet==0.2.3","huggingface_hub>=0.23,<1"],cwd:ocrRoot,timeout:1800);log+=r.1
+                var r=try run(ocrPython.path,["-m","pip","install","unimernet==0.2.3","huggingface_hub>=0.23,<1"],cwd:ocrRoot,timeout:1800,ocrInstall:true);log+=r.1
                 if r.0 != 0 { throw ToolFailure(message:"安装 UniMERNet 依赖失败。UniMERNet 需要 Python 3.10+。") }
             }
 
             reportOCRPhase("正在初始化公式区域检测模型…")
-            var r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup-detector","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200);log+=r.1
+            var r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup-detector","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200,ocrInstall:true);log+=r.1
             if r.0 != 0 || !r.1.contains("FORMULA_MFD_READY=1") { throw ocrFailure("数学公式区域检测（MFD）模型初始化失败。",r.1) }
             try "ready".write(to:ocrMFDReady,atomically:true,encoding:.utf8)
 
             // 标准识别是所有 OCR 能力的基础。即使用户直接安装增强识别，也必须先完成 Pix2Text MFR 初始化。
             reportOCRPhase("正在初始化基础公式识别模型…")
-            r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","pix2text","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200);log+=r.1
+            r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","pix2text","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200,ocrInstall:true);log+=r.1
             if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=pix2text") { throw ocrFailure("标准识别（Pix2Text）模型初始化失败。",r.1) }
             try "ready".write(to:ocrPixReady,atomically:true,encoding:.utf8)
             try? "ready".write(to:ocrLegacyReady,atomically:true,encoding:.utf8)
 
             if engine == "unimernet" {
                 reportOCRPhase("正在下载并初始化 UniMERNet Tiny 模型…")
-                r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","unimernet","--root",ocrRoot.path],cwd:ocrRoot,timeout:2400);log+=r.1
+                r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","unimernet","--root",ocrRoot.path],cwd:ocrRoot,timeout:2400,ocrInstall:true);log+=r.1
                 if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=unimernet") { throw ocrFailure("增强识别（UniMERNet Tiny）已安装，但模型初始化失败。",r.1) }
                 try "ready".write(to:ocrUniReady,atomically:true,encoding:.utf8)
                 return ["installed":true,"engine":engine,"message":"增强识别已安装：标准识别（MFD + Pix2Text）与 UniMERNet Tiny 均已就绪，可离线使用。","log":String(log.suffix(20000))]
