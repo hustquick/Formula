@@ -26,7 +26,7 @@
     return String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
   }
   function usable(entry){return entry&&entry.tag!=='divider'&&normalizedLatex(entry);}
-  function label(entry){if(entry?.englishOperator){const command=normalizedLatex(entry).match(/\\([A-Za-z]+)/);return command?command[1]:({'+':'plus','-':'minus','=':'equals','<':'less than','>':'greater than'}[normalizedLatex(entry)]||entry.en||entry.tag);}
+  function label(entry){if(entry?.englishOperator){const command=normalizedLatex(entry).match(/\\([A-Za-z]+)/);return command?command[1]:({'+':'plus','-':'minus','=':'equals','<':'less than','>':'greater than'}[normalizedLatex(entry)]||(entry.en&&entry.en!=='-'?entry.en:entry.tag));}
     const meaningful=value=>value&&value.trim()!=='-'&&value.trim()!=='—';return String([entry?.zh,entry?.en,entry?.tag].find(meaningful)||'公式');}
   function extract(parsed,name){
     const groups=Array.isArray(parsed?.shortcut)?parsed.shortcut:[];
