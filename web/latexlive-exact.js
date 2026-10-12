@@ -106,7 +106,7 @@
     const browser=q('.ll-template-browser');if(!browser)return;browser.replaceChildren();
     const nav=document.createElement('div');nav.className='ll-template-nav';nav.setAttribute('role','toolbar');nav.setAttribute('aria-label','公式模板分类');
     const panel=document.createElement('div');panel.className='ll-template-panel';panel.hidden=true;panel.setAttribute('role','menu');browser.append(nav,panel);let active='';
-    const covers={algebra:String.raw`y=ax+b`,inequality:String.raw`\lvert a+b\rvert\leqslant\lvert a\rvert+\lvert b\rvert`,calculous:String.raw`\int_{a}^{b} f(x)\,dx`,array:String.raw`\begin{pmatrix}a & b \\ c & d\end{pmatrix}`,physics:String.raw`E=mc^2`,chemistry:String.raw`\mathrm{2H_2+O_2=2H_2O}`};
+    const covers={algebra:String.raw`y=ax+b`,inequality:String.raw`\lvert a+b\rvert\leqslant\lvert a\rvert+\lvert b\rvert`,calculous:String.raw`\int_{a}^{b} f(x)\,\mathrm{d}x`,array:String.raw`\begin{pmatrix}a & b \\ c & d\end{pmatrix}`,physics:String.raw`E=mc^2`,chemistry:String.raw`\mathrm{2H_2+O_2=2H_2O}`};
     for(const category of template.layer1.cont||[]){
       const categoryName=category.tag==='calculous'?'微积分':category.descript||category.tag;
       const entries=(template.layer2.cont?.[category.tag]?.cont||[]).filter(usable);const b=document.createElement('button');b.type='button';b.className='ll-template-category';b.dataset.templateTag=category.tag;b.setAttribute('aria-haspopup','menu');b.setAttribute('aria-expanded','false');if(category.tag==='physics')b.dataset.example='heat';
