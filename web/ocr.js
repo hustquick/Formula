@@ -43,10 +43,10 @@
       <div class="ocr-field"><label>识别能力</label><select data-engine><option value="pix2text">基础识别（Pix2Text）</option><option value="unimernet">专业识别（UniMERNet Tiny）</option></select></div>
       <div class="ocr-field"><label>图片类型</label><div class="ocr-mode"><button data-mode="single" class="active">单个公式</button><button data-mode="page">整页提取公式</button></div></div>
     </div>
-    <div class="ocr-install-choices" role="group" aria-label="安装识别组件"><label><input type="checkbox" data-basic-install>基础版（Pix2Text）</label><label><input type="checkbox" data-pro-install>专业版（UniMERNet Tiny）</label></div>
+    <div class="ocr-install-choices" role="radiogroup" aria-label="选择安装版本"><label><input type="radio" name="ocr-install-tier" value="pix2text" data-basic-install>基础版（Pix2Text）</label><label><input type="radio" name="ocr-install-tier" value="unimernet" data-pro-install>专业版（UniMERNet Tiny）</label></div>
     <p class="ocr-status" data-status>正在检查本地识别模型…</p>
     <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装基础版</button><button data-refresh>刷新状态</button></div>
-    <p class="ocr-note" data-note>勾选专业版时自动勾选并锁定基础版；安装完成的组件不会重复下载。</p>
+    <p class="ocr-note" data-note>选择专业版将自动包含基础版；无需分别安装。</p>
     <div class="ocr-results" data-results hidden></div>
     <details><summary>安装/识别日志</summary><pre class="ocr-log" data-log>尚无日志</pre></details>
   </div>`;
@@ -61,8 +61,6 @@
   const basicChoice=dialog.querySelector('[data-basic-install]');
   const proChoice=dialog.querySelector('[data-pro-install]');
   function syncInstallChoices(){
-    if(proChoice.checked)basicChoice.checked=true;
-    basicChoice.disabled=proChoice.checked;
     const basicInstalled=!!lastStatus?.engines?.pix2text?.installed;
     const proInstalled=!!lastStatus?.engines?.unimernet?.installed;
     const requested=proChoice.checked?'unimernet':'pix2text';
@@ -70,7 +68,7 @@
     install.textContent=installed?'已安装 · 验证/修复':requested==='unimernet'?(basicInstalled?'升级至专业版':'安装专业版（含基础版）'):'安装基础版';
     install.dataset.installEngine=requested;
   }
-  basicChoice.addEventListener('change',()=>{if(!basicChoice.checked)proChoice.checked=false;syncInstallChoices();});
+  basicChoice.addEventListener('change',syncInstallChoices);
   proChoice.addEventListener('change',syncInstallChoices);
   basicChoice.checked=true;
   let mode='single';
