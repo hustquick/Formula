@@ -82,7 +82,9 @@ extension AppDelegate {
         let id=data["id"] as? String ?? ""
         let engine=validOCREngine(data["engine"])
         let page=(data["mode"] as? String) == "page"
-        guard !ocrBusy else { reply(id,["error":"识别组件正在安装或识别，请稍后重试。"]);return }
+        guard !ocrBusy else { reply(id,["error":"已有识别任务正在运行。"]);return }
+        // A previously installed Basic engine remains usable while Pro downloads.
+        guard !(ocrInstallBusy && engine != "pix2text") else { reply(id,["error":"专业版安装期间暂不能使用专业识别。"]);return }
         guard ocrInstalled(engine) else {
             reply(id,["error":"所选识别模型尚未安装。请先安装 \(engine == "unimernet" ? "增强识别（UniMERNet Tiny）" : "标准识别（Pix2Text）")。"]);return
         }
