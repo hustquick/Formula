@@ -21,6 +21,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     let ocrWorker = DispatchQueue(label: "Formula.ocr")
     var ocrBusy = false
     var ocrInstallBusy = false
+    var ocrInstallingEngine = ""
+    var ocrBasicInstalling = false
     var ocrInstallCancelled = false
     var ocrInstallProcess: Process?
 
@@ -138,6 +140,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let process=Process();process.executableURL=URL(fileURLWithPath:executable);process.arguments=arguments;process.currentDirectoryURL=cwd
         var env=ProcessInfo.processInfo.environment
         env["PATH"]=[URL(fileURLWithPath:executable).deletingLastPathComponent().path,"/Library/TeX/texbin","/opt/homebrew/bin","/usr/local/bin","/usr/bin","/bin",env["PATH"] ?? ""].joined(separator:":")
+        env["PYTHONUNBUFFERED"]="1";env["HF_HUB_DISABLE_XET"]="1";env["NO_ALBUMENTATIONS_UPDATE"]="1"
         process.environment=env;process.standardOutput=handle;process.standardError=handle
         if ocrInstall {
             let cancelled=DispatchQueue.main.sync { self.ocrInstallCancelled }
@@ -149,34 +152,51 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let end=Date().addingTimeInterval(timeout)
         var lastProgress=Date.distantPast
         while process.isRunning && Date()<end {
-            // Poll cancellation while the installer is running, rather than waiting for a potentially hours-long download to finish.
-            if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) {
-                if process.isRunning {
-                    process.terminate()
-                    Thread.sleep(forTimeInterval:0.2)
-                    if process.isRunning { kill(process.processIdentifier,SIGKILL) }
-                }
-                process.waitUntilExit()
-                throw ToolFailure(message:"用户已取消 OCR 安装。")
-            }
+            if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) { break }
             if ocrInstall && Date().timeIntervalSince(lastProgress)>1 {
                 lastProgress=Date()
-                if let output=try? String(contentsOf:log,encoding:.utf8),let line=output.components(separatedBy:.newlines).last(where:{$0.contains("%") || $0.contains("Downloading") || $0.contains("Installing")}) {
-                    let snippet=String(line.suffix(180))
-                    DispatchQueue.main.async { self.js("window.FormulaOCRInstallPhase?.(\(self.json(snippet)));") }
+                if let output=try? String(contentsOf:log,encoding:.utf8) {
+                    let tail=String(output.suffix(20000))
+                    DispatchQueue.main.async { self.js("window.FormulaOCRInstallLog?.(\(self.json(tail)));") }
                 }
             }
             Thread.sleep(forTimeInterval:0.1)
         }
         if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) {
-            if process.isRunning {process.terminate();Thread.sleep(forTimeInterval:0.2);if process.isRunning {kill(process.processIdentifier,SIGKILL)}}
+            stopProcessTree(process)
             process.waitUntilExit()
-            throw ToolFailure(message:"用户已取消 OCR 安装。")
+            let detail=(try? String(contentsOf:log,encoding:.utf8)) ?? ""
+            throw ToolFailure(message:"用户已取消 OCR 安装。\n"+String(detail.suffix(12000)))
         }
-        if process.isRunning {process.terminate();Thread.sleep(forTimeInterval:0.2);if process.isRunning{kill(process.processIdentifier,SIGKILL)};process.waitUntilExit();let detail=(try? String(contentsOf:log,encoding:.utf8)) ?? "";throw ToolFailure(message:"工具执行超时（\(Int(timeout)) 秒）\n"+String(detail.suffix(12000)))}
+        if process.isRunning {stopProcessTree(process);process.waitUntilExit();let detail=(try? String(contentsOf:log,encoding:.utf8)) ?? "";throw ToolFailure(message:"工具执行超时（\(Int(timeout)) 秒）\n"+String(detail.suffix(12000)))}
         process.waitUntilExit();let text=(try? String(contentsOf:log,encoding:.utf8)) ?? ""
         if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) { throw ToolFailure(message:"用户已取消 OCR 安装。") }
         return (process.terminationStatus,String(text.suffix(20000)))
+    }
+    // pip build helpers and page-detector subprocesses must end with their parent.
+    func stopProcessTree(_ process:Process) {
+        guard process.isRunning else { return }
+        let scan=Process();scan.executableURL=URL(fileURLWithPath:"/bin/ps")
+        scan.arguments=["-axo","pid=,ppid="]
+        let pipe=Pipe();scan.standardOutput=pipe
+        var descendants:[Int32]=[]
+        if (try? scan.run()) != nil {
+            let bytes=pipe.fileHandleForReading.readDataToEndOfFile();scan.waitUntilExit()
+            let pairs=(String(data:bytes,encoding:.utf8) ?? "").split(separator:"\n").compactMap { line -> (Int32,Int32)? in
+                let fields=line.split(whereSeparator:{$0.isWhitespace})
+                guard fields.count==2,let pid=Int32(fields[0]),let parent=Int32(fields[1]) else { return nil }
+                return (pid,parent)
+            }
+            var parents=[process.processIdentifier]
+            while !parents.isEmpty {
+                let next=pairs.filter { parents.contains($0.1) }.map {$0.0}
+                descendants+=next;parents=next
+            }
+        }
+        for pid in descendants.reversed() { kill(pid,SIGTERM) }
+        process.terminate();Thread.sleep(forTimeInterval:0.2)
+        for pid in descendants.reversed() { kill(pid,SIGKILL) }
+        if process.isRunning { kill(process.processIdentifier,SIGKILL) }
     }
     func discover(_ key:String,_ current:String?,cwd:URL) -> [String:String] {
         let names=key=="latex" ? ["xelatex","pdflatex","lualatex"] : [key]

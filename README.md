@@ -6,9 +6,15 @@ Formula 是面向论文、教材和科研写作的 macOS 公式编辑器。v1.1.
 
 [下载最新 Formula Mac 安装包](https://github.com/hustquick/Formula/releases/latest) · [所有版本](https://github.com/hustquick/Formula/releases)
 
-优先下载 Release 中的 `Formula-1.2.1.dmg`。打开磁盘映像，将 `Formula.app` 拖入 Applications 即可。DMG 内是预编译通用应用，同时支持 Apple Silicon 与 Intel，最终用户无需安装 Node.js、npm 或编译工具。
+优先下载 Release 中的 `Formula-1.3.0.dmg`。打开磁盘映像，将 `Formula.app` 拖入 Applications 即可。DMG 内是预编译通用应用，同时支持 Apple Silicon 与 Intel，最终用户无需安装 Node.js、npm 或编译工具。
 
 > 当前发布采用临时签名，尚未 Apple 开发者公证。首次启动如被 Gatekeeper 阻止，可在“系统设置 → 隐私与安全性”中选择“仍要打开”。
+
+## v1.3.0 本地分级识别与整页公式提取
+
+macOS 支持基础识别（Pix2Text + MFD）和专业识别（UniMERNet Tiny）。专业版先确保基础版就绪，再在独立环境中安装；专业版下载期间可继续使用基础识别。整页图片只提取公式区域，结果以公式预览和复选框展示，勾选或取消立即同步到编辑器。
+
+安装选择兼容的 Python 3.10–3.12（优先 3.11），通过真实模型初始化后才标记就绪。修复在新环境中完成，失败或取消保留原环境；界面显示阶段、当前下载步骤进度和实时日志。此版本不包含 PDF/Word 文档识别或 Windows 本地 OCR。
 
 ## v1.2.1 本地图片识别修复
 

@@ -15,7 +15,7 @@ Formula 不把 Pix2Text 与 UniMERNet 作为两个彼此独立的下载项，而
 
 如果用户直接选择“增强识别”，Formula 会自动先安装并初始化标准识别所需的 Pix2Text 与 MFD，再安装 UniMERNet Tiny，不允许出现“只有 UniMERNet、没有 MFD”的不完整状态。
 
-UniMERNet Tiny 模型权重约 441 MB，只有用户主动选择增强识别时才下载。所有识别器共享同一个 Formula OCR Python 虚拟环境，但分别维护就绪标记。
+UniMERNet Tiny 模型权重约 441 MB，只有用户主动选择增强识别时才下载。基础版与专业版分别使用独立虚拟环境和就绪标记。专业版依赖固定 `transformers==4.42.4`、`torch==2.2.2` 等已验证版本，不能在 Pix2Text 环境中安装。专业版整页模式通过基础版 Python 子进程执行 MFD，然后在专业版进程识别裁剪区域。
 
 ### 两种图片模式
 
@@ -60,13 +60,17 @@ Pix2Text 或 UniMERNet Tiny
 2. 选择“标准识别（Pix2Text）”或“增强识别（UniMERNet Tiny）”。
 3. Formula 检查本地 OCR 环境、MFD 与对应识别能力的就绪状态。
 4. 未安装时，用户点击安装当前识别能力。
-5. Formula 创建或复用独立 Python venv。
-6. 无论选择标准还是增强识别，都先安装 Pix2Text 基础依赖并初始化 MFD 1.5。
+5. Formula 优先选择 Python 3.11，支持 3.10–3.12；拒绝不兼容解释器并在独立目录创建新的 venv。
+6. 基础版未就绪时，先安装 Pix2Text 基础依赖并初始化 MFD 1.5；升级专业版复用已验证基础版，不修改其环境。
 7. 初始化 Pix2Text 公式识别并写入标准识别就绪标记。
 8. 如果选择增强识别，再安装 `unimernet==0.2.3`，下载 `wanderkid/unimernet_tiny` 权重并初始化 UniMERNet Tiny。
 9. 只有各层对应模型真实完成初始化后才写入 ready 文件。
 
-所有 OCR 环境与模型文件均位于用户 Application Support 下，不计入 Formula.app/DMG 体积。
+OCR 环境与 UniMERNet 模型位于用户 Application Support 的 `MathForge/OCR` 下；Pix2Text 使用其默认 `~/.pix2text` 模型缓存。两者都不计入 Formula.app/DMG 体积。界面的空间统计计算 OCR 目录中的文件，不重复计算环境软链接，也不包含外部 Pix2Text 缓存。
+
+安装先在固定绝对路径的 `environment-UUID` 目录中完成，成功后将 `venv` 或 `venv-unimernet` 软链接切换到已验证环境；不会移动 venv，因此 pip 等入口的绝对 shebang 保持有效。切换异常会恢复原环境和原就绪标记。取消立即终止当前进程及子进程，移除未启用的新环境和本应用 `models` 目录下的 `.incomplete` 文件，保留已完成的权重以及 Pix2Text 外部可续传缓存。
+
+安装界面分别显示识别状态和安装阶段，按当前步骤的输出显示百分比或不确定进度，持续保留最近的日志。专业版安装中每三秒刷新基础版就绪状态，基础版完成后无需等待专业版下载即可识别。
 
 ## 实现边界
 
@@ -93,7 +97,7 @@ venv 存在不代表任一模型已经安装完成。Formula 分别维护：
 - UniMERNet 增强识别就绪状态；
 - MFD 公式区域检测就绪状态。
 
-增强识别安装成功必须同时意味着标准识别与 MFD 已经就绪。未通过模型初始化的环境不能开始识别。安装和识别使用单独队列并拒绝重复请求；Python 错误和超时保留日志并自动展开日志区域。
+增强识别安装成功必须同时意味着标准识别与 MFD 已经就绪。未通过模型初始化的环境不能开始识别。安装和识别使用单独队列并拒绝重复请求；Python 错误和超时保留日志并自动展开日志区域。整页 JSON 结果通过临时文件传递，避免大结果被进程日志长度限制截断；处理后删除临时图片与结果文件。
 
 已复现 RapidOCR 3.10.0 移除 `resolve_model_key` 导致 CnSTD 1.2.8 导入失败；Pix2Text 基础安装继续固定 `cnstd==1.2.8`、`cnocr==2.3.3`、`rapidocr==3.9.2` 兼容组合。
 

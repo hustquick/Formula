@@ -2,9 +2,10 @@ import Cocoa
 import WebKit
 
 extension AppDelegate {
-    private var ocrRoot: URL { support.appendingPathComponent("OCR", isDirectory: true) }
+    private var ocrRoot: URL { support.appendingPathComponent("OCR", isDirectory: true).standardizedFileURL.resolvingSymlinksInPath() }
     private var ocrVenv: URL { ocrRoot.appendingPathComponent("venv", isDirectory: true) }
-    private var ocrLegacyReady: URL { ocrRoot.appendingPathComponent("ready-v1.txt") }
+    private var ocrUniVenv: URL { ocrRoot.appendingPathComponent("venv-unimernet", isDirectory: true) }
+    private var ocrUniPython: URL { ocrUniVenv.appendingPathComponent("bin/python3") }
     private var ocrPixReady: URL { ocrRoot.appendingPathComponent("ready-pix2text-v2.txt") }
     private var ocrUniReady: URL { ocrRoot.appendingPathComponent("ready-unimernet-v2.txt") }
     private var ocrMFDReady: URL { ocrRoot.appendingPathComponent("ready-mfd-v2.txt") }
@@ -29,8 +30,8 @@ extension AppDelegate {
     private func ocrReadyURL(_ engine:String) -> URL { engine == "unimernet" ? ocrUniReady : ocrPixReady }
     private func ocrInstalled(_ engine:String) -> Bool {
         let fm=FileManager.default
-        if engine == "pix2text" && fm.fileExists(atPath:ocrLegacyReady.path) { return fm.isExecutableFile(atPath:ocrPython.path) }
-        return fm.isExecutableFile(atPath:ocrPython.path) && fm.fileExists(atPath:ocrReadyURL(engine).path)
+        let python=engine == "unimernet" ? ocrUniPython : ocrPython
+        return fm.isExecutableFile(atPath:python.path) && compatibleOCRPython(python.path) && fm.fileExists(atPath:ocrReadyURL(engine).path)
     }
 
     func handleOCRStatus(_ data:[String:Any]) {
@@ -45,6 +46,7 @@ extension AppDelegate {
             "installed":ocrInstalled("pix2text"),
             "busy":ocrBusy || ocrInstallBusy,
             "installing":ocrInstallBusy,
+            "installingEngine":ocrBasicInstalling ? "pix2text" : ocrInstallingEngine,
             "environmentExists":fm.isExecutableFile(atPath:ocrPython.path),
             "pythonAvailable":python != nil,
             "pythonPath":python ?? "",
@@ -63,10 +65,12 @@ extension AppDelegate {
         let engine=validOCREngine(data["engine"])
         guard !ocrBusy && !ocrInstallBusy else { reply(id,["error":"已有 OCR 任务正在运行。"]);return }
         ocrInstallBusy=true
+        ocrInstallingEngine=engine
+        ocrBasicInstalling=engine == "pix2text" || !ocrInstalled("pix2text") || !FileManager.default.fileExists(atPath:ocrMFDReady.path)
         ocrInstallCancelled=false
         DispatchQueue.global(qos:.utility).async {
             let result=self.installOCR(engine)
-            DispatchQueue.main.async { self.ocrInstallBusy=false;self.ocrInstallProcess=nil;self.reply(id,result) }
+            DispatchQueue.main.async { self.ocrInstallBusy=false;self.ocrInstallingEngine="";self.ocrBasicInstalling=false;self.ocrInstallProcess=nil;self.reply(id,result) }
         }
     }
 
@@ -84,7 +88,7 @@ extension AppDelegate {
         let page=(data["mode"] as? String) == "page"
         guard !ocrBusy else { reply(id,["error":"已有识别任务正在运行。"]);return }
         // A previously installed Basic engine remains usable while Pro downloads.
-        guard !(ocrInstallBusy && engine != "pix2text") else { reply(id,["error":"专业版安装期间暂不能使用专业识别。"]);return }
+        guard !(ocrInstallBusy && (engine != "pix2text" || ocrBasicInstalling)) else { reply(id,["error":"专业版安装期间暂不能使用专业识别。"]);return }
         guard ocrInstalled(engine) else {
             reply(id,["error":"所选识别模型尚未安装。请先安装 \(engine == "unimernet" ? "增强识别（UniMERNet Tiny）" : "标准识别（Pix2Text）")。"]);return
         }
@@ -108,7 +112,7 @@ extension AppDelegate {
 
     private func discoverPython3() -> String? {
         let fm=FileManager.default
-        let candidates=["/opt/homebrew/bin/python3","/usr/local/bin/python3","/usr/bin/python3",NSHomeDirectory()+"/.local/bin/python3"]
+        let candidates=["/opt/homebrew/bin/python3.11","/usr/local/bin/python3.11","/opt/homebrew/bin/python3.10","/usr/local/bin/python3.10","/opt/homebrew/bin/python3.12","/usr/local/bin/python3.12","/opt/homebrew/bin/python3","/usr/local/bin/python3","/usr/bin/python3",NSHomeDirectory()+"/.local/bin/python3"]
         for path in candidates where fm.isExecutableFile(atPath:path) {
             if compatibleOCRPython(path) { return path }
         }
@@ -122,49 +126,50 @@ extension AppDelegate {
 
     // Never select an interpreter solely because its executable exists.
     private func compatibleOCRPython(_ path:String) -> Bool {
-        guard let result=try? run(path,["-c","import sys; print(int(sys.version_info >= (3, 10)))"],cwd:FileManager.default.temporaryDirectory,timeout:8) else { return false }
+        guard let result=try? run(path,["-c","import sys; print(int((3, 10) <= sys.version_info[:2] <= (3, 12)))"],cwd:FileManager.default.temporaryDirectory,timeout:8) else { return false }
         return result.0 == 0 && result.1.trimmingCharacters(in:.whitespacesAndNewlines) == "1"
     }
 
-    private func ensureBaseOCR(_ log: inout String) throws {
+    // Build replacements separately: active environments are never modified by pip.
+    private func prepareOCREnvironment(_ stage:URL,requirements:URL,log:inout String) throws -> URL {
+        guard let python=discoverPython3() else { throw ToolFailure(message:"未找到兼容的 Python。请安装 Python 3.10–3.12（建议 3.11）；较新版本尚不受当前模型依赖支持。") }
+        try FileManager.default.createDirectory(at:ocrRoot,withIntermediateDirectories:true)
+        var r=try run(python,["-m","venv",stage.path],cwd:ocrRoot,timeout:120,ocrInstall:true);log+=r.1
+        let target=stage.appendingPathComponent("bin/python3")
+        guard r.0 == 0 && compatibleOCRPython(target.path) else { throw ToolFailure(message:"创建 OCR 虚拟环境失败。") }
+        r=try run(target.path,["-m","pip","install","--upgrade","pip","setuptools","wheel"],cwd:ocrRoot,timeout:300,ocrInstall:true);log+=r.1
+        guard r.0 == 0 else { throw ToolFailure(message:"更新 OCR 安装工具失败。") }
+        r=try run(target.path,["-m","pip","install","--progress-bar","on","-r",requirements.path],cwd:ocrRoot,timeout:1800,ocrInstall:true);log+=r.1
+        guard r.0 == 0 else { throw ToolFailure(message:"安装 OCR 依赖失败，请查看日志。") }
+        r=try run(target.path,["-m","pip","check"],cwd:ocrRoot,timeout:60,ocrInstall:true);log+=r.1
+        guard r.0 == 0 else { throw ToolFailure(message:"OCR 依赖检查失败。") }
+        return target
+    }
+
+    private func activateOCREnvironment(_ stage:URL,_ target:URL,markers:[URL]) throws {
+        if DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) { throw ToolFailure(message:"用户已取消 OCR 安装。") }
         let fm=FileManager.default
-        guard let systemPython=discoverPython3() else { throw ToolFailure(message:"未找到 Python 3。请先安装 Python 3（建议 Python 3.10+），再安装本地公式识别模型。") }
-        try fm.createDirectory(at:ocrRoot,withIntermediateDirectories:true)
-        if fm.isExecutableFile(atPath:ocrPython.path) && !compatibleOCRPython(ocrPython.path) {
-            // Preserve downloaded models outside the virtual environment.
-            let backup=ocrRoot.appendingPathComponent("venv-backup-"+UUID().uuidString)
-            try fm.moveItem(at:ocrVenv,to:backup)
-            do {
-                let rebuilt=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120,ocrInstall:true)
-                log+=rebuilt.1
-                guard rebuilt.0 == 0 && compatibleOCRPython(ocrPython.path) else {
-                    throw ToolFailure(message:"无法创建兼容 Python 3.10+ 的 OCR 环境。原环境将恢复。")
-                }
+        let backup=ocrRoot.appendingPathComponent("backup-"+UUID().uuidString)
+        let existed=fm.fileExists(atPath:target.path) || (try? fm.destinationOfSymbolicLink(atPath:target.path)) != nil
+        let oldEnvironment=target.resolvingSymlinksInPath()
+        let oldMarkers=markers.map { try? Data(contentsOf:$0) }
+        if existed { try fm.moveItem(at:target,to:backup) }
+        do {
+            // Keep the venv at its original path so pip entry-point shebangs stay valid.
+            try fm.createSymbolicLink(at:target,withDestinationURL:stage)
+            for marker in markers { try "ready".write(to:marker,atomically:true,encoding:.utf8) }
+            if existed {
                 try? fm.removeItem(at:backup)
-            } catch {
-                try? fm.removeItem(at:ocrVenv)
-                try? fm.moveItem(at:backup,to:ocrVenv)
-                throw error
+                if oldEnvironment.path != target.path && oldEnvironment.deletingLastPathComponent().path == ocrRoot.path && oldEnvironment.lastPathComponent.hasPrefix("environment-") { try? fm.removeItem(at:oldEnvironment) }
             }
-        }
-        if !fm.isExecutableFile(atPath:ocrPython.path) {
-            // Remove an incomplete venv, but never touch cached model files.
-            if fm.fileExists(atPath:ocrVenv.path) { try fm.removeItem(at:ocrVenv) }
-            do {
-                let r=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120,ocrInstall:true);log+=r.1
-                guard r.0 == 0 && compatibleOCRPython(ocrPython.path) else {
-                    throw ToolFailure(message:"创建兼容的 OCR Python 环境失败。")
-                }
-            } catch {
-                try? fm.removeItem(at:ocrVenv)
-                throw error
+        } catch {
+            try? fm.removeItem(at:target)
+            if existed { try? fm.moveItem(at:backup,to:target) }
+            for (marker,old) in zip(markers,oldMarkers) {
+                if let bytes=old { try? bytes.write(to:marker,options:.atomic) } else { try? fm.removeItem(at:marker) }
             }
+            throw error
         }
-        var r=try run(ocrPython.path,["-m","pip","install","--upgrade","pip","setuptools","wheel"],cwd:ocrRoot,timeout:300,ocrInstall:true);log+=r.1
-        if r.0 != 0 { throw ToolFailure(message:"更新 OCR 安装工具失败。") }
-        r=try run(ocrPython.path,["-m","pip","install","-r",bundledOCRRequirements.path],cwd:ocrRoot,timeout:1200,ocrInstall:true);log+=r.1
-        if r.0 != 0 { throw ToolFailure(message:"安装 Pix2Text/MFD 基础组件失败，请检查网络后重试。") }
-        guard fm.fileExists(atPath:bundledOCRRunner.path) else { throw ToolFailure(message:"Formula 安装包缺少公式识别启动脚本。") }
     }
 
     private func reportOCRPhase(_ message:String) {
@@ -175,49 +180,46 @@ extension AppDelegate {
 
     private func installOCR(_ engine:String) -> [String:Any] {
         var log=""
-        do {
-            let fm=FileManager.default
-            // Clean up only transient OCR image files; never delete cached models.
-            defer {
-                if self.ocrInstallCancelled {
-                    let fm=FileManager.default
-                    if let files=try? fm.contentsOfDirectory(at:self.ocrRoot,includingPropertiesForKeys:nil) {
-                        for file in files where file.lastPathComponent.hasPrefix("image-") && file.pathExtension == "png" { try? fm.removeItem(at:file) }
-                    }
+        let fm=FileManager.default
+        let stage=ocrRoot.appendingPathComponent("environment-"+UUID().uuidString)
+        var baseCommitted=false
+        defer {
+            if !baseCommitted { try? fm.removeItem(at:stage) }
+            if DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) {
+                let models=ocrRoot.appendingPathComponent("models")
+                if let files=fm.enumerator(at:models,includingPropertiesForKeys:nil) {
+                    for case let file as URL in files where file.pathExtension == "incomplete" { try? fm.removeItem(at:file) }
                 }
             }
-            // Keep installed-engine readiness markers when an update fails.
-            reportOCRPhase("检查 Python 环境及基础依赖…")
-            try ensureBaseOCR(&log)
-
-            if engine == "unimernet" {
-                reportOCRPhase("正在安装 UniMERNet 依赖，可能需要较长时间…")
-                var r=try run(ocrPython.path,["-m","pip","install","unimernet==0.2.3","huggingface_hub>=0.23,<1"],cwd:ocrRoot,timeout:1800,ocrInstall:true);log+=r.1
-                if r.0 != 0 { throw ToolFailure(message:"安装 UniMERNet 依赖失败，请查看安装日志中的具体原因（版本、网络或依赖冲突）。") }
+        }
+        do {
+            // A Pro upgrade reuses a verified baseline without touching its packages.
+            if engine == "pix2text" || !ocrInstalled("pix2text") || !fm.fileExists(atPath:ocrMFDReady.path) {
+                reportOCRPhase("正在准备基础识别独立环境…")
+                let python=try prepareOCREnvironment(stage,requirements:bundledOCRRequirements,log:&log)
+                reportOCRPhase("正在下载并验证 Pix2Text 与 MFD 模型…")
+                let r=try run(python.path,[bundledOCRRunner.path,"--warmup-detector","--warmup","--engine","pix2text","--root",ocrRoot.path],cwd:ocrRoot,timeout:2400,ocrInstall:true);log+=r.1
+                guard r.0 == 0 && r.1.contains("FORMULA_MFD_READY=1") && r.1.contains("FORMULA_OCR_READY=pix2text") else { throw ocrFailure("基础识别模型初始化失败。",r.1) }
+                try activateOCREnvironment(stage,ocrVenv,markers:[ocrPixReady,ocrMFDReady])
+                baseCommitted=true
+                DispatchQueue.main.sync { self.ocrBasicInstalling=false }
+                reportOCRPhase("基础识别已就绪，可立即使用；继续准备专业识别…")
             }
-
-            reportOCRPhase("正在初始化公式区域检测模型…")
-            var r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup-detector","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200,ocrInstall:true);log+=r.1
-            if r.0 != 0 || !r.1.contains("FORMULA_MFD_READY=1") { throw ocrFailure("数学公式区域检测（MFD）模型初始化失败。",r.1) }
-            try "ready".write(to:ocrMFDReady,atomically:true,encoding:.utf8)
-
-            // 标准识别是所有 OCR 能力的基础。即使用户直接安装增强识别，也必须先完成 Pix2Text MFR 初始化。
-            reportOCRPhase("正在初始化基础公式识别模型…")
-            r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","pix2text","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200,ocrInstall:true);log+=r.1
-            if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=pix2text") { throw ocrFailure("标准识别（Pix2Text）模型初始化失败。",r.1) }
-            try "ready".write(to:ocrPixReady,atomically:true,encoding:.utf8)
-            try? "ready".write(to:ocrLegacyReady,atomically:true,encoding:.utf8)
-
             if engine == "unimernet" {
-                reportOCRPhase("正在下载并初始化 UniMERNet Tiny 模型…")
-                r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","unimernet","--root",ocrRoot.path],cwd:ocrRoot,timeout:2400,ocrInstall:true);log+=r.1
-                if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=unimernet") { throw ocrFailure("增强识别（UniMERNet Tiny）已安装，但模型初始化失败。",r.1) }
-                try "ready".write(to:ocrUniReady,atomically:true,encoding:.utf8)
-                return ["installed":true,"engine":engine,"message":"增强识别已安装：标准识别（MFD + Pix2Text）与 UniMERNet Tiny 均已就绪，可离线使用。","log":String(log.suffix(20000))]
+                let proStage=ocrRoot.appendingPathComponent("environment-"+UUID().uuidString)
+                var proCommitted=false
+                defer { if !proCommitted { try? fm.removeItem(at:proStage) } }
+                let requirements=Bundle.main.resourceURL!.appendingPathComponent("unimernet-requirements.txt")
+                reportOCRPhase("正在准备 UniMERNet 独立环境，基础识别可继续使用…")
+                let python=try prepareOCREnvironment(proStage,requirements:requirements,log:&log)
+                reportOCRPhase("正在下载并验证 UniMERNet Tiny 模型…")
+                let r=try run(python.path,[bundledOCRRunner.path,"--warmup","--engine","unimernet","--root",ocrRoot.path],cwd:ocrRoot,timeout:2400,ocrInstall:true);log+=r.1
+                guard r.0 == 0 && r.1.contains("FORMULA_OCR_READY=unimernet") else { throw ocrFailure("专业识别模型初始化失败。",r.1) }
+                try activateOCREnvironment(proStage,ocrUniVenv,markers:[ocrUniReady])
+                proCommitted=true
             }
-
-            return ["installed":true,"engine":engine,"message":"标准识别已安装：MFD 公式区域检测与 Pix2Text 均已就绪，可离线使用。","log":String(log.suffix(20000))]
-        } catch let e as ToolFailure { return ["error":e.message,"log":String((log+"\n"+e.message).suffix(20000))] }
+            return ["installed":true,"engine":engine,"message":engine == "unimernet" ? "增强识别已安装：标准识别与 UniMERNet Tiny 均已就绪。" : "基础识别已安装：Pix2Text 与 MFD 均已就绪。","log":String(log.suffix(20000))]
+        } catch let e as ToolFailure { return ["error":e.message,"cancelled":DispatchQueue.main.sync { self.ocrInstallCancelled },"log":String((log+"\n"+e.message).suffix(20000))] }
         catch { return ["error":error.localizedDescription,"log":String((log+"\n"+error.localizedDescription).suffix(20000))] }
     }
 
@@ -249,19 +251,20 @@ extension AppDelegate {
         var log=""
         do {
             let normalized=ocrRoot.appendingPathComponent("image-"+UUID().uuidString+".png")
-            defer { try? FileManager.default.removeItem(at:normalized) }
+            let pageOutput=ocrRoot.appendingPathComponent("page-"+UUID().uuidString+".json")
+            defer { try? FileManager.default.removeItem(at:normalized);try? FileManager.default.removeItem(at:pageOutput) }
             try ocrImageData(image).write(to:normalized,options:.atomic)
             var args=[bundledOCRRunner.path,"--engine",engine,"--root",ocrRoot.path]
-            if page { args.append("--page") }
+            if page { args += ["--page","--page-output",pageOutput.path] }
             args.append(normalized.path)
-            let r=try run(ocrPython.path,args,cwd:ocrRoot,timeout:page || engine == "unimernet" ? 600 : 240);log=r.1
+            if page && engine == "unimernet" { args += ["--basic-python",ocrPython.path] }
+            let python=engine == "unimernet" ? ocrUniPython : ocrPython
+            let r=try run(python.path,args,cwd:ocrRoot,timeout:page || engine == "unimernet" ? 600 : 240);log=r.1
             if r.0 != 0 { throw ocrFailure("公式识别失败。",r.1) }
             let label=engine == "unimernet" ? "UniMERNet Tiny" : "Pix2Text 1.1.7"
             if page {
-                let prefix="FORMULA_OCR_PAGE="
-                guard let line=log.components(separatedBy:.newlines).last(where:{$0.hasPrefix(prefix)}) else { throw ToolFailure(message:"整页检测器没有返回公式结果。") }
-                let text=try decodeOCRPayload(line,prefix)
-                guard let data=text.data(using:.utf8),let formulas=try JSONSerialization.jsonObject(with:data) as? [[String:Any]] else { throw ToolFailure(message:"整页公式结果格式无效。") }
+                let data=try Data(contentsOf:pageOutput)
+                guard data.count <= 8000000,let formulas=try JSONSerialization.jsonObject(with:data) as? [[String:Any]] else { throw ToolFailure(message:"整页公式结果格式无效或过大。") }
                 return ["formulas":formulas,"engine":label,"detector":"Pix2Text MFD 1.5","log":String(log.suffix(20000))]
             }
             let prefix="FORMULA_OCR_RESULT="

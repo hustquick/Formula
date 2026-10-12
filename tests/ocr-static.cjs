@@ -24,7 +24,7 @@ must("web/ocr.js","data-cancel-install");
 must("web/ocr.js","ocrCancelInstall");
 must("macos/Formula.swift","case \"ocrCancelInstall\":handleOCRCancelInstall(data)");
 must("macos/Formula.swift","ocrInstallProcess");
-must("macos/Formula.swift","ocrInstall:true");
+must("macos/Formula.swift","ocrInstall:Bool=false");
 must("macos/FormulaOCR.swift","handleOCRCancelInstall");
 must("macos/FormulaOCR.swift","ocrInstallBusy");
 must("macos/FormulaOCR.swift","ocrInstall:true");

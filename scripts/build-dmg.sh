@@ -22,6 +22,7 @@ cp -R web "$task_app/Contents/Resources/"
 cp THIRD-PARTY-NOTICES.txt "$task_app/Contents/Resources/"
 cp macos/formula-ocr-runner.py "$task_app/Contents/Resources/formula-ocr-runner.py"
 cp macos/ocr-requirements.txt "$task_app/Contents/Resources/ocr-requirements.txt"
+cp macos/unimernet-requirements.txt "$task_app/Contents/Resources/unimernet-requirements.txt"
 # Keep the native About panel in lock-step with Info.plist without duplicating release metadata.
 task_swift="$task_stage/Formula.swift"
 sed -E "s/Formula [0-9]+\.[0-9]+\.[0-9]+/Formula $task_version/g" macos/Formula.swift > "$task_swift"

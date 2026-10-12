@@ -12,11 +12,12 @@
   };
   window.FormulaOCRProgress=(id,result)=>{if(pending.has(id))status.textContent=result.message;};
   let installPhase="";
-  window.FormulaOCRInstallPhase=(message)=>{installPhase=message;status.textContent=message;};
+  window.FormulaOCRInstallPhase=(message)=>{installPhase=message;installStatus.textContent=message;};
+  window.FormulaOCRInstallLog=(text)=>{log.textContent=text;log.scrollTop=log.scrollHeight;const matches=[...text.matchAll(/(\d+(?:\.\d+)?)%/g)];if(matches.length){installProgress.value=Number(matches.at(-1)[1]);}else{installProgress.removeAttribute("value");}};
   function request(action,data={}){
     return new Promise((resolve,reject)=>{
       const id='ocr-'+Date.now()+'-'+Math.random().toString(36).slice(2);
-      const timeout=action==='ocrStatus'?15000:action==='ocrInstall'?55*60*1000:12*60*1000;
+      const timeout=action==='ocrStatus'?15000:action==='ocrInstall'?150*60*1000:12*60*1000;
       const timer=setTimeout(()=>{pending.delete(id);reject(new Error('本地公式识别操作超时'));},timeout);
       pending.set(id,{resolve,reject,timer});
       try{bridge.postMessage({action,...data,id});}catch(e){clearTimeout(timer);pending.delete(id);reject(e);}
@@ -48,6 +49,7 @@
     <div class="ocr-install-choices" role="group" aria-label="安装版本层级"><label><input type="checkbox" data-basic-install>基础版（Pix2Text）</label><span class="ocr-install-arrow" aria-hidden="true">→</span><label><input type="checkbox" data-pro-install>专业版（UniMERNet Tiny）</label></div>
     <p class="ocr-status" data-status>正在检查本地识别模型…</p>
     <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装基础版</button><button data-cancel-install hidden>取消安装</button><button data-refresh>刷新状态</button></div>
+    <div data-install-panel hidden><progress data-install-progress max="100" aria-label="当前下载步骤进度"></progress><span class="ocr-note" data-install-status aria-live="polite"></span></div>
     <div class="ocr-results" data-results hidden></div>
     <details><summary>安装/识别日志</summary><pre class="ocr-log" data-log>尚无日志</pre></details>
   </div>`;
@@ -58,6 +60,9 @@
   const install=dialog.querySelector('[data-install]');
   const log=dialog.querySelector('[data-log]');
   const cancelInstall=dialog.querySelector('[data-cancel-install]');
+  const installPanel=dialog.querySelector('[data-install-panel]');
+  const installStatus=dialog.querySelector('[data-install-status]');
+  const installProgress=dialog.querySelector('[data-install-progress]');
   const engine=dialog.querySelector('[data-engine]');
   const results=dialog.querySelector('[data-results]');
   const basicChoice=dialog.querySelector('[data-basic-install]');
@@ -80,6 +85,7 @@
   let mode='single';
   let lastStatus=null;
   let pageFormulas=[];
+  let recognizing=false;
   const selected=new Set();
   dialog.querySelector('[data-close]').onclick=()=>dialog.close();
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
@@ -91,15 +97,16 @@
   });
 
   function engineInfo(){return lastStatus?.engines?.[engine.value]||{};}
-  function updateState(){
+  function updateState(preserveStatus=false){
     const info=engineInfo();
     const installed=!!info.installed;
-    recognize.disabled=!installed||(!!lastStatus?.busy&&!lastStatus?.installing)||(!!lastStatus?.installing&&engine.value!=='pix2text')||(mode==='page'&&!lastStatus?.detectorInstalled);
+    recognize.disabled=recognizing||!installed||(!!lastStatus?.busy&&!lastStatus?.installing)||(!!lastStatus?.installing&&(engine.value!=='pix2text'||lastStatus.installingEngine==='pix2text'))||(mode==='page'&&!lastStatus?.detectorInstalled);
     install.disabled=!!lastStatus?.busy;
     const enhanced=engine.value==='unimernet';
     const label=enhanced?'专业识别（UniMERNet Tiny）':'基础识别（Pix2Text）';
     syncInstallChoices();
-    if(lastStatus?.busy){status.textContent=lastStatus.installing?'专业版安装期间，已安装的基础识别仍可使用。':'识别组件正在执行任务。';return;}
+    if(preserveStatus)return;
+    if(lastStatus?.busy){status.textContent=lastStatus.installing?(lastStatus.installingEngine==='pix2text'?'基础识别正在安装或修复。':'专业版安装期间，已安装的基础识别仍可使用。'):'识别组件正在执行任务。';return;}
     if(installed){
       status.textContent=`${label} 已安装 · 总占用约 ${fmt(lastStatus?.bytes||0)} · ${lastStatus?.detectorInstalled?'MFD 整页公式检测已就绪':'MFD 尚未就绪，请验证/修复识别组件'}`;
     }else if(lastStatus?.environmentExists){
@@ -107,7 +114,7 @@
     }else if(lastStatus?.pythonAvailable){
       status.textContent=`${label} 尚未安装。首次安装会创建独立 Python 环境并按需下载模型。`;
     }else{
-      status.textContent='未找到 Python 3。请先安装 Python 3（UniMERNet 建议 3.10+）。';
+      status.textContent='未找到兼容的 Python 3.10–3.12，请安装 Python 3.11 后重试。';
     }
   }
 
@@ -121,26 +128,28 @@
 
   cancelInstall.onclick=async()=>{
     cancelInstall.disabled=true;
-    status.textContent="正在取消安装并结束当前下载进程…";
+    installStatus.textContent="正在取消安装并结束当前下载进程…";
     try{await request("ocrCancelInstall");}catch(e){status.textContent=e.message;}
   };
 
   install.onclick=async()=>{
     const installEngine=install.dataset.installEngine;
     if(!installEngine)return;
-    install.disabled=true;results.hidden=true;
-    cancelInstall.hidden=false;cancelInstall.disabled=false;
+    lastStatus={...lastStatus,busy:true,installing:true,installingEngine:installEngine};
+    updateState(true);install.disabled=true;results.hidden=true;
+    cancelInstall.hidden=false;cancelInstall.disabled=false;installPanel.hidden=false;installProgress.removeAttribute("value");installPhase="";
     const enhanced=installEngine==='unimernet';
     const label=enhanced?'专业版':'基础版';
     const startedAt=Date.now();
-    const ticker=setInterval(()=>{if(installPhase)status.textContent=`${installPhase} · 已等待 ${Math.floor((Date.now()-startedAt)/1000)} 秒（尚无法获取准确下载百分比）`;},1000);
+    const statePoll=setInterval(async()=>{try{lastStatus=await request('ocrStatus');updateState(true);}catch{}},3000);
+    const ticker=setInterval(()=>{if(installPhase)installStatus.textContent=`${installPhase} · 已等待 ${Math.floor((Date.now()-startedAt)/1000)} 秒（尚无法获取准确下载百分比）`;},1000);
     status.textContent=enhanced?'正在安装专业版：自动包含基础版，再安装 UniMERNet Tiny…':'正在安装基础版：准备 Pix2Text 与 MFD 公式检测…';
     try{
       const r=await request('ocrInstall',{engine:installEngine});
       if(r.log)log.textContent=r.log;
       status.textContent=r.message||`${label}安装完成`;
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
-    finally{clearInterval(ticker);installPhase="";cancelInstall.hidden=true;install.disabled=false;await refresh();}
+    finally{clearInterval(ticker);clearInterval(statePoll);installPhase="";installPanel.hidden=true;cancelInstall.hidden=true;install.disabled=false;try{lastStatus=await request("ocrStatus");updateState(true);}catch{}}
   };
 
   function insertLatex(latex){
@@ -204,22 +213,22 @@
   }
 
   recognize.onclick=async()=>{
-    recognize.disabled=true;results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();
+    recognizing=true;recognize.disabled=true;const requestMode=mode;const requestEngine=engine.value;engine.disabled=true;dialog.querySelectorAll('[data-mode]').forEach(x=>x.disabled=true);results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();
     status.textContent=mode==='page'?'请选择整页教材/论文照片…':'请选择单个公式图片…';
     try{
-      const r=await request('ocrRecognize',{engine:engine.value,mode});
+      const r=await request('ocrRecognize',{engine:requestEngine,mode:requestMode});
       if(r.cancelled){status.textContent='已取消';return;}
       if(r.log)log.textContent=r.log;
-      if(mode==='page'){
+      if(requestMode==='page'){
         renderPageResults(Array.isArray(r.formulas)?r.formulas:[],r.engine||engine.value);
       }else{
         if(!r.latex)throw new Error('没有识别到公式');
         insertLatex(r.latex);
         status.textContent=`识别完成 · ${r.engine||engine.value} · 已送入编辑器`;
-        setTimeout(()=>dialog.close(),500);
+        if(!lastStatus?.installing)setTimeout(()=>dialog.close(),500);
       }
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
-    finally{recognize.disabled=false;}
+    finally{recognizing=false;engine.disabled=false;dialog.querySelectorAll('[data-mode]').forEach(x=>x.disabled=false);const outcome=status.textContent;updateState();status.textContent=outcome;}
   };
 
   const imageTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='图片识别');

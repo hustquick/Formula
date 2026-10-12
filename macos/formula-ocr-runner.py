@@ -3,15 +3,20 @@ import argparse
 import base64
 import json
 import sys
+import subprocess
+import tempfile
+import os
+import math
 from pathlib import Path
 
 
 def emit(prefix, value):
     payload = base64.b64encode(value.encode('utf-8')).decode('ascii')
-    print(prefix + payload)
+    print(prefix + payload, flush=True)
 
 
 def build_pix2text_engine(warmup=False):
+    print('[OCR] Loading Pix2Text dependencies', flush=True)
     from pix2text.latex_ocr import LatexOCR
     from pix2text.consts import MODEL_VERSION, AVAILABLE_MODELS
     from pix2text.utils import data_dir, prepare_model_files2
@@ -19,6 +24,14 @@ def build_pix2text_engine(warmup=False):
     info = AVAILABLE_MODELS.get_info('mfr-1.5', 'onnx')
     model_dir = Path(data_dir()) / MODEL_VERSION / info['local_model_id']
     if warmup:
+        required = ['encoder_model.onnx', 'decoder_model.onnx', 'config.json',
+                    'tokenizer.json', 'tokenizer_config.json', 'preprocessor_config.json']
+        if all((model_dir / name).is_file() and (model_dir / name).stat().st_size > 0 for name in required):
+            try:
+                print('[OCR] Validating cached Pix2Text weights', flush=True)
+                return LatexOCR(device='cpu', model_dir=str(model_dir))
+            except Exception as exc:
+                print(f'[OCR] Cached model could not initialize; repairing: {exc}', flush=True)
         prepare_model_files2(model_dir, info['hf_model_id'], file_or_dir='dir')
     return LatexOCR(device='cpu', model_dir=str(model_dir))
 
@@ -26,6 +39,7 @@ def build_pix2text_engine(warmup=False):
 def build_detector():
     # Pix2Text's MFD 1.5 detector is deliberately used directly here. We do
     # not construct TextFormulaOCR, so no normal-text OCR is performed.
+    print('[OCR] Loading MFD dependencies and model', flush=True)
     from pix2text.formula_detector import MathFormulaDetector
     return MathFormulaDetector(device='cpu')
 
@@ -90,14 +104,17 @@ run:
 
 
 def build_unimernet_engine(root, warmup=False):
+    print('[OCR] Loading UniMERNet dependencies', flush=True)
     import torch
     from unimernet.common.config import Config
     import unimernet.tasks as tasks
     from unimernet.processors import load_processor
 
     _, cfg_path = unimernet_paths(root)
-    if warmup or not cfg_path.exists():
+    if warmup:
         _, cfg_path = prepare_unimernet(root)
+    if not cfg_path.exists():
+        raise FileNotFoundError('UniMERNet model is not installed; run installation/repair first')
     args = argparse.Namespace(cfg_path=str(cfg_path), options=None)
     cfg = Config(args)
     task = tasks.setup_task(cfg)
@@ -159,7 +176,11 @@ def detect_formula_regions(image):
         kind = item.get('type', 'formula')
         if box is None:
             continue
+        if kind not in ('embedding', 'isolated', 'formula'):
+            continue
         pts = box.tolist() if hasattr(box, 'tolist') else box
+        if len(pts) < 2 or not all(len(p) >= 2 and all(math.isfinite(float(v)) for v in p[:2]) for p in pts):
+            continue
         xs = [float(p[0]) for p in pts]
         ys = [float(p[1]) for p in pts]
         x0, y0 = max(0, int(min(xs))), max(0, int(min(ys)))
@@ -179,6 +200,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('image', nargs='?')
     parser.add_argument('--engine', choices=['pix2text', 'unimernet'], default='pix2text')
+    parser.add_argument('--basic-python', help='isolated Pix2Text interpreter for page detection')
+    parser.add_argument('--page-output', help='write complete formula results to a JSON file')
+    parser.add_argument('--detect-output', help=argparse.SUPPRESS)
     parser.add_argument('--page', action='store_true', help='detect all formula regions before recognition')
     parser.add_argument('--warmup', action='store_true')
     parser.add_argument('--warmup-detector', action='store_true')
@@ -215,9 +239,26 @@ def main():
 
     from PIL import Image
     image = Image.open(args.image).convert('RGB')
+    if args.detect_output:
+        Path(args.detect_output).write_text(json.dumps(detect_formula_regions(image)), encoding='utf-8')
+        return 0
     if args.page:
-        regions = detect_formula_regions(image)
+        if args.engine == 'unimernet':
+            if not args.basic_python:
+                raise ValueError('UniMERNet page mode requires the Basic Python interpreter')
+            with tempfile.TemporaryDirectory(prefix='detection-', dir=root) as temp:
+                output = Path(temp) / 'regions.json'
+                subprocess.run([args.basic_python, str(Path(__file__).resolve()), args.image,
+                                '--root', str(root), '--detect-output', str(output)],
+                               check=True, timeout=180)
+                regions = json.loads(output.read_text(encoding='utf-8'))
+        else:
+            regions = detect_formula_regions(image)
+        if len(regions) > 200:
+            raise ValueError('More than 200 formulas detected; split the page into smaller images')
         if not regions:
+            if args.page_output:
+                Path(args.page_output).write_text('[]', encoding='utf-8')
             emit('FORMULA_OCR_PAGE=', json.dumps([], ensure_ascii=False))
             return 0
         crops = [image.crop(tuple(r['bbox'])) for r in regions]
@@ -232,6 +273,8 @@ def main():
                     'bbox': region['bbox'],
                     'score': rec.get('score'),
                 })
+        if args.page_output:
+            Path(args.page_output).write_text(json.dumps(formulas, ensure_ascii=False), encoding='utf-8')
         emit('FORMULA_OCR_PAGE=', json.dumps(formulas, ensure_ascii=False))
         return 0
 
