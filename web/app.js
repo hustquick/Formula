@@ -43,7 +43,7 @@ function compactVisualLatex(source){
     result+=token;
     if(token==='{'){depth++;if(pendingText&&!textDepth)textDepth=depth;pendingText=false;}
     else if(token==='}'){if(depth===textDepth)textDepth=0;depth=Math.max(0,depth-1);pendingText=false;}
-    else if(token!=='*'||!pendingText)pendingText=/^\\(?:text|textnormal|textrm|textsf|texttt|textbf|textmd|textit|textsl|textsc|textup|operatorname|mbox|hbox)$/.test(token);
+    else if(token!=='*'||!pendingText)pendingText=/^\\(?:text|textnormal|textrm|textsf|texttt|textbf|textmd|textit|textsl|textsc|textup|operatorname|mbox|hbox|ce|pu)$/.test(token);
     controlWord=/^\\[A-Za-z]+$/.test(token);
   }
   return result;

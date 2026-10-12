@@ -7,9 +7,9 @@
   <link rel="stylesheet" href="latexlive-menus.css">
   <script>
   window.MathJax = {
-    loader: {paths: {'mathjax-newcm': 'vendor/newcm'}, load:['[tex]/color']},
+    loader: {paths: {'mathjax-newcm': 'vendor/newcm'}, load:['[tex]/color','[tex]/mhchem']},
     svg: {fontCache: 'none', font: 'mathjax-newcm'},
-    tex: {packages: {'[-]': ['require', 'autoload'], '[+]':['color']}},
+    tex: {packages: {'[-]': ['require', 'autoload'], '[+]':['color','mhchem']}},
     options: {enableMenu: false, enableEnrichment:false, enableSpeech:false, enableBraille:false, enableExplorer:false, menuOptions:{settings:{enrich:false,speech:false,braille:false,explorer:false}}}, startup: {typeset: false}
   };
   </script>
