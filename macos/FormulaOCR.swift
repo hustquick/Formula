@@ -97,19 +97,30 @@ extension AppDelegate {
     private func discoverPython3() -> String? {
         let fm=FileManager.default
         let candidates=["/opt/homebrew/bin/python3","/usr/local/bin/python3","/usr/bin/python3",NSHomeDirectory()+"/.local/bin/python3"]
-        for path in candidates where fm.isExecutableFile(atPath:path) { return path }
+        for path in candidates where fm.isExecutableFile(atPath:path) {
+            if compatibleOCRPython(path) { return path }
+        }
         let dir=FileManager.default.temporaryDirectory
         if let result=try? run("/bin/zsh",["-lc","command -v python3"],cwd:dir,timeout:8),result.0==0 {
             let path=result.1.trimmingCharacters(in:.whitespacesAndNewlines)
-            if fm.isExecutableFile(atPath:path) { return path }
+            if fm.isExecutableFile(atPath:path) && compatibleOCRPython(path) { return path }
         }
         return nil
+    }
+
+    // Never select an interpreter solely because its executable exists.
+    private func compatibleOCRPython(_ path:String) -> Bool {
+        guard let result=try? run(path,["-c","import sys; print(int(sys.version_info >= (3, 10)))"],cwd:FileManager.default.temporaryDirectory,timeout:8) else { return false }
+        return result.0 == 0 && result.1.trimmingCharacters(in:.whitespacesAndNewlines) == "1"
     }
 
     private func ensureBaseOCR(_ log: inout String) throws {
         let fm=FileManager.default
         guard let systemPython=discoverPython3() else { throw ToolFailure(message:"未找到 Python 3。请先安装 Python 3（建议 Python 3.10+），再安装本地公式识别模型。") }
         try fm.createDirectory(at:ocrRoot,withIntermediateDirectories:true)
+        if fm.isExecutableFile(atPath:ocrPython.path) && !compatibleOCRPython(ocrPython.path) {
+            throw ToolFailure(message:"现有 Formula OCR 虚拟环境的 Python 版本低于 3.10。请先备份或通过后续迁移功能重建 OCR 环境；不会自动删除已有模型。")
+        }
         if !fm.isExecutableFile(atPath:ocrPython.path) {
             let r=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120);log+=r.1
             if r.0 != 0 { throw ToolFailure(message:"创建公式识别独立环境失败。") }
