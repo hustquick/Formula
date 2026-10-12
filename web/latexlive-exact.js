@@ -51,9 +51,9 @@
     mf.focus();const ok=mf.executeCommand(command);mf.dispatchEvent(new Event('input',{bubbles:true}));
     if(ok===false&&q('#status'))q('#status').textContent='请先点击矩阵或多行公式中的单元格';
   }
-  function previewLatex(latex){return latex.replaceAll('#@','x').replaceAll('#?','y').replace(/\\begin\{equation\*?\}|\\end\{equation\*?\}/g,'').replace(/\\label\{[^}]*\}/g,'');}
+  function previewLatex(latex){latex=latex.replace(/\\sqrt\[\]\{\}/g,'\\sqrt[3]{x}').replace(/\{\}/g,'{x}');if(/^[\^_]/.test(latex))latex='x'+latex;return latex.replaceAll('#@','x').replaceAll('#?','y').replace(/\\begin\{equation\*?\}|\\end\{equation\*?\}/g,'').replace(/\\label\{[^}]*\}/g,'');}
   async function render(node,latex){
-    try{await wait(()=>window.MathJax?.tex2svgPromise);await MathJax.startup.promise;const out=await MathJax.tex2svgPromise('\\displaystyle '+previewLatex(latex),{display:false});node.replaceChildren(out);node.dataset.rendered='1';}
+    try{await wait(()=>window.MathJax?.tex2svgPromise);await MathJax.startup.promise;const out=await MathJax.tex2svgPromise('\\displaystyle '+previewLatex(latex),{display:true});node.replaceChildren(out);node.dataset.rendered='1';}
     catch{node.textContent=latex.replace(/\\[A-Za-z]+/g,'').replace(/[{}]/g,'').trim().slice(0,28)||'ƒ';node.dataset.rendered='fallback';}
   }
   function createItem(entry,kind='shortcut'){
