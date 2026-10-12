@@ -10,7 +10,7 @@ const examples = {
   quadratic: String.raw`x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}`,
   matrix: String.raw`\mathbf{A}=\begin{pmatrix}a&b\\c&d\end{pmatrix}`
 };
-let state = {latex: examples.efficiency, rawSource:'', mode:'latex', engine:'embedded', history:[], size:32, padding:12, color:'#18232f', transparent:true, scale:3, preamble:String.raw`\usepackage{amsmath,amssymb}
+let state = {latex: examples.efficiency, rawSource:'', mode:'latex', engine:'embedded', history:[], size:32, padding:12, color:'#18232f', transparent:true, scale:300/96, preamble:String.raw`\usepackage{amsmath,amssymb}
 \usepackage{xcolor}`,typstPreamble:'',displayMode:'display'};
 try { Object.assign(state, window.FormulaSavedState || JSON.parse(localStorage.getItem('mathforge') || '{}')); } catch {}
 state.history = Array.isArray(state.history) ? state.history.filter(x=>typeof x==='string'||(x&&typeof x.rawSource==='string')).slice(0,100) : [];
@@ -135,6 +135,19 @@ async function switchMode(mode){
 }
 function loadLatex(latex){state.latex=latex;conversionAvailable=true;mf.readOnly=false;updating=true;mf.setValue(latex,{silenceNotifications:true});updating=false;try{$('source').value=getModeSource();}catch{state.mode='latex';$('source').value=latex;}state.rawSource=stripDelimiters($('source').value);updateMode();updateAlternates();scheduleRender();}
 function svgText(){return '<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(svgResult.svg);}
+async function pngWithDPI(blob,dpi){
+  const bytes=new Uint8Array(await blob.arrayBuffer());
+  const chunk=new Uint8Array(21),view=new DataView(chunk.buffer);
+  view.setUint32(0,9);chunk.set([112,72,89,115],4);
+  const ppm=Math.round(dpi/0.0254);view.setUint32(8,ppm);view.setUint32(12,ppm);chunk[16]=1;
+  let crc=0xffffffff;for(const byte of chunk.subarray(4,17)){crc^=byte;for(let i=0;i<8;i++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}view.setUint32(17,(crc^0xffffffff)>>>0);
+  const parts=[bytes.subarray(0,8)];let inserted=false;
+  for(let offset=8;offset+12<=bytes.length;){const length=new DataView(bytes.buffer,bytes.byteOffset+offset,4).getUint32(0);const end=offset+length+12;const type=String.fromCharCode(...bytes.subarray(offset+4,offset+8));
+    if(type==='IDAT'&&!inserted){parts.push(chunk);inserted=true;}if(type!=='pHYs')parts.push(bytes.subarray(offset,end));offset=end;
+  }
+  return new Blob(parts,{type:'image/png'});
+}
+function ensureResolutionOption(){if(![...$('scale').options].some(o=>Number(o.value)===state.scale)){const option=new Option(Math.round(state.scale*96)+' DPI（原设置）',String(state.scale));$('scale').add(option);}}
 async function bytesBase64(blob){const bytes=new Uint8Array(await blob.arrayBuffer());let s='';for(let i=0;i<bytes.length;i+=8192)s+=String.fromCharCode(...bytes.subarray(i,i+8192));return btoa(s);}
 async function save(blob, name){
   if(bridge){status('请选择保存位置');const result=await nativeRequest('save',{name,base64:await bytesBase64(blob)});status(result.cancelled?'已取消保存':'已保存 '+name);}
@@ -166,12 +179,12 @@ async function exportFile(kind){
   const scale=Number($('scale').value),w=Math.ceil(width*scale),h=Math.ceil(height*scale);
   if(w*h>50000000||w>16000||h>16000)throw new Error('PNG 尺寸过大，请降低字号或清晰度');
   const url=URL.createObjectURL(new Blob([svgText()],{type:'image/svg+xml'}));
-  try{const img=new Image();img.src=url;await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('图片渲染失败'));});const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(kind==='jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);}ctx.drawImage(img,0,0,w,h);const mime=kind==='jpeg'?'image/jpeg':'image/png';const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,.96));if(!blob)throw new Error('图片导出失败');return save(blob,'equation.'+(kind==='jpeg'?'jpg':'png'));}finally{URL.revokeObjectURL(url);}
+  try{const img=new Image();img.src=url;await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('图片渲染失败'));});const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(kind==='jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);}ctx.drawImage(img,0,0,w,h);const mime=kind==='jpeg'?'image/jpeg':'image/png';const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,.96));if(!blob)throw new Error('图片导出失败');return save(kind==='png'?await pngWithDPI(blob,scale*96):blob,'equation.'+(kind==='jpeg'?'jpg':'png'));}finally{URL.revokeObjectURL(url);}
 }
 function history(){
   $('history').replaceChildren();state.history.forEach((item,i)=>{const text=typeof item==='string'?item:item.rawSource;const wrap=document.createElement('div');wrap.className='history-item';const b=document.createElement('button');b.textContent=text;b.title=text;b.onclick=()=>{if(typeof item==='string')loadLatex(item);else restore(item);};const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','删除收藏');del.onclick=()=>{state.history.splice(i,1);history();persist();};wrap.append(b,del);$('history').append(wrap);});
 }
-function applyUI(){for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];}$('engine').value=state.engine;$('preamble').value=state.preamble;$('typst-preamble').value=state.typstPreamble;$('display-mode').value=state.displayMode;$('engine-note').textContent=state.engine==='embedded'?'MathJax 矢量排版':'本机 '+(state.engine==='typst'?'Typst':'LaTeX');updateMode();}
+function applyUI(){ensureResolutionOption();for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];}$('engine').value=state.engine;$('preamble').value=state.preamble;$('typst-preamble').value=state.typstPreamble;$('display-mode').value=state.displayMode;$('engine-note').textContent=state.engine==='embedded'?'MathJax 矢量排版':'本机 '+(state.engine==='typst'?'Typst':'LaTeX');updateMode();}
 function restore(saved){
   const keepHistory=state.history;for(const k of ['latex','rawSource','mode','engine','size','padding','color','transparent','scale','preamble','typstPreamble','displayMode'])if(saved[k]!==undefined)state[k]=saved[k];state.history=keepHistory;
   if(!bridge)state.engine='embedded';applyUI();$('source').value=state.rawSource||getModeSource();readSource();
@@ -188,7 +201,7 @@ const safe=fn=>async(...args)=>{try{await fn(...args);}catch(e){status(e.message
 window.FormulaNativeResult=(message,error=false)=>status(message,error);
 window.FormulaImport=(text,ext)=>safe(()=>importContent(text,ext))();
 window.FormulaAction=kind=>safe(async()=>{if(kind==='copy')await copy($('source').value);else if(kind==='import')$('import').click();else await exportFile(kind);})();
-window.FormulaTest={compactVisualLatex,exportFile,readSource,stripDelimiters,getState:()=>state,getSVG:()=>svgResult?svgText():null};
+window.FormulaTest={pngWithDPI,compactVisualLatex,exportFile,readSource,stripDelimiters,getState:()=>state,getSVG:()=>svgResult?svgText():null};
 
 MathLive.MathfieldElement.fontsDirectory=new URL('vendor/mathlive/fonts',document.baseURI).href;
 MathLive.MathfieldElement.soundsDirectory=null;
@@ -410,11 +423,12 @@ $('tools').addEventListener('click',handleToolClick);
 formatting.addEventListener('click',handleToolClick);
 
 document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>loadLatex(examples[b.dataset.example]));
+ensureResolutionOption();
 for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];$(key).addEventListener('change',()=>{settings();if(state.size<10||state.size>160||state.padding<0||state.padding>80){status('字号范围 10–160 pt，留白范围 0–80 px',true);return;}scheduleRender();});}
 for(const kind of ['svg','pdf','png','jpeg'])$(kind).onclick=safe(()=>exportFile(kind));
 $('extra-format').onchange=safe(async()=>{const kind=$('extra-format').value;$('extra-format').value='';if(kind)await exportFile(kind);});
 $('copy-svg').onclick=safe(async()=>{await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式');if(nativeResult){if(!nativeResult.svg)throw new Error('本机 LaTeX 的 SVG 复制需要 dvisvgm');await copy(new TextDecoder().decode(Uint8Array.from(atob(nativeResult.svg),c=>c.charCodeAt(0))),'svg');}else if(svgResult)await copy(svgText(),'svg');});
-$('copy-image').onclick=safe(async()=>{await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式');if(!bridge)throw new Error('图片复制请在 Mac 应用中使用，网页可通过导出 PNG 保存');if(nativeResult){send('copyImage',{png:nativeResult.png,pdf:nativeResult.pdf});status('已复制图片及矢量 PDF');}else{const url=URL.createObjectURL(new Blob([svgText()],{type:'image/svg+xml'}));try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=Math.ceil(svgResult.width*state.scale);c.height=Math.ceil(svgResult.height*state.scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const blob=await new Promise(resolve=>c.toBlob(resolve));send('copyImage',{png:await bytesBase64(blob),svg:await bytesBase64(new Blob([svgText()]))});status('已复制图片及矢量 SVG');}finally{URL.revokeObjectURL(url);}}});
+$('copy-image').onclick=safe(async()=>{await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式');if(!bridge)throw new Error('图片复制请在 Mac 应用中使用，网页可通过导出 PNG 保存');if(nativeResult){send('copyImage',{png:nativeResult.png,pdf:nativeResult.pdf});status('已复制图片及矢量 PDF');}else{const url=URL.createObjectURL(new Blob([svgText()],{type:'image/svg+xml'}));try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=Math.ceil(svgResult.width*state.scale);c.height=Math.ceil(svgResult.height*state.scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const blob=await new Promise(resolve=>c.toBlob(resolve));send('copyImage',{png:await bytesBase64(await pngWithDPI(blob,state.scale*96)),svg:await bytesBase64(new Blob([svgText()]))});status('已复制图片及矢量 SVG');}finally{URL.revokeObjectURL(url);}}});
 $('copy-source').onclick=safe(()=>copy($('source').value));$('copy-other').onclick=safe(()=>copy($('other-source').textContent));$('copy-mathml').onclick=safe(()=>copy($('mathml').textContent));
 $('remember').onclick=async()=>{await readSource();if(!valid)return;const item={...state,history:undefined};state.history=[item,...state.history.filter(x=>(typeof x==='string'?x:x.rawSource)!==state.rawSource)].slice(0,100);history();persist();status('已收藏当前公式及排版设置');};
 $('save-library').onclick=safe(()=>save(new Blob([JSON.stringify({format:'mathforge-library',version:1,history:state.history},null,2)],{type:'application/json'}),'formula-library.json'));

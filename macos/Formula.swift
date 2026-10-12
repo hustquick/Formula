@@ -252,7 +252,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let o=request["options"] as? [String:Any] ?? [:]
             let size=max(10,min(160,(o["size"] as? NSNumber)?.doubleValue ?? 32))
             let padding=max(0,min(80,(o["padding"] as? NSNumber)?.doubleValue ?? 12))*0.75
-            let scale=max(1,min(4,(o["scale"] as? NSNumber)?.doubleValue ?? 3))
+            let scale=max(0.75,min(12.5,(o["scale"] as? NSNumber)?.doubleValue ?? 3))
             let color=o["color"] as? String ?? "#18232f"
             guard color.range(of:"^#[0-9A-Fa-f]{6}$",options:.regularExpression) != nil else{throw ToolFailure(message:"颜色设置无效")}
             let transparent=o["transparent"] as? Bool ?? true
@@ -315,6 +315,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let cg=context.cgContext
             if !transparent {cg.setFillColor(NSColor.white.cgColor);cg.fill(CGRect(x:0,y:0,width:CGFloat(width),height:CGFloat(height)))}
             cg.scaleBy(x:pixels,y:pixels);page.draw(with:.mediaBox,to:cg);NSGraphicsContext.restoreGraphicsState()
+            bitmap.size=NSSize(width:CGFloat(width)/pixels,height:CGFloat(height)/pixels)
             let png=bitmap.representation(using:.png,properties:[:])!
             let tiff=bitmap.representation(using:.tiff,properties:[:])!
             // JPEG has no alpha; composite the same PDF on white.
