@@ -38,3 +38,5 @@ Formula 主应用保持轻量，不把 Pix2Text、Python 虚拟环境和模型�
 venv 存在不代表 Pix2Text 或模型安装完成。未通过模型初始化的环境显示“继续安装”，不能开始识别。安装和识别使用单独队列并拒绝重复请求；选择文件后显示识别阶段。Python 错误和超时保留日志并自动展开日志区域。模型损坏时可以验证/修复。原生 OCR 桥接直接写入 Swift 源文件，构建不再依赖文本替换注入。
 
 已复现 RapidOCR 3.10.0 移除 resolve_model_key 导致 CnSTD 1.2.8 导入失败；安装使用 cnstd==1.2.8、cnocr==2.3.3、rapidocr==3.9.2 兼容组合。初始化错误直接显示 Python 错误类型及消息，不能笼统归因网络。
+
+macOS 先使用系统图像解码器将选中的 JPEG/PNG/HEIC 等图片转为临时 PNG，再传给 Python；完成或报错后移除临时图片。这样 HEIC 不会触发 Ultralytics 在识别阶段安装 pi-heif。

@@ -12,6 +12,7 @@ cd "$(dirname "$0")/.."
 node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('web/vendor/latexlive/map_input.json','utf8'));const s=x.shortcut||[];const t=n=>s.find(v=>v.name===n);if(t('toolbar')?.layer1?.cont?.length!==10||t('template')?.layer1?.cont?.length!==10)process.exit(1);const js=fs.readFileSync('web/vendor/latexlive/catalog.js','utf8');if(!js.startsWith('window.LaTeXLiveCatalog='))process.exit(1)"
 task_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/Info.plist)
 task_build_dir="$PWD/dist"
+mkdir -p "$task_build_dir"
 task_stage=$(mktemp -d)
 task_app="$task_stage/Formula.app"
 trap 'rm -rf "$task_stage"' EXIT

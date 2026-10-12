@@ -94,6 +94,19 @@ extension AppDelegate {
         catch { return ["error":error.localizedDescription,"log":String((log+"\n"+error.localizedDescription).suffix(20000))] }
     }
 
+    func ocrImageData(_ image:URL) throws -> Data {
+        guard let source=NSImage(contentsOf:image),let cg=source.cgImage(forProposedRect:nil,context:nil,hints:nil) else {
+            throw ToolFailure(message:"无法读取所选图片。请确认文件未损坏，或导出为 JPEG/PNG 后重试。")
+        }
+        guard cg.width > 0,cg.height > 0,cg.width <= 16000,cg.height <= 16000,cg.width*cg.height <= 50000000 else {
+            throw ToolFailure(message:"图片尺寸过大。请先裁剪为单个公式图片。")
+        }
+        guard let bytes=NSBitmapImageRep(cgImage:cg).representation(using:.png,properties:[:]) else {
+            throw ToolFailure(message:"无法转换公式图片。")
+        }
+        return bytes
+    }
+
     private func ocrFailure(_ message:String,_ log:String) -> ToolFailure {
         let detail=log.components(separatedBy:.newlines).last(where:{$0.hasPrefix("FORMULA_OCR_ERROR=")})
         return ToolFailure(message:message+(detail.map { "\n"+String($0.dropFirst("FORMULA_OCR_ERROR=".count)) } ?? ""))
@@ -102,7 +115,10 @@ extension AppDelegate {
     private func recognizeFormula(_ image:URL) -> [String:Any] {
         var log=""
         do {
-            let r=try run(ocrPython.path,[bundledOCRRunner.path,image.path],cwd:ocrRoot,timeout:180);log=r.1
+            let normalized=ocrRoot.appendingPathComponent("image-"+UUID().uuidString+".png")
+            defer { try? FileManager.default.removeItem(at:normalized) }
+            try ocrImageData(image).write(to:normalized,options:.atomic)
+            let r=try run(ocrPython.path,[bundledOCRRunner.path,normalized.path],cwd:ocrRoot,timeout:180);log=r.1
             if r.0 != 0 { throw ocrFailure("公式识别失败。",r.1) }
             guard let line=log.components(separatedBy:.newlines).last(where:{$0.hasPrefix("FORMULA_OCR_RESULT=")}) else { throw ToolFailure(message:"识别器没有返回 LaTeX 结果。") }
             let payload=String(line.dropFirst("FORMULA_OCR_RESULT=".count))

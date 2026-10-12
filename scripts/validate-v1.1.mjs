@@ -56,7 +56,7 @@ expect(/<key>CFBundleShortVersionString<\/key><string>1\.(?:1|2)\.\d+<\/string>/
 expect(build.includes('vendor/latexlive/catalog.js') && build.includes('vendor/latexlive/map_input.json'), 'DMG does not verify both offline catalog files');
 expect(build.includes('sed -E') && build.includes('task_version'), 'native About version is not synchronized from Info.plist during DMG build');
 expect(localBuild.includes('catalog.js') && localBuild.includes('v1.1.css') && localBuild.includes('task_version'), 'local Build-Mac.command is below v1.1.0 release standard');
-expect(readme.includes('Formula-1.1.0.dmg') && readme.includes('完整公式模板') && readme.includes('Finder 风格自定义工具栏'), 'README is not aligned with v1.1.0');
+expect(readme.includes('Formula-'+plist.match(/<key>CFBundleShortVersionString<\/key><string>([^<]+)<\/string>/)[1]+'.dmg') && readme.includes('完整公式模板') && readme.includes('Finder 风格自定义工具栏'), 'README is not aligned with v1.1.0');
 expect(validation.includes('## v1.1.0 发布标准') && validation.includes('tests/v1.1.cjs'), 'VALIDATION.md is not aligned with v1.1.0');
 expect((await stat('web/v1.1.css')).size > 4000, 'v1.1 visual layer unexpectedly small');
 
