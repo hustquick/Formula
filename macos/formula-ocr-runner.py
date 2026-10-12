@@ -24,7 +24,7 @@ def build_pix2text_engine(warmup=False):
 
 
 def build_detector():
-    # Pix2Text's MFD 1.5 detector is deliberately used directly here.  We do
+    # Pix2Text's MFD 1.5 detector is deliberately used directly here. We do
     # not construct TextFormulaOCR, so no normal-text OCR is performed.
     from pix2text.formula_detector import MathFormulaDetector
     return MathFormulaDetector(device='cpu')
@@ -50,7 +50,42 @@ def prepare_unimernet(root):
         raise FileNotFoundError(f'UniMERNet Tiny checkpoint missing: {checkpoint}')
     model_path = str(model_dir).replace("'", "''")
     checkpoint_path = str(checkpoint).replace("'", "''")
-    cfg.write_text(f'''model:\n  arch: unimernet\n  model_type: unimernet\n  model_config:\n    model_name: '{model_path}'\n    max_seq_len: 1536\n  load_pretrained: True\n  pretrained: '{checkpoint_path}'\n  tokenizer_config:\n    path: '{model_path}'\ndatasets:\n  formula_rec_eval:\n    vis_processor:\n      eval:\n        name: formula_image_eval\n        image_size: [192, 672]\nrun:\n  runner: runner_iter\n  task: unimernet_train\n  batch_size_train: 1\n  batch_size_eval: 1\n  num_workers: 0\n  seed: 42\n  output_dir: '{str(root / 'unimernet-output')}'\n  evaluate: True\n  test_splits: [eval]\n  device: cpu\n  world_size: 1\n  dist_url: env://\n  distributed: False\n  distributed_type: ddp\n  generate_cfg:\n    temperature: 0.0\n''', encoding='utf-8')
+    output_path = str(root / 'unimernet-output').replace("'", "''")
+    config_text = f'''model:
+  arch: unimernet
+  model_type: unimernet
+  model_config:
+    model_name: '{model_path}'
+    max_seq_len: 1536
+  load_pretrained: True
+  pretrained: '{checkpoint_path}'
+  tokenizer_config:
+    path: '{model_path}'
+datasets:
+  formula_rec_eval:
+    vis_processor:
+      eval:
+        name: formula_image_eval
+        image_size: [192, 672]
+run:
+  runner: runner_iter
+  task: unimernet_train
+  batch_size_train: 1
+  batch_size_eval: 1
+  num_workers: 0
+  seed: 42
+  output_dir: '{output_path}'
+  evaluate: True
+  test_splits: [eval]
+  device: cpu
+  world_size: 1
+  dist_url: env://
+  distributed: False
+  distributed_type: ddp
+  generate_cfg:
+    temperature: 0.0
+'''
+    cfg.write_text(config_text, encoding='utf-8')
     return model_dir, cfg
 
 
@@ -60,9 +95,9 @@ def build_unimernet_engine(root, warmup=False):
     import unimernet.tasks as tasks
     from unimernet.processors import load_processor
 
-    model_dir, cfg_path = unimernet_paths(root)
+    _, cfg_path = unimernet_paths(root)
     if warmup or not cfg_path.exists():
-        model_dir, cfg_path = prepare_unimernet(root)
+        _, cfg_path = prepare_unimernet(root)
     args = argparse.Namespace(cfg_path=str(cfg_path), options=None)
     cfg = Config(args)
     task = tasks.setup_task(cfg)
@@ -103,15 +138,11 @@ def recognize_unimernet(engine, images):
     return results
 
 
-def recognize(engine_name, images, root, warmup=False):
+def recognize(engine_name, images, root):
     if engine_name == 'pix2text':
-        engine = build_pix2text_engine(warmup=warmup)
-        return recognize_pix2text(engine, images)
+        return recognize_pix2text(build_pix2text_engine(), images)
     if engine_name == 'unimernet':
-        engine = build_unimernet_engine(root, warmup=warmup)
-        if warmup:
-            return []
-        return recognize_unimernet(engine, images)
+        return recognize_unimernet(build_unimernet_engine(root), images)
     raise ValueError(f'unknown OCR engine: {engine_name}')
 
 
