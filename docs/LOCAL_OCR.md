@@ -6,47 +6,65 @@ Formula 主应用保持轻量，不把 Python 环境、识别依赖和模型权�
 
 ## 当前架构
 
-### 两种可选识别模型
+### 递进式识别能力
 
-- **Pix2Text**：轻量、启动较快，适合普通印刷公式和日常截图。
-- **UniMERNet Tiny**：高精度选项，面向复杂公式、手写公式和噪声截图。模型权重约 441 MB，只有用户主动选择安装时才下载。
+Formula 不把 Pix2Text 与 UniMERNet 作为两个彼此独立的下载项，而是采用递进式安装：
 
-两个识别器共享同一个 Formula OCR Python 虚拟环境，但分别维护就绪标记。未安装 UniMERNet 时不会下载其 Python 依赖和模型权重。
+- **标准识别**：Pix2Text 基础环境 + MFD 1.5 公式区域检测 + Pix2Text 公式识别。安装完成后即可完成“整页找公式 → 识别 → 导出/编辑”的完整流程。
+- **增强识别**：在标准识别全部能力基础上，再额外安装 UniMERNet Tiny，用于复杂公式、手写公式和噪声截图。
+
+如果用户直接选择“增强识别”，Formula 会自动先安装并初始化标准识别所需的 Pix2Text 与 MFD，再安装 UniMERNet Tiny，不允许出现“只有 UniMERNet、没有 MFD”的不完整状态。
+
+UniMERNet Tiny 模型权重约 441 MB，只有用户主动选择增强识别时才下载。所有识别器共享同一个 Formula OCR Python 虚拟环境，但分别维护就绪标记。
 
 ### 两种图片模式
 
-1. **单个公式**：图片直接交给所选识别模型，返回 LaTeX 并自动送入 Formula 编辑器。
-2. **整页提取公式**：输入教材、论文或笔记的整页照片；先用 Pix2Text 自带的 **MFD 1.5（Math Formula Detection）** 只检测数学公式区域，不对普通正文做 OCR；再裁剪每个公式区域并送给用户选择的 Pix2Text 或 UniMERNet。结果按页面顺序列出，用户逐条点击“插入”。
+1. **单个公式**：图片直接交给当前识别模型，返回 LaTeX 并自动送入 Formula 编辑器。
+2. **整页提取公式**：输入教材、论文或笔记的整页照片；先用 Pix2Text 自带的 **MFD 1.5（Math Formula Detection）** 只检测数学公式区域，不对普通正文做 OCR；再裁剪每个公式区域并交给 Pix2Text 或 UniMERNet 识别。
 
 整页流程为：
 
 ```text
 整页图片
   ↓
-MFD 1.5 检测公式区域
+MFD 1.5 检测全部公式区域
   ↓
-按 bbox 裁剪公式
+按页面顺序裁剪各公式
   ↓
 Pix2Text 或 UniMERNet Tiny
   ↓
-LaTeX 结果列表
+渲染后的公式结果列表 + Checkbox
   ↓
-逐条插入 MathLive 编辑器
+勾选即同步到编辑器；取消即移除
 ```
 
 普通正文、页码和背景不会作为最终识别结果返回。
 
+## 多公式交互
+
+整页图片检测到多个公式后，Formula 一次列出全部识别结果。列表显示渲染后的数学公式，而不是要求用户阅读 LaTeX 源码。
+
+每个公式前使用 Checkbox：
+
+- 勾选一个公式：该公式立即同步到 Formula 源码输入与输出预览；
+- 勾选多个公式：按页面阅读顺序组合并同步；
+- 取消某个公式：立即从组合结果中移除；
+- 取消最后一个公式：清空本次 OCR 组合结果；
+- 不再设置“确认插入”或“插入所选”之类的二次确认按钮。
+
+当选择多个公式时，前端使用 `gathered` 环境保持每个公式独立成行，并按检测结果的页面顺序排列。
+
 ## 安装流程
 
 1. 用户打开“图片识别”。
-2. 选择 Pix2Text 或 UniMERNet Tiny。
-3. Formula 检查本地 OCR 环境与所选模型就绪状态。
-4. 未安装时，用户点击“安装当前模型”。
+2. 选择“标准识别（Pix2Text）”或“增强识别（UniMERNet Tiny）”。
+3. Formula 检查本地 OCR 环境、MFD 与对应识别能力的就绪状态。
+4. 未安装时，用户点击安装当前识别能力。
 5. Formula 创建或复用独立 Python venv。
-6. 安装 Pix2Text 基础依赖，并初始化 MFD 1.5 公式区域检测模型。
-7. 如果选择 Pix2Text，初始化 MFR 1.5。
-8. 如果选择 UniMERNet Tiny，再安装 `unimernet==0.2.3`，并从 `wanderkid/unimernet_tiny` 下载权重到 Application Support/OCR/models。
-9. 对应启动脚本返回就绪标记后才写入 ready 文件。
+6. 无论选择标准还是增强识别，都先安装 Pix2Text 基础依赖并初始化 MFD 1.5。
+7. 初始化 Pix2Text 公式识别并写入标准识别就绪标记。
+8. 如果选择增强识别，再安装 `unimernet==0.2.3`，下载 `wanderkid/unimernet_tiny` 权重并初始化 UniMERNet Tiny。
+9. 只有各层对应模型真实完成初始化后才写入 ready 文件。
 
 所有 OCR 环境与模型文件均位于用户 Application Support 下，不计入 Formula.app/DMG 体积。
 
@@ -71,18 +89,18 @@ LaTeX 结果列表
 
 venv 存在不代表任一模型已经安装完成。Formula 分别维护：
 
-- Pix2Text 就绪状态；
-- UniMERNet 就绪状态；
+- Pix2Text 标准识别就绪状态；
+- UniMERNet 增强识别就绪状态；
 - MFD 公式区域检测就绪状态。
 
-未通过模型初始化的环境不能开始识别。安装和识别使用单独队列并拒绝重复请求；Python 错误和超时保留日志并自动展开日志区域。
+增强识别安装成功必须同时意味着标准识别与 MFD 已经就绪。未通过模型初始化的环境不能开始识别。安装和识别使用单独队列并拒绝重复请求；Python 错误和超时保留日志并自动展开日志区域。
 
 已复现 RapidOCR 3.10.0 移除 `resolve_model_key` 导致 CnSTD 1.2.8 导入失败；Pix2Text 基础安装继续固定 `cnstd==1.2.8`、`cnocr==2.3.3`、`rapidocr==3.9.2` 兼容组合。
 
 ## 后续阶段
 
 - PDF 逐页公式提取；
-- 公式区域缩略图预览与批量勾选；
+- 原图公式框编号与结果列表联动；
 - 识别置信度与候选结果显示；
 - 粘贴剪贴板图片、拖拽图片、屏幕区域截图；
 - OCR 环境删除/更新/模型版本管理；
