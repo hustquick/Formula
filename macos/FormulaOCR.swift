@@ -160,7 +160,7 @@ extension AppDelegate {
             for marker in markers { try "ready".write(to:marker,atomically:true,encoding:.utf8) }
             if existed {
                 try? fm.removeItem(at:backup)
-                if oldEnvironment.path != target.path && oldEnvironment.deletingLastPathComponent().path == ocrRoot.path && oldEnvironment.lastPathComponent.hasPrefix("environment-") { try? fm.removeItem(at:oldEnvironment) }
+                if ocrPath(oldEnvironment) != ocrPath(target) && ocrPath(oldEnvironment.deletingLastPathComponent()) == ocrPath(ocrRoot) && oldEnvironment.lastPathComponent.hasPrefix("environment-") { try? fm.removeItem(at:oldEnvironment) }
             }
         } catch {
             try? fm.removeItem(at:target)
@@ -170,6 +170,11 @@ extension AppDelegate {
             }
             throw error
         }
+    }
+
+    // Foundation URL equality includes the directory hint; compare canonical paths.
+    private func ocrPath(_ url:URL) -> String {
+        url.standardizedFileURL.resolvingSymlinksInPath().path.trimmingCharacters(in:CharacterSet(charactersIn:"/"))
     }
 
     private func reportOCRPhase(_ message:String) {

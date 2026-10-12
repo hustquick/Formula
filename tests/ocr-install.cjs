@@ -41,7 +41,7 @@ ${activation}
   let created=try run(python,["-m","venv",stage.path],cwd:ocrRoot,timeout:60)
   precondition(created.0==0)
   try activateOCREnvironment(stage,target,markers:[marker])
-  precondition(target.resolvingSymlinksInPath()==stage)
+  precondition(ocrPath(target)==ocrPath(stage))
   // The original absolute pip shebang still works after activation.
   let pip=try run(target.appendingPathComponent("bin/pip").path,["--version"],cwd:ocrRoot,timeout:10)
   precondition(pip.0==0 && pip.1.contains("environment-new"))
@@ -49,10 +49,10 @@ ${activation}
   try fm.createDirectory(at:replacement,withIntermediateDirectories:true)
   let badMarker=ocrRoot.appendingPathComponent("missing/ready")
   do {try activateOCREnvironment(replacement,target,markers:[marker,badMarker]);fatalError("Expected rollback")}
-  catch {precondition(target.resolvingSymlinksInPath()==stage);let restored=try String(contentsOf:marker,encoding:.utf8);precondition(restored=="ready")}
+  catch {precondition(ocrPath(target)==ocrPath(stage));let restored=try String(contentsOf:marker,encoding:.utf8);precondition(restored=="ready")}
   DispatchQueue.main.sync {self.ocrInstallCancelled=true}
   do {try activateOCREnvironment(replacement,target,markers:[marker]);fatalError("Expected cancelled activation")}
-  catch {precondition(target.resolvingSymlinksInPath()==stage)}
+  catch {precondition(ocrPath(target)==ocrPath(stage))}
   DispatchQueue.main.sync {self.ocrInstallCancelled=false}
   // Cancel a running installation, retaining partial output and ending promptly.
   let started=Date()
