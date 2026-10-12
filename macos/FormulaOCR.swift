@@ -194,13 +194,13 @@ extension AppDelegate {
             if page {
                 let prefix="FORMULA_OCR_PAGE="
                 guard let line=log.components(separatedBy:.newlines).last(where:{$0.hasPrefix(prefix)}) else { throw ToolFailure(message:"整页检测器没有返回公式结果。") }
-                let text=try decodeOCRPayload(line,prefix:prefix)
+                let text=try decodeOCRPayload(line,prefix)
                 guard let data=text.data(using:.utf8),let formulas=try JSONSerialization.jsonObject(with:data) as? [[String:Any]] else { throw ToolFailure(message:"整页公式结果格式无效。") }
                 return ["formulas":formulas,"engine":label,"detector":"Pix2Text MFD 1.5","log":String(log.suffix(20000))]
             }
             let prefix="FORMULA_OCR_RESULT="
             guard let line=log.components(separatedBy:.newlines).last(where:{$0.hasPrefix(prefix)}) else { throw ToolFailure(message:"识别器没有返回 LaTeX 结果。") }
-            let latex=try decodeOCRPayload(line,prefix:prefix).trimmingCharacters(in:.whitespacesAndNewlines)
+            let latex=try decodeOCRPayload(line,prefix).trimmingCharacters(in:.whitespacesAndNewlines)
             if latex.isEmpty { throw ToolFailure(message:"识别结果为空。") }
             return ["latex":latex,"engine":label,"log":String(log.suffix(20000))]
         } catch let e as ToolFailure { return ["error":e.message,"log":String((log+"\n"+e.message).suffix(20000))] }
