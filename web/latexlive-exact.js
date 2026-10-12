@@ -23,10 +23,18 @@
 
   function normalizedLatex(entry){
     if(matrixFallback[entry?.tag])return matrixFallback[entry.tag];
-    return String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
+    let latex=String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
+    // Audited physics entries: replace differential d, preserving I_d and variables.
+    if(/^physics_(?:1|2|7|8|10|11|12)$/.test(entry?.tag||'')){
+      latex=latex.replace(/Id(?=[l\s])/g,String.raw`I\mathrm{d}`);
+      latex=latex.replace(/(^|[^A-Za-z\\_])d(?=\s|[t{^]|\\vec)/g,(_,prefix)=>prefix+String.raw`\mathrm{d}`);
+    }
+    if(entry?.tag==='physics_6')latex=latex.replace(String.raw`\rm{d}`,String.raw`\mathrm{d}`);
+    return latex;
   }
   function usable(entry){return entry&&entry.tag!=='divider'&&normalizedLatex(entry);}
-  function label(entry){return String(entry?.zh||entry?.en||entry?.tag||'公式').replace(/-/g,'—');}
+  function label(entry){if(entry?.englishOperator){const command=normalizedLatex(entry).match(/\\([A-Za-z]+)/);return command?command[1]:({'+':'plus','-':'minus','=':'equals','<':'less than','>':'greater than'}[normalizedLatex(entry)]||(entry.en&&entry.en!=='-'?entry.en:entry.tag));}
+    const meaningful=value=>value&&value.trim()!=='-'&&value.trim()!=='—';return String([entry?.zh,entry?.en,entry?.tag].find(meaningful)||'公式');}
   function extract(parsed,name){
     const groups=Array.isArray(parsed?.shortcut)?parsed.shortcut:[];
     return groups.find(x=>x&&x.name===name&&x.layer1&&x.layer2)||null;
@@ -51,10 +59,9 @@
     mf.focus();const ok=mf.executeCommand(command);mf.dispatchEvent(new Event('input',{bubbles:true}));
     if(ok===false&&q('#status'))q('#status').textContent='请先点击矩阵或多行公式中的单元格';
   }
-  function previewLatex(latex){return latex.replaceAll('#@','x').replaceAll('#?','y').replace(/\\begin\{equation\*?\}|\\end\{equation\*?\}/g,'').replace(/\\label\{[^}]*\}/g,'');}
+  function previewLatex(latex){latex=latex.replace(/\\sqrt\[\]\{\}/g,'\\sqrt[3]{x}').replace(/\{\}/g,'{x}');if(/^[\^_]/.test(latex))latex='x'+latex;return latex.replaceAll('#@','x').replaceAll('#?','y').replace(/\\begin\{equation\*?\}|\\end\{equation\*?\}/g,'').replace(/\\label\{[^}]*\}/g,'');}
   async function render(node,latex){
-    if(!window.MathJax?.tex2svgPromise)return;
-    try{const out=await MathJax.tex2svgPromise('\\displaystyle '+previewLatex(latex),{display:false});node.replaceChildren(out);node.dataset.rendered='1';}
+    try{await wait(()=>window.MathJax?.tex2svgPromise);await MathJax.startup.promise;const out=await MathJax.tex2svgPromise('\\displaystyle '+previewLatex(latex),{display:true});node.replaceChildren(out);node.dataset.rendered='1';}
     catch{node.textContent=latex.replace(/\\[A-Za-z]+/g,'').replace(/[{}]/g,'').trim().slice(0,28)||'ƒ';node.dataset.rendered='fallback';}
   }
   function createItem(entry,kind='shortcut'){
@@ -92,7 +99,7 @@
     for(const group of qa('#tools>.tool-group')){
       const summary=q('summary',group),title=summary?.getAttribute('aria-label')||summary?.textContent.trim();const tag=byDescription.get(title),src=tag&&toolbar.layer2.cont?.[tag]?.cont;if(!Array.isArray(src))continue;
       const panel=q(':scope>div',group);panel.replaceChildren();panel.classList.add('ll-popup-grid');panel.dataset.exactCategory=tag;panel.setAttribute('role','menu');panel.setAttribute('aria-label',title+'选项');summary?.setAttribute('aria-haspopup','menu');
-      for(const entry of src){if(entry.tag==='divider'){const d=document.createElement('div');d.className='ll-divider';d.textContent=entry.name||entry.name_en||'';d.setAttribute('role','presentation');panel.append(d);continue;}if(usable(entry))panel.append(createItem(entry));}
+      for(const entry of src){if(entry.tag==='divider'){const d=document.createElement('div');d.className='ll-divider';d.textContent=entry.name||entry.name_en||'';d.setAttribute('role','presentation');panel.append(d);continue;}if(usable(entry))panel.append(createItem(tag==='symbol'?{...entry,englishOperator:true}:entry));}
       if(tag==='matrix'){
         const d=document.createElement('div');d.className='ll-divider';d.textContent='矩阵编辑 Matrix editing';d.setAttribute('role','presentation');panel.append(d);
         for(const [command,name] of [['addRowBefore','上方加行'],['addRowAfter','下方加行'],['removeRow','删除行'],['addColumnBefore','左侧加列'],['addColumnAfter','右侧加列'],['removeColumn','删除列']]){const b=document.createElement('button');b.type='button';b.className='ll-item ll-command';b.dataset.exactCommand=command;b.textContent=name;b.setAttribute('role','menuitem');panel.append(b);}
@@ -106,10 +113,12 @@
     const browser=q('.ll-template-browser');if(!browser)return;browser.replaceChildren();
     const nav=document.createElement('div');nav.className='ll-template-nav';nav.setAttribute('role','toolbar');nav.setAttribute('aria-label','公式模板分类');
     const panel=document.createElement('div');panel.className='ll-template-panel';panel.hidden=true;panel.setAttribute('role','menu');browser.append(nav,panel);let active='';
+    const covers={algebra:String.raw`y=ax+b`,inequality:String.raw`\lvert a+b\rvert\leqslant\lvert a\rvert+\lvert b\rvert`,calculous:String.raw`\int_{a}^{b} f(x)\,\mathrm{d}x`,array:String.raw`\begin{pmatrix}a & b \\ c & d\end{pmatrix}`,physics:String.raw`E=mc^2`,chemistry:String.raw`\mathrm{2H_2+O_2=2H_2O}`};
     for(const category of template.layer1.cont||[]){
+      const categoryName=category.tag==='calculous'?'微积分':category.descript||category.tag;
       const entries=(template.layer2.cont?.[category.tag]?.cont||[]).filter(usable);const b=document.createElement('button');b.type='button';b.className='ll-template-category';b.dataset.templateTag=category.tag;b.setAttribute('aria-haspopup','menu');b.setAttribute('aria-expanded','false');if(category.tag==='physics')b.dataset.example='heat';
-      const art=document.createElement('span');art.className='ll-category-art ll-preview';art.setAttribute('aria-hidden','true');art.textContent='…';const text=document.createElement('span');text.textContent=category.descript||category.tag;const arrow=document.createElement('span');arrow.className='ll-category-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='⌄';b.append(art,text,arrow);nav.append(b);if(entries[0])render(art,normalizedLatex(entries[0]));
-      b.onclick=e=>{e.preventDefault();e.stopPropagation();if(active===category.tag&&!panel.hidden){panel.hidden=true;active='';b.classList.remove('active');b.setAttribute('aria-expanded','false');document.body.classList.remove('formula-menu-open');return;}qa('.ll-template-category',nav).forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-expanded',String(x===b));});active=category.tag;panel.hidden=false;panel.dataset.templateTag=category.tag;panel.replaceChildren();const title=document.createElement('div');title.className='ll-panel-title';title.innerHTML=`<strong>${category.descript||category.tag}</strong><span>${entries.length} 个模板</span>`;const grid=document.createElement('div');grid.className='ll-template-grid';for(const entry of entries)grid.append(createItem(entry,'template'));panel.append(title,grid);document.body.classList.add('formula-menu-open');viewportPlace(panel,b);};
+      const art=document.createElement('span');art.className='ll-category-art ll-preview';art.setAttribute('aria-hidden','true');art.textContent='…';const text=document.createElement('span');text.textContent=categoryName;const arrow=document.createElement('span');arrow.className='ll-category-arrow';arrow.setAttribute('aria-hidden','true');arrow.textContent='⌄';b.append(art,text,arrow);nav.append(b);const cover=covers[category.tag]||normalizedLatex(entries[0]);art.dataset.coverLatex=cover;render(art,cover);
+      b.onclick=e=>{e.preventDefault();e.stopPropagation();if(active===category.tag&&!panel.hidden){panel.hidden=true;active='';b.classList.remove('active');b.setAttribute('aria-expanded','false');document.body.classList.remove('formula-menu-open');return;}qa('.ll-template-category',nav).forEach(x=>{x.classList.toggle('active',x===b);x.setAttribute('aria-expanded',String(x===b));});active=category.tag;panel.hidden=false;panel.dataset.templateTag=category.tag;panel.replaceChildren();const title=document.createElement('div');title.className='ll-panel-title';title.innerHTML=`<strong>${categoryName}</strong><span>${entries.length} 个模板</span>`;const grid=document.createElement('div');grid.className='ll-template-grid';for(const entry of entries)grid.append(createItem(entry,'template'));panel.append(title,grid);document.body.classList.add('formula-menu-open');viewportPlace(panel,b);};
       b.addEventListener('keydown',e=>{if(e.key==='ArrowRight'||e.key==='ArrowLeft'){e.preventDefault();const buttons=qa('.ll-template-category',nav),i=buttons.indexOf(b),next=e.key==='ArrowRight'?(i+1)%buttons.length:(i-1+buttons.length)%buttons.length;buttons[next].focus();}if(e.key==='ArrowDown'&&!panel.hidden){e.preventDefault();focusableItems(panel)[0]?.focus();}});
     }
     panel.addEventListener('keydown',e=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(e.key)){e.preventDefault();gridMove(panel,e.target.closest('button'),e.key);}if(e.key==='Escape'){e.preventDefault();const trigger=q(`.ll-template-category[data-template-tag="${panel.dataset.templateTag}"]`);closeAllFloating();trigger?.focus();}});
