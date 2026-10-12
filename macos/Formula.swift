@@ -165,6 +165,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         }
         if process.isRunning {process.terminate();Thread.sleep(forTimeInterval:0.2);if process.isRunning{kill(process.processIdentifier,SIGKILL)};process.waitUntilExit();let detail=(try? String(contentsOf:log,encoding:.utf8)) ?? "";throw ToolFailure(message:"工具执行超时（\(Int(timeout)) 秒）\n"+String(detail.suffix(12000)))}
         process.waitUntilExit();let text=(try? String(contentsOf:log,encoding:.utf8)) ?? ""
+        if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) { throw ToolFailure(message:"用户已取消 OCR 安装。") }
         return (process.terminationStatus,String(text.suffix(20000)))
     }
     func discover(_ key:String,_ current:String?,cwd:URL) -> [String:String] {
