@@ -26,7 +26,7 @@
     return String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
   }
   function usable(entry){return entry&&entry.tag!=='divider'&&normalizedLatex(entry);}
-  function label(entry){return String(entry?.zh||entry?.en||entry?.tag||'公式').replace(/-/g,'—');}
+  function label(entry){const meaningful=value=>value&&value.trim()!=='-'&&value.trim()!=='—';return String([entry?.zh,entry?.en,entry?.tag].find(meaningful)||'公式');}
   function extract(parsed,name){
     const groups=Array.isArray(parsed?.shortcut)?parsed.shortcut:[];
     return groups.find(x=>x&&x.name===name&&x.layer1&&x.layer2)||null;
@@ -53,8 +53,7 @@
   }
   function previewLatex(latex){return latex.replaceAll('#@','x').replaceAll('#?','y').replace(/\\begin\{equation\*?\}|\\end\{equation\*?\}/g,'').replace(/\\label\{[^}]*\}/g,'');}
   async function render(node,latex){
-    if(!window.MathJax?.tex2svgPromise)return;
-    try{const out=await MathJax.tex2svgPromise('\\displaystyle '+previewLatex(latex),{display:false});node.replaceChildren(out);node.dataset.rendered='1';}
+    try{await wait(()=>window.MathJax?.tex2svgPromise);await MathJax.startup.promise;const out=await MathJax.tex2svgPromise('\\displaystyle '+previewLatex(latex),{display:false});node.replaceChildren(out);node.dataset.rendered='1';}
     catch{node.textContent=latex.replace(/\\[A-Za-z]+/g,'').replace(/[{}]/g,'').trim().slice(0,28)||'ƒ';node.dataset.rendered='fallback';}
   }
   function createItem(entry,kind='shortcut'){
