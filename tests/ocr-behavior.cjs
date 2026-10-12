@@ -20,8 +20,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.addScriptTag({content:fs.readFileSync('web/ocr.js','utf8')});
  await page.getByText('图片识别',{exact:true}).click();
  await page.waitForFunction(()=>!document.querySelector('[data-recognize]').disabled);
- assert.equal(await page.locator('[data-engine] option').first().textContent(),'标准识别（Pix2Text）');
- assert.equal(await page.locator('[data-engine] option').nth(1).textContent(),'增强识别（UniMERNet Tiny）');
+ assert.equal(await page.locator('[data-engine] option').first().textContent(),'基础识别（Pix2Text）');
+ assert.equal(await page.locator('[data-engine] option').nth(1).textContent(),'专业识别（UniMERNet Tiny）');
  await page.locator('[data-recognize]').click();
  assert.equal(await page.evaluate(()=>calls.at(-1).engine),'pix2text');
  assert.equal(await page.evaluate(()=>calls.at(-1).mode),'single');
