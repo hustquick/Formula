@@ -149,6 +149,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let end=Date().addingTimeInterval(timeout)
         var lastProgress=Date.distantPast
         while process.isRunning && Date()<end {
+            // Poll cancellation while the installer is running, rather than waiting for a potentially hours-long download to finish.
+            if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) {
+                if process.isRunning {
+                    process.terminate()
+                    Thread.sleep(forTimeInterval:0.2)
+                    if process.isRunning { kill(process.processIdentifier,SIGKILL) }
+                }
+                process.waitUntilExit()
+                throw ToolFailure(message:"用户已取消 OCR 安装。")
+            }
             if ocrInstall && Date().timeIntervalSince(lastProgress)>1 {
                 lastProgress=Date()
                 if let output=try? String(contentsOf:log,encoding:.utf8),let line=output.components(separatedBy:.newlines).last(where:{$0.contains("%") || $0.contains("Downloading") || $0.contains("Installing")}) {
