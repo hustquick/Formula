@@ -148,8 +148,15 @@ extension AppDelegate {
             }
         }
         if !fm.isExecutableFile(atPath:ocrPython.path) {
-            let r=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120,ocrInstall:true);log+=r.1
-            if r.0 != 0 { throw ToolFailure(message:"创建公式识别独立环境失败。") }
+            // A half-created environment is not a valid venv. Rebuild it atomically.
+            let staging=ocrRoot.appendingPathComponent("venv-staging-"+UUID().uuidString)
+            defer { try? fm.removeItem(at:staging) }
+            let r=try run(systemPython,["-m","venv",staging.path],cwd:ocrRoot,timeout:120,ocrInstall:true);log+=r.1
+            guard r.0 == 0 && compatibleOCRPython(staging.appendingPathComponent("bin/python3").path) else {
+                throw ToolFailure(message:"创建兼容的 OCR Python 环境失败。")
+            }
+            if fm.fileExists(atPath:ocrVenv.path) { try fm.removeItem(at:ocrVenv) }
+            try fm.moveItem(at:staging,to:ocrVenv)
         }
         var r=try run(ocrPython.path,["-m","pip","install","--upgrade","pip","setuptools","wheel"],cwd:ocrRoot,timeout:300,ocrInstall:true);log+=r.1
         if r.0 != 0 { throw ToolFailure(message:"更新 OCR 安装工具失败。") }
