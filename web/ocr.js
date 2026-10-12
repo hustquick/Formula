@@ -29,7 +29,7 @@
     .ocr-box{padding:22px}.ocr-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.ocr-head h2{margin:0}
     .ocr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.ocr-field{display:flex;flex-direction:column;gap:6px}.ocr-field label{font-size:12px;opacity:.72}.ocr-field select{min-height:36px;border-radius:9px;padding:0 10px}
     .ocr-mode{display:flex;gap:8px}.ocr-mode button{flex:1;min-height:36px}.ocr-mode button.active{font-weight:700;outline:2px solid color-mix(in srgb,currentColor 28%,transparent)}
-    .ocr-install-choices{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}.ocr-install-choices label{display:inline-flex;gap:6px;align-items:center}.ocr-install-choices input{width:17px;height:17px}.ocr-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.ocr-actions button{min-height:36px}.ocr-actions .primary{font-weight:700}
+    .ocr-install-choices{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0}.ocr-install-choices label{display:inline-flex;gap:7px;align-items:center;min-height:36px;cursor:pointer}.ocr-install-choices label:has(input:disabled){opacity:.45;cursor:not-allowed}.ocr-install-choices input{appearance:none;width:18px;height:18px;border:2px solid currentColor;border-radius:50%;margin:0;display:grid;place-items:center;cursor:inherit}.ocr-install-choices input:checked::before{content:"";width:9px;height:9px;border-radius:50%;background:currentColor}.ocr-install-choices input:focus-visible{outline:2px solid #5689ff;outline-offset:3px}.ocr-install-arrow{opacity:.45;font-size:18px}.ocr-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.ocr-actions button{min-height:36px}.ocr-actions .primary{font-weight:700}
     .ocr-status{padding:12px 14px;border-radius:12px;background:color-mix(in srgb,currentColor 6%,transparent);line-height:1.55}
     .ocr-note{opacity:.72;font-size:13px;line-height:1.55}.ocr-log{max-height:150px;overflow:auto;font-size:11px;white-space:pre-wrap;background:#111;color:#ddd;padding:10px;border-radius:10px}
     .ocr-results{display:grid;gap:8px;margin-top:12px;max-height:310px;overflow:auto}.ocr-result{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,currentColor 5%,transparent);cursor:pointer}
@@ -43,10 +43,9 @@
       <div class="ocr-field"><label>识别能力</label><select data-engine><option value="pix2text">基础识别（Pix2Text）</option><option value="unimernet">专业识别（UniMERNet Tiny）</option></select></div>
       <div class="ocr-field"><label>图片类型</label><div class="ocr-mode"><button data-mode="single" class="active">单个公式</button><button data-mode="page">整页提取公式</button></div></div>
     </div>
-    <div class="ocr-install-choices" role="radiogroup" aria-label="选择安装版本"><label><input type="radio" name="ocr-install-tier" value="pix2text" data-basic-install>基础版（Pix2Text）</label><label><input type="radio" name="ocr-install-tier" value="unimernet" data-pro-install>专业版（UniMERNet Tiny）</label></div>
+    <div class="ocr-install-choices" role="group" aria-label="安装版本层级"><label><input type="checkbox" data-basic-install>基础版（Pix2Text）</label><span class="ocr-install-arrow" aria-hidden="true">→</span><label><input type="checkbox" data-pro-install>专业版（UniMERNet Tiny）</label></div>
     <p class="ocr-status" data-status>正在检查本地识别模型…</p>
     <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装基础版</button><button data-refresh>刷新状态</button></div>
-    <p class="ocr-note" data-note>选择专业版将自动包含基础版；无需分别安装。</p>
     <div class="ocr-results" data-results hidden></div>
     <details><summary>安装/识别日志</summary><pre class="ocr-log" data-log>尚无日志</pre></details>
   </div>`;
@@ -61,12 +60,16 @@
   const basicChoice=dialog.querySelector('[data-basic-install]');
   const proChoice=dialog.querySelector('[data-pro-install]');
   function syncInstallChoices(){
+    // Pro implies Basic; the parent remains selected and locked while Pro is selected.
+    if(proChoice.checked)basicChoice.checked=true;
+    basicChoice.disabled=proChoice.checked;
     const basicInstalled=!!lastStatus?.engines?.pix2text?.installed;
     const proInstalled=!!lastStatus?.engines?.unimernet?.installed;
-    const requested=proChoice.checked?'unimernet':'pix2text';
+    const requested=proChoice.checked?'unimernet':basicChoice.checked?'pix2text':null;
     const installed=requested==='unimernet'?proInstalled:basicInstalled;
-    install.textContent=installed?'已安装 · 验证/修复':requested==='unimernet'?(basicInstalled?'升级至专业版':'安装专业版（含基础版）'):'安装基础版';
-    install.dataset.installEngine=requested;
+    install.disabled=!!lastStatus?.busy||!requested;
+    install.textContent=!requested?'选择安装版本':installed?'已安装 · 验证/修复':requested==='unimernet'?(basicInstalled?'升级至专业版':'安装专业版'):'安装基础版';
+    install.dataset.installEngine=requested||'';
   }
   basicChoice.addEventListener('change',syncInstallChoices);
   proChoice.addEventListener('change',syncInstallChoices);
@@ -115,7 +118,8 @@
 
   install.onclick=async()=>{
     install.disabled=true;recognize.disabled=true;results.hidden=true;
-    const installEngine=install.dataset.installEngine||'pix2text';
+    const installEngine=install.dataset.installEngine;
+    if(!installEngine)return;
     const enhanced=installEngine==='unimernet';
     const label=enhanced?'专业版':'基础版';
     status.textContent=enhanced?'正在安装专业版：自动包含基础版，再安装 UniMERNet Tiny…':'正在安装基础版：准备 Pix2Text 与 MFD 公式检测…';
