@@ -28,3 +28,5 @@ button,select{border-color:#dde3ed;border-radius:5px;color:#43536a;background:#f
 @media(max-width:660px){main{padding:16px 10px}.tools{flex-wrap:wrap}.tool-group,.tool-group[open]{flex:1 0 15%}.input-tabs{overflow:auto}.input-actions{flex-wrap:wrap}.input-format{flex-wrap:wrap}.input-mode{margin-left:auto}.brand p,.badge{display:none}}
 
 .category-art mjx-container{font-size:175%!important}.heading-icon{display:inline-flex;vertical-align:middle}.input-format .segmented{height:36px}.preview-card>.section-head #engine{margin-left:auto}#remember{margin-left:0;color:#3277da}.format-popup .tool-icon{max-height:34px}
+
+#mode-latex:disabled,#mode-typst:disabled{background:transparent;color:#9299a3;box-shadow:none;opacity:.55;cursor:default}

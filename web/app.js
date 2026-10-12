@@ -330,7 +330,7 @@ $('font-menu').addEventListener('pointerdown',e=>e.preventDefault());
 $('font-menu').onclick=()=>{formatting.hidden=!formatting.hidden;const r=$('font-menu').getBoundingClientRect();formatting.style.left=r.left+'px';formatting.style.top=r.bottom+6+'px';};
 formatting.addEventListener('click',()=>formatting.hidden=true);
 const inputEditors=document.querySelector('.input-editors');
-function setInputPane(mode){inputEditors.dataset.inputMode=mode;$('input-source').classList.toggle('active',mode==='source');$('input-visual').classList.toggle('active',mode==='visual');}
+function setInputPane(mode){inputEditors.dataset.inputMode=mode;for(const id of ['mode-latex','mode-typst'])$(id).disabled=mode==='visual';$('input-source').classList.toggle('active',mode==='source');$('input-visual').classList.toggle('active',mode==='visual');}
 $('input-source').onclick=()=>{setInputPane('source');$('source').focus();};
 $('input-visual').onclick=()=>{clearTimeout(sourceTimer);readSource();setInputPane('visual');mf.focus();};
 const originalFocus=mf.focus.bind(mf);mf.focus=(...args)=>{setInputPane('visual');return originalFocus(...args);};
