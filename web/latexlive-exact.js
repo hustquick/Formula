@@ -26,7 +26,8 @@
     return String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
   }
   function usable(entry){return entry&&entry.tag!=='divider'&&normalizedLatex(entry);}
-  function label(entry){const meaningful=value=>value&&value.trim()!=='-'&&value.trim()!=='—';return String([entry?.zh,entry?.en,entry?.tag].find(meaningful)||'公式');}
+  function label(entry){if(entry?.englishOperator){const command=normalizedLatex(entry).match(/\\([A-Za-z]+)/);return command?command[1]:({'+':'plus','-':'minus','=':'equals','<':'less than','>':'greater than'}[normalizedLatex(entry)]||entry.en||entry.tag);}
+    const meaningful=value=>value&&value.trim()!=='-'&&value.trim()!=='—';return String([entry?.zh,entry?.en,entry?.tag].find(meaningful)||'公式');}
   function extract(parsed,name){
     const groups=Array.isArray(parsed?.shortcut)?parsed.shortcut:[];
     return groups.find(x=>x&&x.name===name&&x.layer1&&x.layer2)||null;
@@ -91,7 +92,7 @@
     for(const group of qa('#tools>.tool-group')){
       const summary=q('summary',group),title=summary?.getAttribute('aria-label')||summary?.textContent.trim();const tag=byDescription.get(title),src=tag&&toolbar.layer2.cont?.[tag]?.cont;if(!Array.isArray(src))continue;
       const panel=q(':scope>div',group);panel.replaceChildren();panel.classList.add('ll-popup-grid');panel.dataset.exactCategory=tag;panel.setAttribute('role','menu');panel.setAttribute('aria-label',title+'选项');summary?.setAttribute('aria-haspopup','menu');
-      for(const entry of src){if(entry.tag==='divider'){const d=document.createElement('div');d.className='ll-divider';d.textContent=entry.name||entry.name_en||'';d.setAttribute('role','presentation');panel.append(d);continue;}if(usable(entry))panel.append(createItem(entry));}
+      for(const entry of src){if(entry.tag==='divider'){const d=document.createElement('div');d.className='ll-divider';d.textContent=entry.name||entry.name_en||'';d.setAttribute('role','presentation');panel.append(d);continue;}if(usable(entry))panel.append(createItem(tag==='symbol'?{...entry,englishOperator:true}:entry));}
       if(tag==='matrix'){
         const d=document.createElement('div');d.className='ll-divider';d.textContent='矩阵编辑 Matrix editing';d.setAttribute('role','presentation');panel.append(d);
         for(const [command,name] of [['addRowBefore','上方加行'],['addRowAfter','下方加行'],['removeRow','删除行'],['addColumnBefore','左侧加列'],['addColumnAfter','右侧加列'],['removeColumn','删除列']]){const b=document.createElement('button');b.type='button';b.className='ll-item ll-command';b.dataset.exactCommand=command;b.textContent=name;b.setAttribute('role','menuitem');panel.append(b);}
