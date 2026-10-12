@@ -9,11 +9,20 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
   window.calls=[];window.imports=[];
   window.FormulaImport=(...x)=>imports.push(x);
   window.FormulaNativeReply=()=>{};
-  window.webkit={messageHandlers:{mathforge:{postMessage:m=>{calls.push(m);if(m.action==='ocrStatus')setTimeout(()=>FormulaNativeReply(m.id,{installed:true}),0);}}}};
+  window.webkit={messageHandlers:{mathforge:{postMessage:m=>{
+   calls.push(m);
+   if(m.action==='ocrStatus')setTimeout(()=>FormulaNativeReply(m.id,{
+    installed:true,busy:false,environmentExists:true,pythonAvailable:true,detectorInstalled:true,bytes:1234,
+    engines:{pix2text:{installed:true},unimernet:{installed:true}}
+   }),0);
+  }}}};
  });
  await page.addScriptTag({content:fs.readFileSync('web/ocr.js','utf8')});
  await page.getByText('图片识别',{exact:true}).click();
+ await page.waitForFunction(()=>!document.querySelector('[data-recognize]').disabled);
  await page.locator('[data-recognize]').click();
+ assert.equal(await page.evaluate(()=>calls.at(-1).engine),'pix2text');
+ assert.equal(await page.evaluate(()=>calls.at(-1).mode),'single');
  await page.evaluate(()=>FormulaOCRProgress(calls.at(-1).id,{message:'正在识别 JPG'}));
  assert.equal(await page.locator('[data-status]').textContent(),'正在识别 JPG');
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{error:'模型初始化失败',log:'ModuleNotFoundError: pix2text'}));
@@ -27,6 +36,22 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{latex:'x^2',engine:'Pix2Text'}));
  await page.waitForFunction(()=>imports.length===1);
  assert.deepEqual(await page.evaluate(()=>imports),[['x^2','tex']]);
+
+ // Re-open and verify high-accuracy engine plus full-page extraction.
+ await page.getByText('图片识别',{exact:true}).click();
+ await page.locator('[data-engine]').selectOption('unimernet');
+ await page.locator('[data-mode="page"]').click();
+ await page.locator('[data-recognize]').click();
+ assert.equal(await page.evaluate(()=>calls.at(-1).engine),'unimernet');
+ assert.equal(await page.evaluate(()=>calls.at(-1).mode),'page');
+ await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{engine:'UniMERNet Tiny',formulas:[
+  {latex:'a+b=c',type:'embedding',bbox:[10,20,100,50]},
+  {latex:'\\int_0^1 x\\,dx',type:'isolated',bbox:[12,80,180,130]}
+ ]}));
+ await page.waitForFunction(()=>document.querySelectorAll('.ocr-result').length===2);
+ assert.match(await page.locator('[data-status]').textContent(),/检测到 2 个公式/);
+ await page.locator('.ocr-result button').first().click();
+ assert.deepEqual(await page.evaluate(()=>imports.at(-1)),['a+b=c','tex']);
  await page.evaluate(()=>FormulaNativeReply('unrelated',{ok:true}));
- await browser.close();console.log('OCR progress, error logs, cancellation, import and reply routing OK');
+ await browser.close();console.log('OCR progress, model selection, page extraction, cancellation, import and reply routing OK');
 })().catch(e=>{console.error(e);process.exit(1)});
