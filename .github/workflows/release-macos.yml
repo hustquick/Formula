@@ -46,6 +46,8 @@ jobs:
           npm run sync:latexlive
       - name: Validate Formula v1.1.0 release contract
         run: npm run validate:v1.1
+      - name: Validate local OCR packaging
+        run: node tests/ocr-static.cjs
       - name: Compile universal app and verify DMG
         run: bash scripts/build-dmg.sh
       - name: Upload build artifacts
