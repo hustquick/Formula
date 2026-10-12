@@ -5,8 +5,8 @@ import sys
 
 
 def build_engine():
-    from pix2text import Pix2Text
-    return Pix2Text.from_config(enable_table=False, device='cpu')
+    from pix2text.latex_ocr import LatexOCR
+    return LatexOCR(device='cpu')
 
 
 def main():
@@ -22,10 +22,14 @@ def main():
     if not args.image:
         parser.error('image path is required')
 
-    result = engine.recognize_formula(args.image, return_text=True)
+    result = engine.recognize(args.image)
     if isinstance(result, (list, tuple)):
         result = result[0] if result else ''
-    latex = str(result).strip()
+    if not isinstance(result, dict) or not isinstance(result.get('text'), str):
+        raise ValueError('formula recognizer returned an invalid result')
+    latex = result['text'].strip()
+    if not latex:
+        raise ValueError('no formula was recognized')
     payload = base64.b64encode(latex.encode('utf-8')).decode('ascii')
     print('FORMULA_OCR_RESULT=' + payload)
     return 0 if latex else 2

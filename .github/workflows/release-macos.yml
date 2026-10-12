@@ -47,7 +47,11 @@ jobs:
       - name: Validate Formula v1.1.0 release contract
         run: npm run validate:v1.1
       - name: Validate local OCR packaging
-        run: node tests/ocr-static.cjs
+        run: |
+          node tests/ocr-static.cjs
+          npm install --no-save --package-lock=false playwright
+          npx playwright install chromium
+          node tests/ocr-behavior.cjs
       - name: Compile universal app and verify DMG
         run: bash scripts/build-dmg.sh
       - name: Upload build artifacts

@@ -18,6 +18,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     let worker = DispatchQueue(label: "Formula.compiler")
     var queuedImports: [URL] = []
     var ready = false
+    let ocrWorker = DispatchQueue(label: "Formula.ocr")
+    var ocrBusy = false
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
@@ -46,7 +48,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         sender.reply(toOpenOrPrint:.success)
     }
     func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-        ready=true;for url in queuedImports {importFile(url)};queuedImports=[]
+        ready=true;loadOCRUI();for url in queuedImports {importFile(url)};queuedImports=[]
     }
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
         decisionHandler(navigationAction.request.url?.isFileURL == true ? .allow : .cancel)
@@ -96,6 +98,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         case "render":
             let paths=toolPaths
             worker.async {let result=self.render(data,paths:paths);DispatchQueue.main.async {self.reply(data["id"] as? String ?? "",result)}}
+        case "ocrStatus":handleOCRStatus(data)
+        case "ocrInstall":handleOCRInstall(data)
+        case "ocrRecognize":handleOCRRecognize(data)
         case "drag":dragFile(data)
         default:break
         }
@@ -132,7 +137,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         process.environment=env;process.standardOutput=handle;process.standardError=handle
         try process.run();let end=Date().addingTimeInterval(timeout)
         while process.isRunning && Date()<end {Thread.sleep(forTimeInterval:0.05)}
-        if process.isRunning {process.terminate();Thread.sleep(forTimeInterval:0.2);if process.isRunning{kill(process.processIdentifier,SIGKILL)};process.waitUntilExit();throw ToolFailure(message:"工具执行超时（\(Int(timeout)) 秒）")}
+        if process.isRunning {process.terminate();Thread.sleep(forTimeInterval:0.2);if process.isRunning{kill(process.processIdentifier,SIGKILL)};process.waitUntilExit();let detail=(try? String(contentsOf:log,encoding:.utf8)) ?? "";throw ToolFailure(message:"工具执行超时（\(Int(timeout)) 秒）\n"+String(detail.suffix(12000)))}
         process.waitUntilExit();let text=(try? String(contentsOf:log,encoding:.utf8)) ?? ""
         return (process.terminationStatus,String(text.suffix(20000)))
     }

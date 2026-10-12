@@ -1,0 +1,32 @@
+const assert=require('node:assert/strict');
+const fs=require('node:fs');
+const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES+'/playwright':'playwright');
+(async()=>{
+ const browser=await chromium.launch({headless:true});
+ const page=await browser.newPage();
+ await page.setContent('<button>图片识别</button>');
+ await page.evaluate(()=>{
+  window.calls=[];window.imports=[];
+  window.FormulaImport=(...x)=>imports.push(x);
+  window.FormulaNativeReply=()=>{};
+  window.webkit={messageHandlers:{mathforge:{postMessage:m=>{calls.push(m);if(m.action==='ocrStatus')setTimeout(()=>FormulaNativeReply(m.id,{installed:true}),0);}}}};
+ });
+ await page.addScriptTag({content:fs.readFileSync('web/ocr.js','utf8')});
+ await page.getByText('图片识别',{exact:true}).click();
+ await page.locator('[data-recognize]').click();
+ await page.evaluate(()=>FormulaOCRProgress(calls.at(-1).id,{message:'正在识别 JPG'}));
+ assert.equal(await page.locator('[data-status]').textContent(),'正在识别 JPG');
+ await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{error:'模型初始化失败',log:'ModuleNotFoundError: pix2text'}));
+ await page.waitForFunction(()=>document.querySelector('[data-status]').textContent==='模型初始化失败');
+ assert.equal(await page.locator('[data-log]').textContent(),'ModuleNotFoundError: pix2text');
+ assert.equal(await page.locator('details').getAttribute('open'),'');
+ await page.locator('[data-recognize]').click();
+ await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{cancelled:true}));
+ await page.waitForFunction(()=>document.querySelector('[data-status]').textContent==='已取消');
+ await page.locator('[data-recognize]').click();
+ await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{latex:'x^2',engine:'Pix2Text'}));
+ await page.waitForFunction(()=>imports.length===1);
+ assert.deepEqual(await page.evaluate(()=>imports),[['x^2','tex']]);
+ await page.evaluate(()=>FormulaNativeReply('unrelated',{ok:true}));
+ await browser.close();console.log('OCR progress, error logs, cancellation, import and reply routing OK');
+})().catch(e=>{console.error(e);process.exit(1)});
