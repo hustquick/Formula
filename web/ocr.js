@@ -24,7 +24,7 @@
 
   const style=document.createElement('style');
   style.textContent=`
-    #formula-ocr-dialog{width:min(720px,calc(100vw - 32px));border:0;border-radius:18px;padding:0;box-shadow:0 20px 70px #0004}
+    #formula-ocr-dialog{width:min(760px,calc(100vw - 32px));border:0;border-radius:18px;padding:0;box-shadow:0 20px 70px #0004}
     #formula-ocr-dialog::backdrop{background:#0005;backdrop-filter:blur(2px)}
     .ocr-box{padding:22px}.ocr-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.ocr-head h2{margin:0}
     .ocr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.ocr-field{display:flex;flex-direction:column;gap:6px}.ocr-field label{font-size:12px;opacity:.72}.ocr-field select{min-height:36px;border-radius:9px;padding:0 10px}
@@ -32,20 +32,20 @@
     .ocr-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.ocr-actions button{min-height:36px}.ocr-actions .primary{font-weight:700}
     .ocr-status{padding:12px 14px;border-radius:12px;background:color-mix(in srgb,currentColor 6%,transparent);line-height:1.55}
     .ocr-note{opacity:.72;font-size:13px;line-height:1.55}.ocr-log{max-height:150px;overflow:auto;font-size:11px;white-space:pre-wrap;background:#111;color:#ddd;padding:10px;border-radius:10px}
-    .ocr-results{display:grid;gap:8px;margin-top:12px;max-height:260px;overflow:auto}.ocr-result{display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;padding:9px 10px;border-radius:10px;background:color-mix(in srgb,currentColor 5%,transparent)}
-    .ocr-result code{font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere}.ocr-result small{opacity:.62}.ocr-result button{min-height:30px}
+    .ocr-results{display:grid;gap:8px;margin-top:12px;max-height:310px;overflow:auto}.ocr-result{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,currentColor 5%,transparent);cursor:pointer}
+    .ocr-result input[type=checkbox]{width:18px;height:18px;margin:0}.ocr-result .ocr-formula-preview{min-height:34px;display:flex;align-items:center;overflow:auto}.ocr-result .ocr-formula-preview svg{max-width:100%;height:auto}.ocr-result small{opacity:.62;display:block;margin-top:4px}.ocr-result.selected{outline:2px solid color-mix(in srgb,currentColor 22%,transparent)}
   `;document.head.append(style);
 
   const dialog=document.createElement('dialog');dialog.id='formula-ocr-dialog';
   dialog.innerHTML=`<div class="ocr-box">
     <div class="ocr-head"><div><h2>图片公式识别</h2><div class="ocr-note">本地模型 · 按需安装 · 安装后可离线使用</div></div><button data-close>完成</button></div>
     <div class="ocr-grid">
-      <div class="ocr-field"><label>识别模型</label><select data-engine><option value="pix2text">Pix2Text（轻量）</option><option value="unimernet">UniMERNet Tiny（高精度）</option></select></div>
+      <div class="ocr-field"><label>识别能力</label><select data-engine><option value="pix2text">标准识别（Pix2Text）</option><option value="unimernet">增强识别（UniMERNet Tiny）</option></select></div>
       <div class="ocr-field"><label>图片类型</label><div class="ocr-mode"><button data-mode="single" class="active">单个公式</button><button data-mode="page">整页提取公式</button></div></div>
     </div>
     <p class="ocr-status" data-status>正在检查本地识别模型…</p>
-    <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装当前模型</button><button data-refresh>刷新状态</button></div>
-    <p class="ocr-note" data-note>单个公式：直接把图片交给所选模型。整页提取：先用 MFD 1.5 只检测数学公式区域，忽略正文，再逐个识别为 LaTeX。</p>
+    <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装标准识别</button><button data-refresh>刷新状态</button></div>
+    <p class="ocr-note" data-note>标准识别包含 MFD 公式检测和 Pix2Text；增强识别会自动包含标准识别所需的基础组件，再额外安装 UniMERNet Tiny。</p>
     <div class="ocr-results" data-results hidden></div>
     <details><summary>安装/识别日志</summary><pre class="ocr-log" data-log>尚无日志</pre></details>
   </div>`;
@@ -59,12 +59,14 @@
   const results=dialog.querySelector('[data-results]');
   let mode='single';
   let lastStatus=null;
+  let pageFormulas=[];
+  const selected=new Set();
   dialog.querySelector('[data-close]').onclick=()=>dialog.close();
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
   dialog.querySelectorAll('[data-mode]').forEach(btn=>btn.onclick=()=>{
     mode=btn.dataset.mode;
     dialog.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===btn));
-    results.hidden=true;results.innerHTML='';
+    pageFormulas=[];selected.clear();results.hidden=true;results.innerHTML='';
     updateState();
   });
 
@@ -74,11 +76,12 @@
     const installed=!!info.installed;
     recognize.disabled=!installed||!!lastStatus?.busy||(mode==='page'&&!lastStatus?.detectorInstalled);
     install.disabled=!!lastStatus?.busy;
-    const label=engine.value==='unimernet'?'UniMERNet Tiny':'Pix2Text';
+    const enhanced=engine.value==='unimernet';
+    const label=enhanced?'增强识别（UniMERNet Tiny）':'标准识别（Pix2Text）';
     install.textContent=installed?'验证/修复 '+label:'安装 '+label;
     if(lastStatus?.busy){status.textContent='本地识别组件正在安装或识别，请稍后刷新状态。';return;}
     if(installed){
-      status.textContent=`${label} 已安装 · 总占用约 ${fmt(lastStatus?.bytes||0)} · ${lastStatus?.detectorInstalled?'MFD 整页公式检测已就绪':'MFD 尚未就绪，请验证/修复当前模型'}`;
+      status.textContent=`${label} 已安装 · 总占用约 ${fmt(lastStatus?.bytes||0)} · ${lastStatus?.detectorInstalled?'MFD 整页公式检测已就绪':'MFD 尚未就绪，请验证/修复识别组件'}`;
     }else if(lastStatus?.environmentExists){
       status.textContent=`${label} 尚未安装；现有 Python 识别环境可复用。`;
     }else if(lastStatus?.pythonAvailable){
@@ -94,16 +97,17 @@
     catch(e){status.textContent=e.message;recognize.disabled=true;}
   }
   dialog.querySelector('[data-refresh]').onclick=refresh;
-  engine.onchange=()=>{results.hidden=true;results.innerHTML='';updateState();};
+  engine.onchange=()=>{pageFormulas=[];selected.clear();results.hidden=true;results.innerHTML='';updateState();};
 
   install.onclick=async()=>{
     install.disabled=true;recognize.disabled=true;results.hidden=true;
-    const label=engine.value==='unimernet'?'UniMERNet Tiny':'Pix2Text';
-    status.textContent=`正在安装 ${label}，同时准备 MFD 1.5 公式区域检测模型…`;
+    const enhanced=engine.value==='unimernet';
+    const label=enhanced?'增强识别':'标准识别';
+    status.textContent=enhanced?'正在安装增强识别：先准备标准识别基础组件，再安装 UniMERNet Tiny…':'正在安装标准识别：准备 Pix2Text 与 MFD 公式检测…';
     try{
       const r=await request('ocrInstall',{engine:engine.value});
       if(r.log)log.textContent=r.log;
-      status.textContent=r.message||'本地识别安装完成';
+      status.textContent=r.message||`${label}安装完成`;
       await refresh();
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
     finally{install.disabled=false;}
@@ -113,23 +117,64 @@
     if(typeof window.FormulaImport!=='function')throw new Error('编辑器尚未就绪');
     window.FormulaImport(latex,'tex');
   }
+  function normalizeFormula(latex){
+    let s=String(latex||'').trim();
+    if(s.startsWith('$$')&&s.endsWith('$$'))s=s.slice(2,-2).trim();
+    else if(s.startsWith('$')&&s.endsWith('$'))s=s.slice(1,-1).trim();
+    else if((s.startsWith('\\[')&&s.endsWith('\\]'))||(s.startsWith('\\(')&&s.endsWith('\\)')))s=s.slice(2,-2).trim();
+    return s;
+  }
+  function selectedLatex(){
+    const picked=pageFormulas.map((item,index)=>selected.has(index)?normalizeFormula(item.latex):'').filter(Boolean);
+    if(!picked.length)return '';
+    if(picked.length===1)return picked[0];
+    return `\\begin{gathered}\n${picked.join('\\\\[0.6em]\n')}\n\\end{gathered}`;
+  }
+  function clearEditor(){
+    const source=document.getElementById('source');
+    if(source){source.value='';source.dispatchEvent(new Event('input',{bubbles:true}));return;}
+    if(typeof window.FormulaImport==='function')window.FormulaImport('\\text{}','tex');
+  }
+  function syncSelection(engineLabel){
+    const latex=selectedLatex();
+    if(latex)insertLatex(latex);else clearEditor();
+    const count=selected.size;
+    status.textContent=count?`已选择 ${count} 个公式 · 已同步到输入与输出预览 · ${engineLabel}`:'当前未选择公式 · 已清空本次识别结果';
+  }
+  async function renderFormulaPreview(target,latex){
+    target.textContent='正在生成公式预览…';
+    try{
+      if(!window.MathJax?.tex2svgPromise)throw new Error('MathJax unavailable');
+      await window.MathJax.startup?.promise;
+      const node=await window.MathJax.tex2svgPromise(normalizeFormula(latex),{display:false});
+      const svg=node.querySelector('svg');
+      if(!svg)throw new Error('No SVG');
+      target.replaceChildren(svg.cloneNode(true));
+    }catch{target.textContent='公式预览暂不可用';}
+  }
   function renderPageResults(formulas,engineLabel){
-    results.innerHTML='';
+    results.innerHTML='';pageFormulas=formulas;selected.clear();
     if(!formulas.length){results.hidden=true;status.textContent='整页检测完成，但没有检测到数学公式。';return;}
     formulas.forEach((item,index)=>{
-      const row=document.createElement('div');row.className='ocr-result';
-      const meta=Array.isArray(item.bbox)?`区域 ${item.bbox.map(Math.round).join(', ')}`:'';
-      row.innerHTML=`<div><code></code><br><small>公式 ${index+1}${item.type?' · '+item.type:''}${meta?' · '+meta:''}</small></div><button>插入</button>`;
-      row.querySelector('code').textContent=item.latex||'';
-      row.querySelector('button').onclick=()=>{insertLatex(item.latex);status.textContent=`已将公式 ${index+1} 插入编辑器 · ${engineLabel}`;};
-      results.append(row);
+      const row=document.createElement('label');row.className='ocr-result';
+      const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.formulaIndex=String(index);
+      const body=document.createElement('div');
+      const preview=document.createElement('div');preview.className='ocr-formula-preview';
+      const meta=document.createElement('small');meta.textContent=`公式 ${index+1}${item.type?' · '+item.type:''}`;
+      body.append(preview,meta);row.append(checkbox,body);results.append(row);
+      renderFormulaPreview(preview,item.latex||'');
+      checkbox.onchange=()=>{
+        if(checkbox.checked)selected.add(index);else selected.delete(index);
+        row.classList.toggle('selected',checkbox.checked);
+        syncSelection(engineLabel);
+      };
     });
     results.hidden=false;
-    status.textContent=`检测到 ${formulas.length} 个公式 · ${engineLabel} · 可逐个插入编辑器`;
+    status.textContent=`检测到 ${formulas.length} 个公式 · 请直接勾选需要的公式；勾选即同步，取消即移除`;
   }
 
   recognize.onclick=async()=>{
-    recognize.disabled=true;results.hidden=true;results.innerHTML='';
+    recognize.disabled=true;results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();
     status.textContent=mode==='page'?'请选择整页教材/论文照片…':'请选择单个公式图片…';
     try{
       const r=await request('ocrRecognize',{engine:engine.value,mode});
@@ -144,7 +189,7 @@
         setTimeout(()=>dialog.close(),500);
       }
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
-    finally{recognize.disabled=false;updateState();}
+    finally{recognize.disabled=false;if(mode!=='page')updateState();}
   };
 
   const imageTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='图片识别');
