@@ -28,10 +28,24 @@ perl -0pi -e 's/ready=true;for url in queuedImports/ready=true;self.loadOCRUI();
 perl -0pi -e 's/case "drag":dragFile\(data\)/case "ocrStatus":handleOCRStatus(data)\n        case "ocrInstall":handleOCRInstall(data)\n        case "ocrRecognize":handleOCRRecognize(data)\n        case "drag":dragFile(data)/' "$task_swift"
 grep -q 'case "ocrRecognize":handleOCRRecognize(data)' "$task_swift" || { echo 'OCR bridge 注入失败。' >&2; exit 1; }
 grep -q 'self.loadOCRUI()' "$task_swift" || { echo 'OCR UI 注入失败。' >&2; exit 1; }
+# Swift only permits top-level executable statements in the main source file when multiple files are compiled.
+# Build one staged main.swift by inserting the OCR extension before the existing app startup block.
+task_main="$task_stage/main.swift"
+task_ocr_body="$task_stage/FormulaOCR.body.swift"
+sed '/^import Cocoa$/d;/^import WebKit$/d' macos/FormulaOCR.swift > "$task_ocr_body"
+awk -v extra="$task_ocr_body" '
+  /^let app=NSApplication\.shared$/ && !inserted {
+    while ((getline line < extra) > 0) print line
+    close(extra)
+    inserted=1
+  }
+  { print }
+' "$task_swift" > "$task_main"
+grep -q 'extension AppDelegate' "$task_main" || { echo 'OCR Swift 扩展合并失败。' >&2; exit 1; }
 task_sdk=$(xcrun --sdk macosx --show-sdk-path)
 for task_arch in arm64 x86_64; do
   xcrun swiftc -swift-version 5 -O -sdk "$task_sdk" -target "$task_arch-apple-macosx12.0" \
-    -framework Cocoa -framework WebKit -framework PDFKit "$task_swift" macos/FormulaOCR.swift \
+    -framework Cocoa -framework WebKit -framework PDFKit "$task_main" \
     -o "$task_stage/Formula-$task_arch"
 done
 lipo -create "$task_stage/Formula-arm64" "$task_stage/Formula-x86_64" -output "$task_app/Contents/MacOS/Formula"
