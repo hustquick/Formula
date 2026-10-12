@@ -4,7 +4,7 @@ must('web/ocr.js','ocrRecognize');
 must('web/ocr.js','FormulaImport');
 must('web/ocr.js','增强识别（UniMERNet Tiny）');
 must('web/ocr.js','data-mode="page"');
-must('web/ocr.js','type=checkbox');
+must('web/ocr.js',"checkbox.type='checkbox'");
 must('web/ocr.js','syncSelection');
 must('web/ocr.js','\\\\begin{gathered}');
 must('macos/ocr-requirements.txt','pix2text==1.1.7');
