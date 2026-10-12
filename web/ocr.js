@@ -11,7 +11,8 @@
     if(result?.error)req.reject(Object.assign(new Error(result.error),{log:result.log}));else req.resolve(result||{});
   };
   window.FormulaOCRProgress=(id,result)=>{if(pending.has(id))status.textContent=result.message;};
-  window.FormulaOCRInstallPhase=(message)=>{status.textContent=message;};
+  let installPhase="";
+  window.FormulaOCRInstallPhase=(message)=>{installPhase=message;status.textContent=message;};
   function request(action,data={}){
     return new Promise((resolve,reject)=>{
       const id='ocr-'+Date.now()+'-'+Math.random().toString(36).slice(2);
@@ -123,6 +124,8 @@
     if(!installEngine)return;
     const enhanced=installEngine==='unimernet';
     const label=enhanced?'专业版':'基础版';
+    const startedAt=Date.now();
+    const ticker=setInterval(()=>{if(installPhase)status.textContent=`${installPhase} · 已等待 ${Math.floor((Date.now()-startedAt)/1000)} 秒（尚无法获取准确下载百分比）`;},1000);
     status.textContent=enhanced?'正在安装专业版：自动包含基础版，再安装 UniMERNet Tiny…':'正在安装基础版：准备 Pix2Text 与 MFD 公式检测…';
     try{
       const r=await request('ocrInstall',{engine:installEngine});
@@ -130,7 +133,7 @@
       status.textContent=r.message||`${label}安装完成`;
       await refresh();
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
-    finally{install.disabled=false;}
+    finally{clearInterval(ticker);installPhase="";install.disabled=false;}
   };
 
   function insertLatex(latex){
