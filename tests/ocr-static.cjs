@@ -1,0 +1,11 @@
+const fs=require('fs');
+const must=(file,text)=>{const s=fs.readFileSync(file,'utf8');if(!s.includes(text)){console.error(`missing ${JSON.stringify(text)} in ${file}`);process.exit(1);}};
+must('web/ocr.js','ocrRecognize');
+must('web/ocr.js','FormulaImport');
+must('macos/FormulaOCR.swift','pix2text>=1.1.7,<1.2');
+must('macos/FormulaOCR.swift','handleOCRRecognize');
+must('macos/formula-ocr-runner.py','recognize_formula');
+must('scripts/build-dmg.sh','macos/FormulaOCR.swift');
+must('scripts/build-dmg.sh','formula-ocr-runner.py');
+must('scripts/build-dmg.sh','case "ocrRecognize":handleOCRRecognize(data)');
+console.log('OCR static contract OK');
