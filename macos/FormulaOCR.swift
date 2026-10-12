@@ -74,7 +74,7 @@ extension AppDelegate {
         let id=data["id"] as? String ?? ""
         guard ocrInstallBusy else { reply(id,["cancelled":false,"message":"当前没有安装任务。"]);return }
         ocrInstallCancelled=true
-        if let process=ocrInstallProcess,process.isRunning { process.terminate() }
+        // The worker owns the process lifecycle and observes this flag.
         reply(id,["cancelled":true,"message":"已请求取消安装，正在结束当前步骤。"])
     }
 
@@ -168,6 +168,15 @@ extension AppDelegate {
         var log=""
         do {
             let fm=FileManager.default
+            // Clean up only transient OCR image files; never delete cached models.
+            defer {
+                if self.ocrInstallCancelled {
+                    let fm=FileManager.default
+                    if let files=try? fm.contentsOfDirectory(at:self.ocrRoot,includingPropertiesForKeys:nil) {
+                        for file in files where file.lastPathComponent.hasPrefix("image-") && file.pathExtension == "png" { try? fm.removeItem(at:file) }
+                    }
+                }
+            }
             // Keep installed-engine readiness markers when an update fails.
             reportOCRPhase("检查 Python 环境及基础依赖…")
             try ensureBaseOCR(&log)
@@ -175,7 +184,7 @@ extension AppDelegate {
             if engine == "unimernet" {
                 reportOCRPhase("正在安装 UniMERNet 依赖，可能需要较长时间…")
                 var r=try run(ocrPython.path,["-m","pip","install","unimernet==0.2.3","huggingface_hub>=0.23,<1"],cwd:ocrRoot,timeout:1800,ocrInstall:true);log+=r.1
-                if r.0 != 0 { throw ToolFailure(message:"安装 UniMERNet 依赖失败。UniMERNet 需要 Python 3.10+。") }
+                if r.0 != 0 { throw ToolFailure(message:"安装 UniMERNet 依赖失败，请查看安装日志中的具体原因（版本、网络或依赖冲突）。") }
             }
 
             reportOCRPhase("正在初始化公式区域检测模型…")
