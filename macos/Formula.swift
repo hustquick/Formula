@@ -130,7 +130,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
 
     // Arguments are passed directly to Process; formula content never becomes a shell command.
-    func run(_ executable:String,_ arguments:[String],cwd:URL,timeout:TimeInterval=35) throws -> (Int32,String) {
+    func run(_ executable:String,_ arguments:[String],cwd:URL,timeout:TimeInterval=35,ocrInstall:Bool=false) throws -> (Int32,String) {
         guard FileManager.default.isExecutableFile(atPath:executable) else{throw ToolFailure(message:"工具不可执行：\(executable)")}
         let log=cwd.appendingPathComponent("process-\(UUID().uuidString).log")
         FileManager.default.createFile(atPath:log.path,contents:nil)
@@ -139,8 +139,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         var env=ProcessInfo.processInfo.environment
         env["PATH"]=[URL(fileURLWithPath:executable).deletingLastPathComponent().path,"/Library/TeX/texbin","/opt/homebrew/bin","/usr/local/bin","/usr/bin","/bin",env["PATH"] ?? ""].joined(separator:":")
         process.environment=env;process.standardOutput=handle;process.standardError=handle
-        try process.run();let end=Date().addingTimeInterval(timeout)
-        while process.isRunning && Date()<end {Thread.sleep(forTimeInterval:0.05)}
+        if ocrInstall {
+            let cancelled=DispatchQueue.main.sync { self.ocrInstallCancelled }
+            if cancelled { throw ToolFailure(message:"用户已取消 OCR 安装。") }
+        }
+        try process.run()
+        if ocrInstall { DispatchQueue.main.sync { self.ocrInstallProcess=process } }
+        defer { if ocrInstall { DispatchQueue.main.sync { self.ocrInstallProcess=nil } } }
+        let end=Date().addingTimeInterval(timeout)
+        var lastProgress=Date.distantPast
+        while process.isRunning && Date()<end {
+            if ocrInstall && Date().timeIntervalSince(lastProgress)>1 {
+                lastProgress=Date()
+                if let output=try? String(contentsOf:log,encoding:.utf8),let line=output.components(separatedBy:.newlines).last(where:{$0.contains("%") || $0.contains("Downloading") || $0.contains("Installing")}) {
+                    let snippet=String(line.suffix(180))
+                    DispatchQueue.main.async { self.js("window.FormulaOCRInstallPhase?.(\(self.json(snippet)));") }
+                }
+            }
+            Thread.sleep(forTimeInterval:0.1)
+        }
+        if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) {
+            if process.isRunning {process.terminate();Thread.sleep(forTimeInterval:0.2);if process.isRunning {kill(process.processIdentifier,SIGKILL)}}
+            process.waitUntilExit()
+            throw ToolFailure(message:"用户已取消 OCR 安装。")
+        }
         if process.isRunning {process.terminate();Thread.sleep(forTimeInterval:0.2);if process.isRunning{kill(process.processIdentifier,SIGKILL)};process.waitUntilExit();let detail=(try? String(contentsOf:log,encoding:.utf8)) ?? "";throw ToolFailure(message:"工具执行超时（\(Int(timeout)) 秒）\n"+String(detail.suffix(12000)))}
         process.waitUntilExit();let text=(try? String(contentsOf:log,encoding:.utf8)) ?? ""
         return (process.terminationStatus,String(text.suffix(20000)))
