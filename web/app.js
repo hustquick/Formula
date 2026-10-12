@@ -340,7 +340,7 @@ const formatting=document.createElement('div');formatting.className='format-popu
 for(const title of ['正体','粗体','黑板体','花体','文本','向量','帽号','上划线','下划线','撤销','重做']){const entry=catalog.find(entry=>entry.label===title);entry.button.hidden=false;formatting.append(entry.button);}
 toolbar.parentElement.append(formatting);
 $('font-menu').addEventListener('pointerdown',e=>e.preventDefault());
-$('font-menu').onclick=()=>{formatting.hidden=!formatting.hidden;const r=$('font-menu').getBoundingClientRect();formatting.style.left=r.left+'px';formatting.style.top=r.bottom+6+'px';};
+$('font-menu').onclick=()=>{formatting.hidden=!formatting.hidden;const r=$('font-menu').getBoundingClientRect();formatting.style.left=Math.max(8,Math.min(r.left,innerWidth-formatting.offsetWidth-8))+'px';formatting.style.top=(r.bottom+6+formatting.offsetHeight>innerHeight?r.top-formatting.offsetHeight-6:r.bottom+6)+'px';};
 formatting.addEventListener('click',()=>formatting.hidden=true);
 const inputEditors=document.querySelector('.input-editors');
 function setInputPane(mode){inputEditors.dataset.inputMode=mode;for(const id of ['mode-latex','mode-typst'])$(id).disabled=mode==='visual';$('input-source').classList.toggle('active',mode==='source');$('input-visual').classList.toggle('active',mode==='visual');}
@@ -349,9 +349,7 @@ $('input-visual').onclick=()=>{clearTimeout(sourceTimer);readSource();setInputPa
 const originalFocus=mf.focus.bind(mf);mf.focus=(...args)=>{setInputPane('visual');return originalFocus(...args);};
 $('clear-input').onclick=()=>{clearTimeout(sourceTimer);clearTimeout(visualTimer);mf.setValue('');syncVisual(true);svgResult=null;nativeResult=null;valid=false;state.latex='';state.rawSource='';persist();$('source').value='';$('preview').replaceChildren();status('请输入公式');};
 $('input-settings').onclick=()=>$('system-tools').click();
-$('input-color').oninput=()=>{$('color').value=$('input-color').value;$('color').dispatchEvent(new Event('change'));};
-$('input-size').onchange=()=>{$('size').value=$('input-size').value;$('size').dispatchEvent(new Event('change'));};
-for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('input-size').value);$('input-size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('input-size').dispatchEvent(new Event('change'));};
+for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('size').value);$('size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('size').dispatchEvent(new Event('change'));};
 let currentTab='quick';
 function selectToolTab(tab){currentTab=tab;document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));toolbar.dataset.tab=tab;document.querySelector('.toolbar-customize').hidden=tab!=='custom';document.querySelector('.examples').hidden=tab!=='templates';$('history').hidden=tab!=='favorites';if(tab==='templates')document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));if(tab==='favorites')document.querySelector('.tool-deck').prepend($('history'));}
 document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>selectToolTab(button.dataset.tab));selectToolTab('quick');document.querySelector('.preview-card>.section-head').append($('remember'));
