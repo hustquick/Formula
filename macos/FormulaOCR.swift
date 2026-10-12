@@ -43,7 +43,8 @@ extension AppDelegate {
         }
         reply(id,[
             "installed":ocrInstalled("pix2text"),
-            "busy":ocrBusy,
+            "busy":ocrBusy || ocrInstallBusy,
+            "installing":ocrInstallBusy,
             "environmentExists":fm.isExecutableFile(atPath:ocrPython.path),
             "pythonAvailable":python != nil,
             "pythonPath":python ?? "",
@@ -60,12 +61,21 @@ extension AppDelegate {
     func handleOCRInstall(_ data:[String:Any]) {
         let id=data["id"] as? String ?? ""
         let engine=validOCREngine(data["engine"])
-        guard !ocrBusy else { reply(id,["error":"识别组件正在安装或识别，请稍后重试。"]);return }
-        ocrBusy=true
-        ocrWorker.async {
+        guard !ocrBusy && !ocrInstallBusy else { reply(id,["error":"已有 OCR 任务正在运行。"]);return }
+        ocrInstallBusy=true
+        ocrInstallCancelled=false
+        DispatchQueue.global(qos:.utility).async {
             let result=self.installOCR(engine)
-            DispatchQueue.main.async { self.ocrBusy=false;self.reply(id,result) }
+            DispatchQueue.main.async { self.ocrInstallBusy=false;self.ocrInstallProcess=nil;self.reply(id,result) }
         }
+    }
+
+    func handleOCRCancelInstall(_ data:[String:Any]) {
+        let id=data["id"] as? String ?? ""
+        guard ocrInstallBusy else { reply(id,["cancelled":false,"message":"当前没有安装任务。"]);return }
+        ocrInstallCancelled=true
+        if let process=ocrInstallProcess,process.isRunning { process.terminate() }
+        reply(id,["cancelled":true,"message":"已请求取消安装，正在结束当前步骤。"])
     }
 
     func handleOCRRecognize(_ data:[String:Any]) {
