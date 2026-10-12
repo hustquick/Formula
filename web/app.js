@@ -125,8 +125,12 @@ function readSource(){
 async function switchMode(mode){
   if(state.engine==='latex'&&mode==='typst'){status('本机 LaTeX 使用 LaTeX 源码。请切换到内置排版或本机 Typst。',true);return;}
   if(state.engine==='typst'&&mode==='latex'){status('本机 Typst 使用 Typst 源码。请切换到内置排版或本机 LaTeX。',true);return;}
-  await readSource();if(!valid)return;
-  try{const next=mode==='latex'?state.latex:typst(state.latex);state.mode=mode;$('source').value=next;updateMode();updateAlternates();persist();}
+  if(mode===state.mode)return;
+  // Keep the canonical LaTeX when the generated alternate source is untouched.
+  // Only parse again after an actual source edit, avoiding lossy round trips.
+  if(stripDelimiters($('source').value)!==state.rawSource){await readSource();if(!valid)return;}
+  if(!conversionAvailable){status('此语法暂不支持转换为另一种源码。',true);return;}
+  try{const next=mode==='latex'?state.latex:typst(state.latex);state.mode=mode;$('source').value=next;state.rawSource=stripDelimiters(next);updateMode();updateAlternates();persist();scheduleRender();}
   catch(e){status('无法切换：'+e.message,true);}
 }
 function loadLatex(latex){state.latex=latex;conversionAvailable=true;mf.readOnly=false;updating=true;mf.setValue(latex,{silenceNotifications:true});updating=false;try{$('source').value=getModeSource();}catch{state.mode='latex';$('source').value=latex;}state.rawSource=stripDelimiters($('source').value);updateMode();updateAlternates();scheduleRender();}
@@ -406,4 +410,6 @@ for(const kind of ['svg','pdf'])$('batch-'+kind).onclick=safe(async()=>{const li
 $('preview').title='Mac 应用中按住 Option 拖动，可将公式文件拖到桌面或其他应用';
 $('preview').addEventListener('mousedown',safe(async e=>{if(!e.altKey||!bridge||!valid)return;e.preventDefault();if(nativeResult){const kind=nativeResult.svg?'svg':'pdf';send('drag',{name:'equation.'+kind,base64:nativeResult[kind]});}else if(svgResult){send('drag',{name:'equation.svg',base64:await bytesBase64(new Blob([svgText()]))});}}));
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='e'){e.preventDefault();safe(()=>exportFile('svg'))();}if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='c'){e.preventDefault();safe(()=>copy($('source').value))();}});
+// Repair language/source mismatches saved by versions before 1.4.1.
+try{const alternate=state.mode==='latex'?typst(state.latex):state.latex;if(state.rawSource&&state.rawSource===alternate)state.rawSource=getModeSource();}catch{}
 applyUI();history();if(state.rawSource){$('source').value=state.rawSource;readSource();}else loadLatex(state.latex);if(bridge)send('scanTools');

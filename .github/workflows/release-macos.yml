@@ -70,6 +70,7 @@ jobs:
           node tests/ocr-behavior.cjs
           node tests/document-behavior.cjs
           node tests/ocr-preview.cjs
+          node tests/source-mode.cjs
           python -m venv "$RUNNER_TEMP/document-venv"
           "$RUNNER_TEMP/document-venv/bin/python" -m pip install -r macos/document-requirements.txt
           "$RUNNER_TEMP/document-venv/bin/python" macos/formula-document-runner.py --check
