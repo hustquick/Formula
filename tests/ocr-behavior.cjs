@@ -4,10 +4,10 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
 (async()=>{
  const browser=await chromium.launch({headless:true});
  const page=await browser.newPage();
- await page.setContent('<button>图片识别</button>');
+ await page.setContent('<button>图片识别</button><textarea id="source"></textarea>');
  await page.evaluate(()=>{
   window.calls=[];window.imports=[];
-  window.FormulaImport=(...x)=>imports.push(x);
+  window.FormulaImport=(...x)=>{imports.push(x);document.getElementById('source').value=x[0]||'';};
   window.FormulaNativeReply=()=>{};
   window.webkit={messageHandlers:{mathforge:{postMessage:m=>{
    calls.push(m);
@@ -20,6 +20,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.addScriptTag({content:fs.readFileSync('web/ocr.js','utf8')});
  await page.getByText('图片识别',{exact:true}).click();
  await page.waitForFunction(()=>!document.querySelector('[data-recognize]').disabled);
+ assert.equal(await page.locator('[data-engine] option').first().textContent(),'标准识别（Pix2Text）');
+ assert.equal(await page.locator('[data-engine] option').nth(1).textContent(),'增强识别（UniMERNet Tiny）');
  await page.locator('[data-recognize]').click();
  assert.equal(await page.evaluate(()=>calls.at(-1).engine),'pix2text');
  assert.equal(await page.evaluate(()=>calls.at(-1).mode),'single');
@@ -37,7 +39,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.waitForFunction(()=>imports.length===1);
  assert.deepEqual(await page.evaluate(()=>imports),[['x^2','tex']]);
 
- // Re-open and verify high-accuracy engine plus full-page extraction.
+ // Re-open and verify enhanced engine plus full-page multi-select extraction.
+ await page.waitForTimeout(550);
  await page.getByText('图片识别',{exact:true}).click();
  await page.locator('[data-engine]').selectOption('unimernet');
  await page.locator('[data-mode="page"]').click();
@@ -50,8 +53,26 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  ]}));
  await page.waitForFunction(()=>document.querySelectorAll('.ocr-result').length===2);
  assert.match(await page.locator('[data-status]').textContent(),/检测到 2 个公式/);
- await page.locator('.ocr-result button').first().click();
+ assert.equal(await page.locator('.ocr-result input[type=checkbox]').count(),2);
+ assert.equal(await page.locator('.ocr-result button').count(),0);
+
+ await page.locator('.ocr-result input[type=checkbox]').first().check();
  assert.deepEqual(await page.evaluate(()=>imports.at(-1)),['a+b=c','tex']);
+ assert.equal(await page.locator('#source').inputValue(),'a+b=c');
+
+ await page.locator('.ocr-result input[type=checkbox]').nth(1).check();
+ const combined=await page.evaluate(()=>imports.at(-1)[0]);
+ assert.match(combined,/\\begin\{gathered\}/);
+ assert.match(combined,/a\+b=c/);
+ assert.match(combined,/\\int_0\^1 x\\,dx/);
+ assert.match(await page.locator('[data-status]').textContent(),/已选择 2 个公式/);
+
+ await page.locator('.ocr-result input[type=checkbox]').first().uncheck();
+ assert.deepEqual(await page.evaluate(()=>imports.at(-1)),['\\int_0^1 x\\,dx','tex']);
+ await page.locator('.ocr-result input[type=checkbox]').nth(1).uncheck();
+ assert.equal(await page.locator('#source').inputValue(),'');
+ assert.match(await page.locator('[data-status]').textContent(),/当前未选择公式/);
+
  await page.evaluate(()=>FormulaNativeReply('unrelated',{ok:true}));
- await browser.close();console.log('OCR progress, model selection, page extraction, cancellation, import and reply routing OK');
+ await browser.close();console.log('OCR progress, tiered model selection, live checkbox page extraction, cancellation, import and reply routing OK');
 })().catch(e=>{console.error(e);process.exit(1)});
