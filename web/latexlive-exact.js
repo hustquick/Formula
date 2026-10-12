@@ -23,7 +23,14 @@
 
   function normalizedLatex(entry){
     if(matrixFallback[entry?.tag])return matrixFallback[entry.tag];
-    return String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
+    let latex=String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
+    // Audited physics entries: replace differential d, preserving I_d and variables.
+    if(/^physics_(?:1|2|7|8|10|11|12)$/.test(entry?.tag||'')){
+      latex=latex.replace(/Id(?=[l\s])/g,String.raw`I\mathrm{d}`);
+      latex=latex.replace(/(^|[^A-Za-z\\_])d(?=\s|[t{^]|\\vec)/g,(_,prefix)=>prefix+String.raw`\mathrm{d}`);
+    }
+    if(entry?.tag==='physics_6')latex=latex.replace(String.raw`\rm{d}`,String.raw`\mathrm{d}`);
+    return latex;
   }
   function usable(entry){return entry&&entry.tag!=='divider'&&normalizedLatex(entry);}
   function label(entry){if(entry?.englishOperator){const command=normalizedLatex(entry).match(/\\([A-Za-z]+)/);return command?command[1]:({'+':'plus','-':'minus','=':'equals','<':'less than','>':'greater than'}[normalizedLatex(entry)]||(entry.en&&entry.en!=='-'?entry.en:entry.tag));}
