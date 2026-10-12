@@ -119,7 +119,21 @@ extension AppDelegate {
         guard let systemPython=discoverPython3() else { throw ToolFailure(message:"未找到 Python 3。请先安装 Python 3（建议 Python 3.10+），再安装本地公式识别模型。") }
         try fm.createDirectory(at:ocrRoot,withIntermediateDirectories:true)
         if fm.isExecutableFile(atPath:ocrPython.path) && !compatibleOCRPython(ocrPython.path) {
-            throw ToolFailure(message:"现有 Formula OCR 虚拟环境的 Python 版本低于 3.10。请先备份或通过后续迁移功能重建 OCR 环境；不会自动删除已有模型。")
+            // Preserve downloaded models outside the virtual environment.
+            let backup=ocrRoot.appendingPathComponent("venv-backup-"+UUID().uuidString)
+            try fm.moveItem(at:ocrVenv,to:backup)
+            do {
+                let rebuilt=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120)
+                log+=rebuilt.1
+                guard rebuilt.0 == 0 && compatibleOCRPython(ocrPython.path) else {
+                    throw ToolFailure(message:"无法创建兼容 Python 3.10+ 的 OCR 环境。原环境将恢复。")
+                }
+                try? fm.removeItem(at:backup)
+            } catch {
+                try? fm.removeItem(at:ocrVenv)
+                try? fm.moveItem(at:backup,to:ocrVenv)
+                throw error
+            }
         }
         if !fm.isExecutableFile(atPath:ocrPython.path) {
             let r=try run(systemPython,["-m","venv",ocrVenv.path],cwd:ocrRoot,timeout:120);log+=r.1
