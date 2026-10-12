@@ -8,13 +8,15 @@
     const req=pending.get(id);
     if(!req){previousReply?.(id,result);return;}
     clearTimeout(req.timer);pending.delete(id);
-    if(result?.error)req.reject(new Error(result.error));else req.resolve(result||{});
+    if(result?.error)req.reject(Object.assign(new Error(result.error),{log:result.log}));else req.resolve(result||{});
   };
+  window.FormulaOCRProgress=(id,result)=>{if(pending.has(id))status.textContent=result.message;};
   function request(action,data={}){
     return new Promise((resolve,reject)=>{
       const id='ocr-'+Date.now()+'-'+Math.random().toString(36).slice(2);
-      const timer=setTimeout(()=>{pending.delete(id);reject(new Error('本地公式识别操作超时'));},20*60*1000);
-      pending.set(id,{resolve,reject,timer});bridge.postMessage({action,...data,id});
+      const timer=setTimeout(()=>{pending.delete(id);reject(new Error('本地公式识别操作超时'));},action==='ocrStatus'?15000:action==='ocrInstall'?50*60*1000:5*60*1000);
+      pending.set(id,{resolve,reject,timer});
+      try{bridge.postMessage({action,...data,id});}catch(e){clearTimeout(timer);pending.delete(id);reject(e);}
     });
   }
   const fmt=bytes=>bytes<1024*1024?`${Math.round(bytes/1024)} KB`:`${(bytes/1024/1024).toFixed(1)} MB`;
@@ -46,16 +48,16 @@
     status.textContent='正在检查本地识别模型…';
     try{
       const r=await request('ocrStatus');
-      recognize.disabled=!r.installed;
-      install.hidden=!!r.installed;
-      status.textContent=r.installed?`本地识别已安装 · 占用约 ${fmt(r.bytes||0)} · 可离线使用`:(r.pythonAvailable?'尚未安装识别模型。首次安装会创建独立环境并下载 Pix2Text/MFR 模型。':'尚未安装识别模型，且未找到 Python 3。请先安装 Python 3。');
+      recognize.disabled=!r.installed||r.busy;
+      install.hidden=false;install.disabled=!!r.busy;install.textContent=r.installed?'验证/修复本地识别模型':'安装/继续安装本地识别模型';
+      status.textContent=r.busy?'本地识别组件正在安装或识别，请稍后刷新状态。':r.installed?`本地识别已安装 · 占用约 ${fmt(r.bytes||0)} · 可离线使用`:(r.environmentExists?'Python 环境已创建，但识别模型尚未验证就绪。请继续安装，完成后再选择图片。':r.pythonAvailable?'尚未安装识别模型。首次安装会创建独立环境并下载 Pix2Text/MFR 模型。':'尚未安装识别模型，且未找到 Python 3。请先安装 Python 3。');
     }catch(e){status.textContent=e.message;recognize.disabled=true;}
   }
   dialog.querySelector('[data-refresh]').onclick=refresh;
   install.onclick=async()=>{
     install.disabled=true;recognize.disabled=true;status.textContent='正在创建独立环境、安装 Pix2Text 并下载模型…';
     try{const r=await request('ocrInstall');if(r.log)log.textContent=r.log;status.textContent=r.message||'本地识别安装完成';await refresh();}
-    catch(e){status.textContent=e.message;log.textContent=e.message;}
+    catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
     finally{install.disabled=false;}
   };
   recognize.onclick=async()=>{
@@ -65,10 +67,11 @@
       if(r.cancelled){status.textContent='已取消';return;}
       if(r.log)log.textContent=r.log;
       if(!r.latex)throw new Error('没有识别到公式');
-      window.FormulaImport?.(r.latex,'tex');
+      if(typeof window.FormulaImport!=='function')throw new Error('编辑器尚未就绪，识别结果：'+r.latex);
+      window.FormulaImport(r.latex,'tex');
       status.textContent=`识别完成 · ${r.engine||'Pix2Text'} · 已送入编辑器`;
       setTimeout(()=>dialog.close(),500);
-    }catch(e){status.textContent=e.message;log.textContent=e.message;}
+    }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
     finally{recognize.disabled=false;}
   };
 

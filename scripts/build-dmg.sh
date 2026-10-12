@@ -12,22 +12,19 @@ cd "$(dirname "$0")/.."
 node -e "const fs=require('fs');const x=JSON.parse(fs.readFileSync('web/vendor/latexlive/map_input.json','utf8'));const s=x.shortcut||[];const t=n=>s.find(v=>v.name===n);if(t('toolbar')?.layer1?.cont?.length!==10||t('template')?.layer1?.cont?.length!==10)process.exit(1);const js=fs.readFileSync('web/vendor/latexlive/catalog.js','utf8');if(!js.startsWith('window.LaTeXLiveCatalog='))process.exit(1)"
 task_version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/Info.plist)
 task_build_dir="$PWD/dist"
-task_app="$task_build_dir/Formula.app"
+mkdir -p "$task_build_dir"
 task_stage=$(mktemp -d)
+task_app="$task_stage/Formula.app"
 trap 'rm -rf "$task_stage"' EXIT
 mkdir -p "$task_app/Contents/MacOS" "$task_app/Contents/Resources"
 cp macos/Info.plist "$task_app/Contents/Info.plist"
 cp -R web "$task_app/Contents/Resources/"
 cp THIRD-PARTY-NOTICES.txt "$task_app/Contents/Resources/"
 cp macos/formula-ocr-runner.py "$task_app/Contents/Resources/formula-ocr-runner.py"
+cp macos/ocr-requirements.txt "$task_app/Contents/Resources/ocr-requirements.txt"
 # Keep the native About panel in lock-step with Info.plist without duplicating release metadata.
 task_swift="$task_stage/Formula.swift"
 sed -E "s/Formula [0-9]+\.[0-9]+\.[0-9]+/Formula $task_version/g" macos/Formula.swift > "$task_swift"
-# Wire the optional OCR extension into the existing native bridge without enlarging the core source file.
-perl -0pi -e 's/ready=true;for url in queuedImports/ready=true;self.loadOCRUI();for url in queuedImports/' "$task_swift"
-perl -0pi -e 's/case "drag":dragFile\(data\)/case "ocrStatus":handleOCRStatus(data)\n        case "ocrInstall":handleOCRInstall(data)\n        case "ocrRecognize":handleOCRRecognize(data)\n        case "drag":dragFile(data)/' "$task_swift"
-grep -q 'case "ocrRecognize":handleOCRRecognize(data)' "$task_swift" || { echo 'OCR bridge 注入失败。' >&2; exit 1; }
-grep -q 'self.loadOCRUI()' "$task_swift" || { echo 'OCR UI 注入失败。' >&2; exit 1; }
 # Swift only permits top-level executable statements in the main source file when multiple files are compiled.
 # Build one staged main.swift by inserting the OCR extension before the existing app startup block.
 task_main="$task_stage/main.swift"
@@ -49,8 +46,9 @@ for task_arch in arm64 x86_64; do
     -o "$task_stage/Formula-$task_arch"
 done
 lipo -create "$task_stage/Formula-arm64" "$task_stage/Formula-x86_64" -output "$task_app/Contents/MacOS/Formula"
-lipo "$task_app/Contents/MacOS/Formula" -verify_arch arm64 x86_64
+[[ "$(lipo -archs "$task_app/Contents/MacOS/Formula")" == "x86_64 arm64" || "$(lipo -archs "$task_app/Contents/MacOS/Formula")" == "arm64 x86_64" ]]
 iconutil -c icns macos/Formula.iconset -o "$task_app/Contents/Resources/Formula.icns"
+xattr -cr "$task_app"
 codesign --force --deep --sign - "$task_app"
 codesign --verify --deep --strict "$task_app"
 mkdir "$task_stage/image"
@@ -69,7 +67,9 @@ hdiutil attach -readonly -nobrowse -mountpoint "$task_stage/mounted" "$task_dmg"
 [[ -f "$task_stage/mounted/Formula.app/Contents/Resources/formula-ocr-runner.py" ]]
 [[ "$(readlink "$task_stage/mounted/Applications")" == /Applications ]]
 codesign --verify --deep --strict "$task_stage/mounted/Formula.app"
-lipo "$task_stage/mounted/Formula.app/Contents/MacOS/Formula" -verify_arch arm64 x86_64
+[[ "$(lipo -archs "$task_stage/mounted/Formula.app/Contents/MacOS/Formula")" == "x86_64 arm64" || "$(lipo -archs "$task_stage/mounted/Formula.app/Contents/MacOS/Formula")" == "arm64 x86_64" ]]
 hdiutil detach "$task_stage/mounted"
 (cd "$task_build_dir" && shasum -a 256 "Formula-$task_version.dmg" > "Formula-$task_version.dmg.sha256")
+mkdir -p "$task_build_dir"
+ditto --noextattr --noqtn "$task_app" "$task_build_dir/Formula.app"
 printf '已生成：%s\n' "$task_dmg"

@@ -4,6 +4,7 @@ on:
   push:
     branches: [main]
     paths:
+      - 'Build-Mac.command'
       - 'macos/**'
       - 'web/**'
       - 'scripts/**'
@@ -14,6 +15,7 @@ on:
   pull_request:
     branches: [main]
     paths:
+      - 'Build-Mac.command'
       - 'macos/**'
       - 'web/**'
       - 'scripts/**'
@@ -47,7 +49,21 @@ jobs:
       - name: Validate Formula v1.1.0 release contract
         run: npm run validate:v1.1
       - name: Validate local OCR packaging
-        run: node tests/ocr-static.cjs
+        run: |
+          node tests/ocr-static.cjs
+          node tests/ocr-process.cjs
+          node tests/ocr-image.cjs
+          npm install --no-save --package-lock=false playwright
+          npx playwright install chromium
+          node tests/ocr-behavior.cjs
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate actual Pix2Text dependency imports
+        run: |
+          python -m pip install -r macos/ocr-requirements.txt
+          python -m pip check
+          python macos/formula-ocr-runner.py --check
       - name: Compile universal app and verify DMG
         run: bash scripts/build-dmg.sh
       - name: Upload build artifacts
@@ -64,10 +80,10 @@ jobs:
         run: |
           version=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' macos/Info.plist)
           tag="v$version"
-          notes='Formula 1.1.0：完整离线打包 LaTeX Live 10 类快捷工具和 10 类公式模板；所有二级菜单采用浮动 palette，不改变主编辑区布局；矩阵/多行支持行列编辑；顶部工具栏支持 Finder 风格拖拽自定义和图标/文字显示模式；增加键盘导航、窗口边缘避让以及发布前自动验收。预编译通用应用支持 Apple Silicon 和 Intel。应用采用临时签名，尚未 Apple 公证。'
+
           if ! gh release view "$tag" >/dev/null 2>&1; then
-            gh release create "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes "$notes"
+            gh release create "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes-file docs/RELEASE_NOTES.md
           else
-            gh release edit "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes "$notes"
+            gh release edit "$tag" --target "$GITHUB_SHA" --title "Formula $version" --notes-file docs/RELEASE_NOTES.md
           fi
           gh release upload "$tag" "dist/Formula-$version.dmg" "dist/Formula-$version.dmg.sha256" --clobber

@@ -1,0 +1,5 @@
+pix2text==1.1.7
+cnstd==1.2.8
+cnocr==2.3.3
+# CnSTD 1.2.8 imports resolve_model_key, which RapidOCR 3.10 removed.
+rapidocr==3.9.2
