@@ -6,9 +6,16 @@ Formula 是面向论文、教材和科研写作的 macOS 公式编辑器。v1.1.
 
 [下载最新 Formula Mac 安装包](https://github.com/hustquick/Formula/releases/latest) · [所有版本](https://github.com/hustquick/Formula/releases)
 
-优先下载 Release 中的 `Formula-1.2.1.dmg`。打开磁盘映像，将 `Formula.app` 拖入 Applications 即可。DMG 内是预编译通用应用，同时支持 Apple Silicon 与 Intel，最终用户无需安装 Node.js、npm 或编译工具。
+优先下载 Release 中的 `Formula-1.3.0.dmg`。打开磁盘映像，将 `Formula.app` 拖入 Applications 即可。DMG 内是预编译通用应用，同时支持 Apple Silicon 与 Intel，最终用户无需安装 Node.js、npm 或编译工具。
 
 > 当前发布采用临时签名，尚未 Apple 开发者公证。首次启动如被 Gatekeeper 阻止，可在“系统设置 → 隐私与安全性”中选择“仍要打开”。
+
+## v1.3.0 文档识别
+
+- PDF 和整页图片：识别中英文正文与公式，PDF 支持指定页码并分批识别。
+- Word (.docx)：直接读取正文和原生 OMML 公式，对嵌入图片进行 OCR。
+- 结果按来源显示，支持全文预览、复制、Markdown 导出和选择公式导入编辑器。
+- 文档模型按需安装，复用现有单公式模型；安装与逐页识别显示进度，失败保留日志。
 
 ## v1.2.1 本地图片识别修复
 
@@ -231,4 +238,4 @@ GitHub Actions 使用 macOS runner 分别编译 arm64 / x86_64，再通过 `lipo
 
 ## 当前边界
 
-v1.1.0 聚焦高质量公式编辑、模板、排版与导出。v1.2.1 已启用 macOS 单公式图片识别，并修复安装状态和依赖兼容问题；文档识别尚未启用；当前版本也不包含自动更新、完整 LaTeXiT 公式库兼容或公式计算系统。
+v1.1.0 聚焦高质量公式编辑、模板、排版与导出。v1.2.1 已启用 macOS 单公式图片识别，并修复安装状态和依赖兼容问题；v1.3.0 支持 PDF、Word (.docx) 和整页图片的正文/公式识别；当前版本也不包含自动更新、完整 LaTeXiT 公式库兼容或公式计算系统。

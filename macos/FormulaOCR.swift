@@ -4,8 +4,11 @@ import WebKit
 extension AppDelegate {
     private var ocrRoot: URL { support.appendingPathComponent("OCR", isDirectory: true) }
     private var ocrVenv: URL { ocrRoot.appendingPathComponent("venv", isDirectory: true) }
+    private var documentReady: URL { ocrRoot.appendingPathComponent("ready-document-v1.txt") }
+    private var documentRunner: URL { Bundle.main.resourceURL!.appendingPathComponent("formula-document-runner.py") }
     private var ocrReady: URL { ocrRoot.appendingPathComponent("ready-v1.txt") }
     private var ocrPython: URL { ocrVenv.appendingPathComponent("bin/python3") }
+    private var documentRequirements: URL { Bundle.main.resourceURL!.appendingPathComponent("document-requirements.txt") }
     private var bundledOCRRequirements: URL { Bundle.main.resourceURL!.appendingPathComponent("ocr-requirements.txt") }
     private var bundledOCRRunner: URL { Bundle.main.resourceURL!.appendingPathComponent("formula-ocr-runner.py") }
 
@@ -27,7 +30,7 @@ extension AppDelegate {
         if let e=fm.enumerator(at:ocrRoot, includingPropertiesForKeys:[.fileSizeKey], options:[.skipsHiddenFiles]) {
             for case let url as URL in e { if let n=try? url.resourceValues(forKeys:[.fileSizeKey]).fileSize { size += Int64(n) } }
         }
-        reply(id,["installed":installed,"busy":ocrBusy,"environmentExists":fm.isExecutableFile(atPath:ocrPython.path),"pythonAvailable":python != nil,"pythonPath":python ?? "","bytes":size,"root":ocrRoot.path])
+        reply(id,["installed":installed,"documentInstalled":fm.isExecutableFile(atPath:ocrPython.path) && fm.fileExists(atPath:documentReady.path),"busy":ocrBusy,"environmentExists":fm.isExecutableFile(atPath:ocrPython.path),"pythonAvailable":python != nil,"pythonPath":python ?? "","bytes":size,"root":ocrRoot.path])
     }
 
     func handleOCRInstall(_ data:[String:Any]) {
@@ -35,7 +38,7 @@ extension AppDelegate {
         guard !ocrBusy else { reply(id,["error":"识别组件正在安装或识别，请稍后重试。"]);return }
         ocrBusy=true
         ocrWorker.async {
-            let result=self.installOCR()
+            let result=self.installOCR(document:data["document"] as? Bool ?? false,id:id)
             DispatchQueue.main.async { self.ocrBusy=false;self.reply(id,result) }
         }
     }
@@ -59,6 +62,59 @@ extension AppDelegate {
         }
     }
 
+    private func documentProgress(_ id:String,_ log:String) {
+        guard let line=log.components(separatedBy:.newlines).last(where:{$0.hasPrefix("FORMULA_DOCUMENT_PROGRESS=")}),
+              let bytes=String(line.dropFirst("FORMULA_DOCUMENT_PROGRESS=".count)).data(using:.utf8),
+              let progress=try? JSONSerialization.jsonObject(with:bytes) as? [String:Any] else {return}
+        DispatchQueue.main.async {self.js("window.FormulaOCRProgress?.(\(self.json(id)),\(self.json(progress)));")}
+    }
+
+    func handleDocumentRecognize(_ data:[String:Any]) {
+        let id=data["id"] as? String ?? ""
+        guard !ocrBusy else {reply(id,["error":"识别组件正在安装或识别，请稍后重试。"]);return}
+        guard FileManager.default.isExecutableFile(atPath:ocrPython.path),FileManager.default.fileExists(atPath:documentReady.path) else {
+            reply(id,["error":"请先安装文档识别组件。图片识别模型可以继续使用。"]);return
+        }
+        let first=data["first"] as? Int ?? 1,last=data["last"] as? Int ?? 0
+        guard first >= 1,last >= 0,(last == 0 || (last >= first && last-first < 20)) else {
+            reply(id,["error":"请设置有效 PDF 页码，每次最多识别 20 页。"]);return
+        }
+        ocrBusy=true
+        let panel=NSOpenPanel();panel.title="选择 PDF、Word 或整页图片";panel.canChooseDirectories=false;panel.allowsMultipleSelection=false
+        panel.allowedFileTypes=["pdf","docx","png","jpg","jpeg","webp","tif","tiff","bmp","heic"]
+        panel.beginSheetModal(for:window){response in
+            guard response == .OK,let url=panel.url else {self.ocrBusy=false;self.reply(id,["cancelled":true]);return}
+            self.js("window.FormulaOCRProgress?.(\(self.json(id)),\(self.json(["message":"正在读取："+url.lastPathComponent])));")
+            self.ocrWorker.async {
+                let result=self.recognizeDocument(url,first:first,last:last,id:id)
+                DispatchQueue.main.async {self.ocrBusy=false;self.reply(id,result)}
+            }
+        }
+    }
+
+    private func recognizeDocument(_ source:URL,first:Int,last:Int,id:String) -> [String:Any] {
+        var log=""
+        let resultFile=ocrRoot.appendingPathComponent("document-"+UUID().uuidString+".json")
+        let normalized=ocrRoot.appendingPathComponent("document-image-"+UUID().uuidString+".png")
+        defer {try? FileManager.default.removeItem(at:resultFile);try? FileManager.default.removeItem(at:normalized)}
+        do {
+            var input=source
+            if !["pdf","docx"].contains(source.pathExtension.lowercased()) {
+                try ocrImageData(source).write(to:normalized,options:.atomic);input=normalized
+            }
+            let result=try run(ocrPython.path,[documentRunner.path,input.path,"--first",String(first),"--last",String(last),"--output",resultFile.path],cwd:ocrRoot,timeout:600,progress:{self.documentProgress(id,$0)})
+            log=result.1
+            if result.0 != 0 {throw ocrFailure("文档识别失败。",log)}
+            let bytes=try Data(contentsOf:resultFile)
+            guard bytes.count <= 8000000, var payload=try JSONSerialization.jsonObject(with:bytes) as? [String:Any],payload["pages"] is [[String:Any]] else {
+                throw ToolFailure(message:"文档识别结果无效或过大，请减少页数后重试。")
+            }
+            payload["sourceName"]=source.lastPathComponent;payload["log"]=log
+            return payload
+        } catch let e as ToolFailure {return ["error":e.message,"log":log+"\n"+e.message]}
+        catch {return ["error":error.localizedDescription,"log":log+"\n"+error.localizedDescription]}
+    }
+
     private func discoverPython3() -> String? {
         let fm=FileManager.default
         let candidates=["/opt/homebrew/bin/python3","/usr/local/bin/python3","/usr/bin/python3",NSHomeDirectory()+"/.local/bin/python3"]
@@ -71,10 +127,10 @@ extension AppDelegate {
         return nil
     }
 
-    private func installOCR() -> [String:Any] {
+    private func installOCR(document:Bool=false,id:String="") -> [String:Any] {
         var log=""
         do {
-            try? FileManager.default.removeItem(at:ocrReady)
+            try? FileManager.default.removeItem(at:document ? documentReady : ocrReady)
             guard let systemPython=discoverPython3() else { throw ToolFailure(message:"未找到 Python 3。请先安装 Python 3（例如 Homebrew Python），再安装本地公式识别模型。") }
             try FileManager.default.createDirectory(at:ocrRoot,withIntermediateDirectories:true)
             if !FileManager.default.isExecutableFile(atPath:ocrPython.path) {
@@ -83,13 +139,16 @@ extension AppDelegate {
             }
             var r=try run(ocrPython.path,["-m","pip","install","--upgrade","pip","setuptools","wheel"],cwd:ocrRoot,timeout:300);log+=r.1
             if r.0 != 0 { throw ToolFailure(message:"更新 OCR 安装工具失败。") }
-            r=try run(ocrPython.path,["-m","pip","install","-r",bundledOCRRequirements.path],cwd:ocrRoot,timeout:1200);log+=r.1
+            r=try run(ocrPython.path,["-m","pip","install","-r",(document ? documentRequirements : bundledOCRRequirements).path],cwd:ocrRoot,timeout:1200);log+=r.1
             if r.0 != 0 { throw ToolFailure(message:"安装 Pix2Text 失败，请检查网络后重试。") }
             guard FileManager.default.fileExists(atPath:bundledOCRRunner.path) else { throw ToolFailure(message:"Formula 安装包缺少公式识别启动脚本。") }
-            r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup"],cwd:ocrRoot,timeout:1200);log+=r.1
-            if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=1") { throw ocrFailure("Pix2Text 已安装，但模型初始化失败。请查看下方错误详情，或点击验证/修复。",r.1) }
+            let runner=document ? documentRunner : bundledOCRRunner
+            let marker=document ? "FORMULA_DOCUMENT_READY=1" : "FORMULA_OCR_READY=1"
+            r=try run(ocrPython.path,[runner.path,"--warmup"],cwd:ocrRoot,timeout:1200,progress:document ? {self.documentProgress(id,$0)} : nil);log+=r.1
+            if r.0 != 0 || !r.1.contains(marker) { throw ocrFailure("Pix2Text 已安装，但模型初始化失败。请查看下方错误详情，或点击验证/修复。",r.1) }
             try "ready".write(to:ocrReady,atomically:true,encoding:.utf8)
-            return ["installed":true,"message":"本地公式识别已安装，可以离线识别单公式图片。","log":String(log.suffix(20000))]
+            if document {try "ready".write(to:documentReady,atomically:true,encoding:.utf8)}
+            return ["installed":true,"message":document ? "文档识别组件已就绪，可读取 PDF、Word 和整页图片。" : "本地公式识别已安装，可以离线识别单公式图片。","log":String(log.suffix(20000))]
         } catch let e as ToolFailure { return ["error":e.message,"log":String((log+"\n"+e.message).suffix(20000))] }
         catch { return ["error":error.localizedDescription,"log":String((log+"\n"+error.localizedDescription).suffix(20000))] }
     }

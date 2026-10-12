@@ -1,0 +1,3 @@
+-r ocr-requirements.txt
+# Local DOCX/OMML conversion, including the platform Pandoc binary.
+pypandoc_binary==1.17

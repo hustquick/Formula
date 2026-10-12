@@ -101,6 +101,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         case "ocrStatus":handleOCRStatus(data)
         case "ocrInstall":handleOCRInstall(data)
         case "ocrRecognize":handleOCRRecognize(data)
+        case "ocrDocument":handleDocumentRecognize(data)
         case "drag":dragFile(data)
         default:break
         }
@@ -126,7 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
 
     // Arguments are passed directly to Process; formula content never becomes a shell command.
-    func run(_ executable:String,_ arguments:[String],cwd:URL,timeout:TimeInterval=35) throws -> (Int32,String) {
+    func run(_ executable:String,_ arguments:[String],cwd:URL,timeout:TimeInterval=35,progress:((String)->Void)?=nil) throws -> (Int32,String) {
         guard FileManager.default.isExecutableFile(atPath:executable) else{throw ToolFailure(message:"工具不可执行：\(executable)")}
         let log=cwd.appendingPathComponent("process-\(UUID().uuidString).log")
         FileManager.default.createFile(atPath:log.path,contents:nil)
@@ -136,7 +137,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         env["PATH"]=[URL(fileURLWithPath:executable).deletingLastPathComponent().path,"/Library/TeX/texbin","/opt/homebrew/bin","/usr/local/bin","/usr/bin","/bin",env["PATH"] ?? ""].joined(separator:":")
         process.environment=env;process.standardOutput=handle;process.standardError=handle
         try process.run();let end=Date().addingTimeInterval(timeout)
-        while process.isRunning && Date()<end {Thread.sleep(forTimeInterval:0.05)}
+        var nextProgress=Date();var lastProgress=""
+        while process.isRunning && Date()<end {
+            if progress != nil && Date() >= nextProgress {
+                let current=String(((try? String(contentsOf:log,encoding:.utf8)) ?? "").suffix(20000))
+                if current != lastProgress {progress?(current);lastProgress=current}
+                nextProgress=Date().addingTimeInterval(0.5)
+            }
+            Thread.sleep(forTimeInterval:0.05)
+        }
         if process.isRunning {process.terminate();Thread.sleep(forTimeInterval:0.2);if process.isRunning{kill(process.processIdentifier,SIGKILL)};process.waitUntilExit();let detail=(try? String(contentsOf:log,encoding:.utf8)) ?? "";throw ToolFailure(message:"工具执行超时（\(Int(timeout)) 秒）\n"+String(detail.suffix(12000)))}
         process.waitUntilExit();let text=(try? String(contentsOf:log,encoding:.utf8)) ?? ""
         return (process.terminationStatus,String(text.suffix(20000)))

@@ -19,7 +19,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{error:'模型初始化失败',log:'ModuleNotFoundError: pix2text'}));
  await page.waitForFunction(()=>document.querySelector('[data-status]').textContent==='模型初始化失败');
  assert.equal(await page.locator('[data-log]').textContent(),'ModuleNotFoundError: pix2text');
- assert.equal(await page.locator('details').getAttribute('open'),'');
+ assert.equal(await page.locator('#formula-ocr-dialog details').getAttribute('open'),'');
  await page.locator('[data-recognize]').click();
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{cancelled:true}));
  await page.waitForFunction(()=>document.querySelector('[data-status]').textContent==='已取消');

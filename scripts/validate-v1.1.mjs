@@ -52,7 +52,7 @@ expect(css.includes('.primary-tools.customizing') && css.includes('#toolbar-remo
 expect(css.includes('#tools[data-tab="quick"]'), 'ten-category shortcut strip CSS missing');
 expect(html.includes('id="toolbar-display"'), 'toolbar icon/text display selector missing');
 expect(!/numeric[-_ ]?(keypad|keyboard)|数字键盘/i.test(html), 'numeric keypad should not be present');
-expect(/<key>CFBundleShortVersionString<\/key><string>1\.(?:1|2)\.\d+<\/string>/.test(plist), 'Info.plist version must be 1.1.x or 1.2.x');
+expect(/<key>CFBundleShortVersionString<\/key><string>1\.(?:1|2|3)\.\d+<\/string>/.test(plist), 'Info.plist version must be 1.1.x, 1.2.x or 1.3.x');
 expect(build.includes('vendor/latexlive/catalog.js') && build.includes('vendor/latexlive/map_input.json'), 'DMG does not verify both offline catalog files');
 expect(build.includes('sed -E') && build.includes('task_version'), 'native About version is not synchronized from Info.plist during DMG build');
 expect(localBuild.includes('catalog.js') && localBuild.includes('v1.1.css') && localBuild.includes('task_version'), 'local Build-Mac.command is below v1.1.0 release standard');

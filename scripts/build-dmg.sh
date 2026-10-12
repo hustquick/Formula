@@ -22,6 +22,8 @@ cp -R web "$task_app/Contents/Resources/"
 cp THIRD-PARTY-NOTICES.txt "$task_app/Contents/Resources/"
 cp macos/formula-ocr-runner.py "$task_app/Contents/Resources/formula-ocr-runner.py"
 cp macos/ocr-requirements.txt "$task_app/Contents/Resources/ocr-requirements.txt"
+cp macos/formula-document-runner.py "$task_app/Contents/Resources/formula-document-runner.py"
+cp macos/document-requirements.txt "$task_app/Contents/Resources/document-requirements.txt"
 # Keep the native About panel in lock-step with Info.plist without duplicating release metadata.
 task_swift="$task_stage/Formula.swift"
 sed -E "s/Formula [0-9]+\.[0-9]+\.[0-9]+/Formula $task_version/g" macos/Formula.swift > "$task_swift"
@@ -65,6 +67,8 @@ hdiutil attach -readonly -nobrowse -mountpoint "$task_stage/mounted" "$task_dmg"
 [[ -f "$task_stage/mounted/Formula.app/Contents/Resources/web/v1.1.css" ]]
 [[ -f "$task_stage/mounted/Formula.app/Contents/Resources/web/ocr.js" ]]
 [[ -f "$task_stage/mounted/Formula.app/Contents/Resources/formula-ocr-runner.py" ]]
+[[ -f "$task_stage/mounted/Formula.app/Contents/Resources/formula-document-runner.py" ]]
+[[ -f "$task_stage/mounted/Formula.app/Contents/Resources/document-requirements.txt" ]]
 [[ "$(readlink "$task_stage/mounted/Applications")" == /Applications ]]
 codesign --verify --deep --strict "$task_stage/mounted/Formula.app"
 [[ "$(lipo -archs "$task_stage/mounted/Formula.app/Contents/MacOS/Formula")" == "x86_64 arm64" || "$(lipo -archs "$task_stage/mounted/Formula.app/Contents/MacOS/Formula")" == "arm64 x86_64" ]]

@@ -56,14 +56,17 @@ jobs:
           npm install --no-save --package-lock=false playwright
           npx playwright install chromium
           node tests/ocr-behavior.cjs
+          node tests/document-ui.cjs
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
       - name: Validate actual Pix2Text dependency imports
         run: |
-          python -m pip install -r macos/ocr-requirements.txt
+          python -m pip install -r macos/document-requirements.txt
           python -m pip check
           python macos/formula-ocr-runner.py --check
+          python macos/formula-document-runner.py --check
+          python tests/document-backend.py
       - name: Compile universal app and verify DMG
         run: bash scripts/build-dmg.sh
       - name: Upload build artifacts
