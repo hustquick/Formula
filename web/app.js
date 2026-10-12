@@ -350,6 +350,7 @@ const originalFocus=mf.focus.bind(mf);mf.focus=(...args)=>{setInputPane('visual'
 $('clear-input').onclick=()=>{clearTimeout(sourceTimer);clearTimeout(visualTimer);mf.setValue('');syncVisual(true);svgResult=null;nativeResult=null;valid=false;state.latex='';state.rawSource='';persist();$('source').value='';$('preview').replaceChildren();status('请输入公式');};
 $('input-settings').onclick=()=>$('system-tools').click();
 for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('size').value);$('size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('size').dispatchEvent(new Event('change'));};
+document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));
 let currentTab='quick';
 function selectToolTab(tab){currentTab=tab;document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));toolbar.dataset.tab=tab;document.querySelector('.toolbar-customize').hidden=tab!=='custom';document.querySelector('.examples').hidden=tab!=='templates';$('history').hidden=tab!=='favorites';if(tab==='templates')document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));if(tab==='favorites')document.querySelector('.tool-deck').prepend($('history'));}
 document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>selectToolTab(button.dataset.tab));selectToolTab('quick');document.querySelector('.preview-card>.section-head').append($('remember'));
