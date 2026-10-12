@@ -6,7 +6,8 @@ const source=fs.readFileSync('macos/Formula.swift','utf8');
 const method=source.slice(source.indexOf('    func run('),source.indexOf('    func discover('));
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'formula-process-test-'));
 try {
- const program=`import Foundation\nimport Darwin\nstruct ToolFailure: Error { let message: String }\nclass Runner { var ocrInstallCancelled=false; var ocrInstallProcess:Process?; func js(_ s:String) {} ; func json(_ s:String)->String { s };
+ const program=`import Foundation\nimport Darwin\nstruct ToolFailure: Error { let message: String }\nclass Runner { var documentCancelled=false
+ var ocrInstallCancelled=false; var ocrInstallProcess:Process?; func js(_ s:String) {} ; func json(_ s:String)->String { s };
 ${method}
 }
 let runner=Runner()

@@ -17,7 +17,7 @@
   function request(action,data={}){
     return new Promise((resolve,reject)=>{
       const id='ocr-'+Date.now()+'-'+Math.random().toString(36).slice(2);
-      const timeout=action==='ocrStatus'?15000:action==='ocrInstall'?150*60*1000:12*60*1000;
+      const timeout=action==='ocrStatus'?15000:['ocrInstall','ocrDocumentInstall'].includes(action)?150*60*1000:action==='ocrDocument'?210*60*1000:12*60*1000;
       const timer=setTimeout(()=>{pending.delete(id);reject(new Error('本地公式识别操作超时'));},timeout);
       pending.set(id,{resolve,reject,timer});
       try{bridge.postMessage({action,...data,id});}catch(e){clearTimeout(timer);pending.delete(id);reject(e);}
@@ -41,14 +41,15 @@
 
   const dialog=document.createElement('dialog');dialog.id='formula-ocr-dialog';
   dialog.innerHTML=`<div class="ocr-box">
-    <div class="ocr-head"><div><h2>图片公式识别</h2><div class="ocr-note">本地模型 · 按需安装 · 安装后可离线使用</div></div><button data-close>完成</button></div>
+    <div class="ocr-head"><div><h2 data-title>图片公式识别</h2><div class="ocr-note">本地模型 · 按需安装 · 安装后可离线使用</div></div><button data-close>完成</button></div>
     <div class="ocr-grid">
       <div class="ocr-field"><label>识别能力</label><select data-engine><option value="pix2text">基础识别（Pix2Text）</option><option value="unimernet">专业识别（UniMERNet Tiny）</option></select></div>
       <div class="ocr-field"><label>图片类型</label><div class="ocr-mode"><button data-mode="single" class="active">单个公式</button><button data-mode="page">整页提取公式</button></div></div>
     </div>
+    <div data-document-options hidden><label>PDF 起始页 <input data-first type="number" min="1" value="1" style="width:70px"></label> <label>结束页 <input data-last type="number" min="0" value="0" style="width:70px"></label><p class="ocr-note">结束页填 0：从起始页处理最多 20 页。Word 按文档顺序提取原生公式及图片中的公式，页码不适用。仅提取公式，不转换正文。</p><button data-word-install>安装 Word 解析组件</button></div>
     <div class="ocr-install-choices" role="group" aria-label="安装版本层级"><label><input type="checkbox" data-basic-install>基础版（Pix2Text）</label><span class="ocr-install-arrow" aria-hidden="true">→</span><label><input type="checkbox" data-pro-install>专业版（UniMERNet Tiny）</label></div>
     <p class="ocr-status" data-status>正在检查本地识别模型…</p>
-    <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装基础版</button><button data-cancel-install hidden>取消安装</button><button data-refresh>刷新状态</button></div>
+    <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装基础版</button><button data-cancel-install hidden>取消安装</button><button data-refresh>刷新状态</button><button data-cancel-document hidden>取消识别</button></div>
     <div data-install-panel hidden><progress data-install-progress max="100" aria-label="当前下载步骤进度"></progress><span class="ocr-note" data-install-status aria-live="polite"></span></div>
     <div class="ocr-results" data-results hidden></div>
     <details><summary>安装/识别日志</summary><pre class="ocr-log" data-log>尚无日志</pre></details>
@@ -83,6 +84,9 @@
   proChoice.addEventListener('change',syncInstallChoices);
   basicChoice.checked=true;
   let mode='single';
+  let documentMode=false;
+  const wordInstall=dialog.querySelector('[data-word-install]');
+  const cancelDocument=dialog.querySelector('[data-cancel-document]');
   let lastStatus=null;
   let pageFormulas=[];
   let recognizing=false;
@@ -100,7 +104,9 @@
   function updateState(preserveStatus=false){
     const info=engineInfo();
     const installed=!!info.installed;
-    recognize.disabled=recognizing||!installed||(!!lastStatus?.busy&&!lastStatus?.installing)||(!!lastStatus?.installing&&(engine.value!=='pix2text'||lastStatus.installingEngine==='pix2text'))||(mode==='page'&&!lastStatus?.detectorInstalled);
+    recognize.disabled=recognizing||!installed||(!!lastStatus?.busy&&!lastStatus?.installing)||(!!lastStatus?.installing&&(engine.value!=='pix2text'||lastStatus.installingEngine==='pix2text'))||((mode==='page'||documentMode)&&!lastStatus?.detectorInstalled);
+    wordInstall.disabled=!!lastStatus?.busy||recognizing;
+    wordInstall.textContent=lastStatus?.documentInstalled?'Word 组件已安装 · 验证/修复':'安装 Word 解析组件';
     install.disabled=!!lastStatus?.busy;
     const enhanced=engine.value==='unimernet';
     const label=enhanced?'专业识别（UniMERNet Tiny）':'基础识别（Pix2Text）';
@@ -199,7 +205,7 @@
       const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.formulaIndex=String(index);
       const body=document.createElement('div');
       const preview=document.createElement('div');preview.className='ocr-formula-preview';
-      const meta=document.createElement('small');meta.textContent=`公式 ${index+1}${item.type?' · '+item.type:''}`;
+      const meta=document.createElement('small');meta.textContent=`公式 ${index+1}${item.source?' · '+item.source:item.type?' · '+item.type:''}`;
       body.append(preview,meta);row.append(checkbox,body);results.append(row);
       renderFormulaPreview(preview,item.latex||'');
       checkbox.onchange=()=>{
@@ -213,14 +219,18 @@
   }
 
   recognize.onclick=async()=>{
-    recognizing=true;recognize.disabled=true;const requestMode=mode;const requestEngine=engine.value;engine.disabled=true;dialog.querySelectorAll('[data-mode]').forEach(x=>x.disabled=true);results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();
-    status.textContent=mode==='page'?'请选择整页教材/论文照片…':'请选择单个公式图片…';
+    recognizing=true;recognize.disabled=true;const requestDocument=documentMode;const requestMode=documentMode?'page':mode;const requestEngine=engine.value;engine.disabled=true;dialog.querySelectorAll('[data-mode]').forEach(x=>x.disabled=true);results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();
+    wordInstall.disabled=true;cancelDocument.hidden=!requestDocument;cancelDocument.disabled=false;
+    status.textContent=requestDocument?'请选择 PDF 或 Word 文档…':mode==='page'?'请选择整页教材/论文照片…':'请选择单个公式图片…';
     try{
-      const r=await request('ocrRecognize',{engine:requestEngine,mode:requestMode});
+      const first=Number(dialog.querySelector('[data-first]').value),last=Number(dialog.querySelector('[data-last]').value);
+      if(requestDocument&&(!Number.isInteger(first)||first<1||!Number.isInteger(last)||last<0||(last>0&&(last<first||last-first>=20))))throw new Error('PDF 页码无效，每次最多识别 20 页。');
+      const r=await request(requestDocument?'ocrDocument':'ocrRecognize',{engine:requestEngine,mode:requestMode,first,last});
       if(r.cancelled){status.textContent='已取消';return;}
       if(r.log)log.textContent=r.log;
       if(requestMode==='page'){
         renderPageResults(Array.isArray(r.formulas)?r.formulas:[],r.engine||engine.value);
+        if(requestDocument){status.textContent=(r.sourceName?r.sourceName+' · ':'')+status.textContent;if(r.warnings?.length){status.textContent+=' · '+r.warnings.join(' ');log.textContent=r.warnings.join('\n')+'\n'+(r.log||'');}}
       }else{
         if(!r.latex)throw new Error('没有识别到公式');
         insertLatex(r.latex);
@@ -228,9 +238,26 @@
         if(!lastStatus?.installing)setTimeout(()=>dialog.close(),500);
       }
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
-    finally{recognizing=false;engine.disabled=false;dialog.querySelectorAll('[data-mode]').forEach(x=>x.disabled=false);const outcome=status.textContent;updateState();status.textContent=outcome;}
+    finally{cancelDocument.hidden=true;recognizing=false;engine.disabled=false;dialog.querySelectorAll('[data-mode]').forEach(x=>x.disabled=false);const outcome=status.textContent;updateState();status.textContent=outcome;}
   };
 
+  cancelDocument.onclick=async()=>{cancelDocument.disabled=true;status.textContent='正在取消文档识别并清理临时文件…';try{await request('ocrDocumentCancel');}catch(e){status.textContent=e.message;}};
+  wordInstall.onclick=async()=>{
+    wordInstall.disabled=true;installPanel.hidden=false;cancelInstall.hidden=false;cancelInstall.disabled=false;installProgress.removeAttribute('value');
+    try{const r=await request('ocrDocumentInstall');status.textContent=r.message||'Word 组件已安装';log.textContent=r.log||'';}
+    catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
+    finally{installPanel.hidden=true;cancelInstall.hidden=true;try{lastStatus=await request('ocrStatus');updateState(true);}catch{}wordInstall.disabled=false;}
+  };
+  function openOCR(isDocument){
+    if(recognizing){dialog.showModal();return;}
+    documentMode=isDocument;dialog.querySelector('[data-title]').textContent=isDocument?'文档公式识别':'图片公式识别';
+    dialog.querySelector('[data-document-options]').hidden=!isDocument;
+    dialog.querySelector('.ocr-mode').parentElement.hidden=isDocument;
+    recognize.textContent=isDocument?'选择文档并识别':'选择图片并识别';
+    results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();dialog.showModal();refresh();
+  }
   const imageTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='图片识别');
-  if(imageTab){imageTab.disabled=false;imageTab.title='本地图片公式识别';imageTab.onclick=()=>{dialog.showModal();refresh();};}
+  if(imageTab){imageTab.disabled=false;imageTab.title='本地图片公式识别';imageTab.onclick=()=>openOCR(false);}
+  const documentTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='文档识别');
+  if(documentTab){documentTab.disabled=false;documentTab.title='PDF / Word 文档公式识别';documentTab.onclick=()=>openOCR(true);}
 })();

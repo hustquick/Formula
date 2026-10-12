@@ -1,6 +1,7 @@
 import Cocoa
 import WebKit
 import UniformTypeIdentifiers
+import PDFKit
 
 extension AppDelegate {
     private var ocrRoot: URL { support.appendingPathComponent("OCR", isDirectory: true).standardizedFileURL.resolvingSymlinksInPath() }
@@ -61,6 +62,7 @@ extension AppDelegate {
             let detectorReady=fm.fileExists(atPath:self.ocrMFDReady.path)
             DispatchQueue.main.async {
                 self.reply(id,[
+                    "documentInstalled":fm.isExecutableFile(atPath:self.ocrRoot.appendingPathComponent("venv-document/bin/python3").path) && fm.fileExists(atPath:self.ocrRoot.appendingPathComponent("ready-document-v2.txt").path),
                     "installed":pixReady,"busy":self.ocrBusy || self.ocrInstallBusy,
                     "installing":self.ocrInstallBusy,
                     "installingEngine":self.ocrBasicInstalling ? "pix2text" : self.ocrInstallingEngine,
@@ -270,7 +272,7 @@ extension AppDelegate {
         return text
     }
 
-    private func recognizeFormula(_ image:URL,engine:String,page:Bool) -> [String:Any] {
+    private func recognizeFormula(_ image:URL,engine:String,page:Bool,documentTask:Bool=false) -> [String:Any] {
         var log=""
         do {
             let normalized=ocrRoot.appendingPathComponent("image-"+UUID().uuidString+".png")
@@ -282,7 +284,7 @@ extension AppDelegate {
             args.append(normalized.path)
             if page && engine == "unimernet" { args += ["--basic-python",ocrPython.path] }
             let python=engine == "unimernet" ? ocrUniPython : ocrPython
-            let r=try run(python.path,args,cwd:ocrRoot,timeout:page || engine == "unimernet" ? 600 : 240);log=r.1
+            let r=try run(python.path,args,cwd:ocrRoot,timeout:page || engine == "unimernet" ? 600 : 240,documentTask:documentTask);log=r.1
             if r.0 != 0 { throw ocrFailure("公式识别失败。",r.1) }
             let label=engine == "unimernet" ? "UniMERNet Tiny" : "Pix2Text 1.1.7"
             if page {

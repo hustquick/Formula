@@ -13,6 +13,7 @@ import Darwin
 struct ToolFailure:Error {let message:String}
 class Harness {
  let support:URL
+ var documentCancelled=false
  var ocrInstallCancelled=false
  var ocrBasicInstalling=false
  var failWarmup=false

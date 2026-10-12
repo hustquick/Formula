@@ -461,3 +461,9 @@ SOFTWARE.
 
 
 
+
+On-demand Word document support (installed separately, outside Formula.app):
+pypandoc_binary 1.17 / pypandoc (MIT): https://github.com/JessicaTegner/pypandoc
+Includes Pandoc (GPL-2.0-or-later): https://github.com/jgm/pandoc
+Pandoc is invoked as a separate local process with --sandbox to convert DOCX OMML to LaTeX.
+Upstream license and source: https://github.com/jgm/pandoc/blob/main/COPYRIGHT

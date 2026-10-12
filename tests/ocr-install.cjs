@@ -15,6 +15,7 @@ struct ToolFailure:Error {let message:String}
 class Harness {
  let support:URL
 ${rootProperty}
+ var documentCancelled=false
  var ocrInstallCancelled=false
  var ocrInstallProcess:Process?
  func js(_ s:String) {}

@@ -30,6 +30,7 @@ import Darwin
 struct ToolFailure:Error {let message:String}
 class AppDelegate {
  let support:URL
+ var documentCancelled=false
  var ocrInstallCancelled=false
  var ocrInstallProcess:Process?
  var ocrBasicInstalling=false

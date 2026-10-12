@@ -76,7 +76,7 @@ OCR 环境与 UniMERNet 模型位于用户 Application Support 的 `MathForge/OC
 
 - 当前本地后端首先支持 macOS。
 - 输入支持 PNG/JPEG/WebP/TIFF/BMP/HEIC；macOS 原生解码后统一转为 PNG 再进入 Python。
-- 整页识别目前针对图片；PDF 后续可逐页渲染成图片后复用同一 MFD → MFR 流程。
+- PDF 使用 PDFKit 逐页渲染到最长边 2200 像素，再复用同一 MFD → MFR 流程；每次最多 20 页，支持指定范围。
 - MFD 只负责定位公式，不负责识别普通文字。
 - UniMERNet 当前使用 Tiny 档，优先控制下载体积和 CPU 内存占用；Small/Base 可作为后续高级选项。
 - Typst 继续复用 Formula 现有 LaTeX → Typst 转换链路。
@@ -103,10 +103,17 @@ venv 存在不代表任一模型已经安装完成。Formula 分别维护：
 
 ## 后续阶段
 
-- PDF 逐页公式提取；
 - 原图公式框编号与结果列表联动；
 - 识别置信度与候选结果显示；
 - 粘贴剪贴板图片、拖拽图片、屏幕区域截图；
 - OCR 环境删除/更新/模型版本管理；
 - Windows 本地 OCR 后端；
 - Apple Silicon 上评估 MPS/CoreML/ONNX 加速。
+
+## 文档识别（1.4.0）
+
+PDF 不另装 PDF 解析依赖，复用基础/专业模型。DOCX 使用 `venv-document` 中的 `pypandoc_binary==1.17`，原生 OMML 转 LaTeX，按 Pandoc 文档树顺序提取公式和图片。图片在本地临时目录展开，不访问外部图片链接；图片公式通过所选引擎识别，正文不导入公式编辑器。
+
+Word 组件独立创建、验证、激活；取消或失败清理暂存环境，保留已有环境。文档进程可取消，结束后清理临时页面、JSON、图片和进程日志。DOCX ZIP 展开总量限制 100 MB / 5000 项，最多 100 张图片；结果最多 1000 项。异常、加密文件和无效页码报错，不把未完成识别当作完整结果交付。
+
+可执行测试：`tests/document-runner.py`（真实 Pandoc）、`tests/document-behavior.cjs`（界面行为）、`tests/document-integration.py --ocr-root <已安装 OCR 目录> --work-dir <隔离测试目录>`（原生 Word 安装、PDFKit、两个真实模型、异常及取消清理）。

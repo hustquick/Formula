@@ -1,0 +1,2 @@
+# DOCX native OMML -> LaTeX; isolated from both OCR engine environments.
+pypandoc_binary==1.17

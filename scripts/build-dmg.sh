@@ -21,6 +21,8 @@ cp macos/Info.plist "$task_app/Contents/Info.plist"
 cp -R web "$task_app/Contents/Resources/"
 cp THIRD-PARTY-NOTICES.txt "$task_app/Contents/Resources/"
 cp macos/formula-ocr-runner.py "$task_app/Contents/Resources/formula-ocr-runner.py"
+cp macos/formula-document-runner.py "$task_app/Contents/Resources/"
+cp macos/document-requirements.txt "$task_app/Contents/Resources/"
 cp macos/ocr-requirements.txt "$task_app/Contents/Resources/ocr-requirements.txt"
 cp macos/unimernet-requirements.txt "$task_app/Contents/Resources/unimernet-requirements.txt"
 # Keep the native About panel in lock-step with Info.plist without duplicating release metadata.
@@ -30,7 +32,7 @@ sed -E "s/Formula [0-9]+\.[0-9]+\.[0-9]+/Formula $task_version/g" macos/Formula.
 # Build one staged main.swift by inserting the OCR extension before the existing app startup block.
 task_main="$task_stage/main.swift"
 task_ocr_body="$task_stage/FormulaOCR.body.swift"
-sed '/^import Cocoa$/d;/^import WebKit$/d' macos/FormulaOCR.swift > "$task_ocr_body"
+cat macos/FormulaOCR.swift macos/FormulaDocument.swift | sed '/^import Cocoa$/d;/^import WebKit$/d' > "$task_ocr_body"
 awk -v extra="$task_ocr_body" '
   /^let app=NSApplication\.shared$/ && !inserted {
     while ((getline line < extra) > 0) print line

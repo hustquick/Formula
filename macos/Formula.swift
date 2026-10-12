@@ -20,6 +20,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     var ready = false
     let ocrWorker = DispatchQueue(label: "Formula.ocr")
     var ocrBusy = false
+    var documentCancelled = false
     var ocrInstallBusy = false
     var ocrInstallingEngine = ""
     var ocrBasicInstalling = false
@@ -110,6 +111,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         case "ocrInstall":handleOCRInstall(data)
         case "ocrCancelInstall":handleOCRCancelInstall(data)
         case "ocrRecognize":handleOCRRecognize(data)
+        case "ocrDocument":handleDocumentRecognize(data)
+        case "ocrDocumentInstall":handleDocumentInstall(data)
+        case "ocrDocumentCancel":documentCancelled=true;reply(data["id"] as? String ?? "",["cancelled":true])
         case "drag":dragFile(data)
         default:break
         }
@@ -135,7 +139,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
 
     // Arguments are passed directly to Process; formula content never becomes a shell command.
-    func run(_ executable:String,_ arguments:[String],cwd:URL,timeout:TimeInterval=35,ocrInstall:Bool=false) throws -> (Int32,String) {
+    func run(_ executable:String,_ arguments:[String],cwd:URL,timeout:TimeInterval=35,ocrInstall:Bool=false,documentTask:Bool=false) throws -> (Int32,String) {
         guard FileManager.default.isExecutableFile(atPath:executable) else{throw ToolFailure(message:"工具不可执行：\(executable)")}
         let log=cwd.appendingPathComponent("process-\(UUID().uuidString).log")
         FileManager.default.createFile(atPath:log.path,contents:nil)
@@ -155,7 +159,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let end=Date().addingTimeInterval(timeout)
         var lastProgress=Date.distantPast
         while process.isRunning && Date()<end {
-            if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) { break }
+            if (ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled})) || (documentTask && DispatchQueue.main.sync(execute:{self.documentCancelled})) { break }
             if ocrInstall && Date().timeIntervalSince(lastProgress)>1 {
                 lastProgress=Date()
                 if let output=try? String(contentsOf:log,encoding:.utf8) {
@@ -164,6 +168,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 }
             }
             Thread.sleep(forTimeInterval:0.1)
+        }
+        if documentTask && DispatchQueue.main.sync(execute:{self.documentCancelled}) {
+            stopProcessTree(process);process.waitUntilExit();throw ToolFailure(message:"已取消文档识别。")
         }
         if ocrInstall && DispatchQueue.main.sync(execute:{self.ocrInstallCancelled}) {
             stopProcessTree(process)
