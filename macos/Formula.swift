@@ -20,6 +20,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     var ready = false
     let ocrWorker = DispatchQueue(label: "Formula.ocr")
     var ocrBusy = false
+    var ocrInstallBusy = false
+    var ocrInstallCancelled = false
+    var ocrInstallProcess: Process?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
