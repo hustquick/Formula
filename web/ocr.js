@@ -47,7 +47,7 @@
     </div>
     <div class="ocr-install-choices" role="group" aria-label="安装版本层级"><label><input type="checkbox" data-basic-install>基础版（Pix2Text）</label><span class="ocr-install-arrow" aria-hidden="true">→</span><label><input type="checkbox" data-pro-install>专业版（UniMERNet Tiny）</label></div>
     <p class="ocr-status" data-status>正在检查本地识别模型…</p>
-    <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装基础版</button><button data-refresh>刷新状态</button></div>
+    <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装基础版</button><button data-cancel-install hidden>取消安装</button><button data-refresh>刷新状态</button></div>
     <div class="ocr-results" data-results hidden></div>
     <details><summary>安装/识别日志</summary><pre class="ocr-log" data-log>尚无日志</pre></details>
   </div>`;
@@ -57,6 +57,7 @@
   const recognize=dialog.querySelector('[data-recognize]');
   const install=dialog.querySelector('[data-install]');
   const log=dialog.querySelector('[data-log]');
+  const cancelInstall=dialog.querySelector('[data-cancel-install]');
   const engine=dialog.querySelector('[data-engine]');
   const results=dialog.querySelector('[data-results]');
   const basicChoice=dialog.querySelector('[data-basic-install]');
@@ -118,8 +119,15 @@
   dialog.querySelector('[data-refresh]').onclick=refresh;
   engine.onchange=()=>{pageFormulas=[];selected.clear();results.hidden=true;results.innerHTML='';updateState();};
 
+  cancelInstall.onclick=async()=>{
+    cancelInstall.disabled=true;
+    status.textContent="正在取消安装并结束当前下载进程…";
+    try{await request("ocrCancelInstall");}catch(e){status.textContent=e.message;}
+  };
+
   install.onclick=async()=>{
     install.disabled=true;recognize.disabled=true;results.hidden=true;
+    cancelInstall.hidden=false;cancelInstall.disabled=false;
     const installEngine=install.dataset.installEngine;
     if(!installEngine)return;
     const enhanced=installEngine==='unimernet';
@@ -133,7 +141,7 @@
       status.textContent=r.message||`${label}安装完成`;
       await refresh();
     }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
-    finally{clearInterval(ticker);installPhase="";install.disabled=false;}
+    finally{clearInterval(ticker);installPhase="";cancelInstall.hidden=true;install.disabled=false;await refresh();}
   };
 
   function insertLatex(latex){
