@@ -120,6 +120,7 @@ extension AppDelegate {
                 }
             } else {throw ToolFailure(message:"目前支持 PDF 和 .docx；旧版 .doc 请另存为 .docx。")}
             try checkDocumentCancellation()
+            guard formulas.count<=1000,try JSONSerialization.data(withJSONObject:formulas).count<=8000000 else {throw ToolFailure(message:"文档结果过大，请减少页数或拆分文档。")}
             return ["formulas":formulas,"warnings":warnings,"sourceName":source.lastPathComponent,"engine":engine=="unimernet" ? "UniMERNet Tiny" : "Pix2Text","log":log]
         } catch let e as ToolFailure {return ["error":e.message,"log":String((log+"\n"+e.message).suffix(20000))]}
         catch {return ["error":error.localizedDescription,"log":String(log.suffix(20000))]}

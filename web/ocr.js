@@ -194,7 +194,8 @@
       const node=await window.MathJax.tex2svgPromise(normalizeFormula(latex),{display:false});
       const svg=node.querySelector('svg');
       if(!svg)throw new Error('No SVG');
-      target.replaceChildren(svg.cloneNode(true));
+      // MathJax 4 may emit several SVG fragments for one inline formula.
+      target.replaceChildren(node.cloneNode(true));
     }catch{target.textContent='公式预览暂不可用';}
   }
   function renderPageResults(formulas,engineLabel){

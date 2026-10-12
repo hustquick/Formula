@@ -69,6 +69,7 @@ jobs:
           npx playwright install chromium
           node tests/ocr-behavior.cjs
           node tests/document-behavior.cjs
+          node tests/ocr-preview.cjs
           python -m venv "$RUNNER_TEMP/document-venv"
           "$RUNNER_TEMP/document-venv/bin/python" -m pip install -r macos/document-requirements.txt
           "$RUNNER_TEMP/document-venv/bin/python" macos/formula-document-runner.py --check
@@ -86,7 +87,9 @@ jobs:
           NO_ALBUMENTATIONS_UPDATE=1 "$RUNNER_TEMP/unimernet-venv/bin/python" macos/formula-ocr-runner.py --check --engine unimernet
       - name: Real native OCR installation and model inference
         if: github.event_name == 'workflow_dispatch' && inputs.real_ocr
-        run: python tests/ocr-integration.py --work-dir "$RUNNER_TEMP/formula-real-ocr"
+        run: |
+          python tests/ocr-integration.py --work-dir "$RUNNER_TEMP/formula-real-ocr"
+          python tests/document-integration.py --ocr-root "$RUNNER_TEMP/formula-real-ocr/native-install-root/OCR" --work-dir "$RUNNER_TEMP/formula-document-real"
       - name: Compile universal app and verify DMG
         run: bash scripts/build-dmg.sh
       - name: Upload build artifacts
