@@ -103,6 +103,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             worker.async {let result=self.render(data,paths:paths);DispatchQueue.main.async {self.reply(data["id"] as? String ?? "",result)}}
         case "ocrStatus":handleOCRStatus(data)
         case "ocrInstall":handleOCRInstall(data)
+        case "ocrCancelInstall":handleOCRCancelInstall(data)
         case "ocrRecognize":handleOCRRecognize(data)
         case "drag":dragFile(data)
         default:break
