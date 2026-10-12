@@ -29,7 +29,7 @@
     .ocr-box{padding:22px}.ocr-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.ocr-head h2{margin:0}
     .ocr-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0}.ocr-field{display:flex;flex-direction:column;gap:6px}.ocr-field label{font-size:12px;opacity:.72}.ocr-field select{min-height:36px;border-radius:9px;padding:0 10px}
     .ocr-mode{display:flex;gap:8px}.ocr-mode button{flex:1;min-height:36px}.ocr-mode button.active{font-weight:700;outline:2px solid color-mix(in srgb,currentColor 28%,transparent)}
-    .ocr-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.ocr-actions button{min-height:36px}.ocr-actions .primary{font-weight:700}
+    .ocr-install-choices{display:flex;gap:16px;flex-wrap:wrap;margin:12px 0}.ocr-install-choices label{display:inline-flex;gap:6px;align-items:center}.ocr-install-choices input{width:17px;height:17px}.ocr-actions{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0}.ocr-actions button{min-height:36px}.ocr-actions .primary{font-weight:700}
     .ocr-status{padding:12px 14px;border-radius:12px;background:color-mix(in srgb,currentColor 6%,transparent);line-height:1.55}
     .ocr-note{opacity:.72;font-size:13px;line-height:1.55}.ocr-log{max-height:150px;overflow:auto;font-size:11px;white-space:pre-wrap;background:#111;color:#ddd;padding:10px;border-radius:10px}
     .ocr-results{display:grid;gap:8px;margin-top:12px;max-height:310px;overflow:auto}.ocr-result{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,currentColor 5%,transparent);cursor:pointer}
@@ -40,12 +40,13 @@
   dialog.innerHTML=`<div class="ocr-box">
     <div class="ocr-head"><div><h2>图片公式识别</h2><div class="ocr-note">本地模型 · 按需安装 · 安装后可离线使用</div></div><button data-close>完成</button></div>
     <div class="ocr-grid">
-      <div class="ocr-field"><label>识别能力</label><select data-engine><option value="pix2text">标准识别（Pix2Text）</option><option value="unimernet">增强识别（UniMERNet Tiny）</option></select></div>
+      <div class="ocr-field"><label>识别能力</label><select data-engine><option value="pix2text">基础识别（Pix2Text）</option><option value="unimernet">专业识别（UniMERNet Tiny）</option></select></div>
       <div class="ocr-field"><label>图片类型</label><div class="ocr-mode"><button data-mode="single" class="active">单个公式</button><button data-mode="page">整页提取公式</button></div></div>
     </div>
+    <div class="ocr-install-choices" role="group" aria-label="安装识别组件"><label><input type="checkbox" data-basic-install>基础版（Pix2Text）</label><label><input type="checkbox" data-pro-install>专业版（UniMERNet Tiny）</label></div>
     <p class="ocr-status" data-status>正在检查本地识别模型…</p>
-    <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装标准识别</button><button data-refresh>刷新状态</button></div>
-    <p class="ocr-note" data-note>标准识别包含 MFD 公式检测和 Pix2Text；增强识别会自动包含标准识别所需的基础组件，再额外安装 UniMERNet Tiny。</p>
+    <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片并识别</button><button data-install>安装基础版</button><button data-refresh>刷新状态</button></div>
+    <p class="ocr-note" data-note>勾选专业版时自动勾选并锁定基础版；安装完成的组件不会重复下载。</p>
     <div class="ocr-results" data-results hidden></div>
     <details><summary>安装/识别日志</summary><pre class="ocr-log" data-log>尚无日志</pre></details>
   </div>`;
@@ -57,6 +58,21 @@
   const log=dialog.querySelector('[data-log]');
   const engine=dialog.querySelector('[data-engine]');
   const results=dialog.querySelector('[data-results]');
+  const basicChoice=dialog.querySelector('[data-basic-install]');
+  const proChoice=dialog.querySelector('[data-pro-install]');
+  function syncInstallChoices(){
+    if(proChoice.checked)basicChoice.checked=true;
+    basicChoice.disabled=proChoice.checked;
+    const basicInstalled=!!lastStatus?.engines?.pix2text?.installed;
+    const proInstalled=!!lastStatus?.engines?.unimernet?.installed;
+    const requested=proChoice.checked?'unimernet':'pix2text';
+    const installed=requested==='unimernet'?proInstalled:basicInstalled;
+    install.textContent=installed?'已安装 · 验证/修复':requested==='unimernet'?(basicInstalled?'升级至专业版':'安装专业版（含基础版）'):'安装基础版';
+    install.dataset.installEngine=requested;
+  }
+  basicChoice.addEventListener('change',()=>{if(!basicChoice.checked)proChoice.checked=false;syncInstallChoices();});
+  proChoice.addEventListener('change',syncInstallChoices);
+  basicChoice.checked=true;
   let mode='single';
   let lastStatus=null;
   let pageFormulas=[];
@@ -77,8 +93,8 @@
     recognize.disabled=!installed||!!lastStatus?.busy||(mode==='page'&&!lastStatus?.detectorInstalled);
     install.disabled=!!lastStatus?.busy;
     const enhanced=engine.value==='unimernet';
-    const label=enhanced?'增强识别（UniMERNet Tiny）':'标准识别（Pix2Text）';
-    install.textContent=installed?'验证/修复 '+label:'安装 '+label;
+    const label=enhanced?'专业识别（UniMERNet Tiny）':'基础识别（Pix2Text）';
+    syncInstallChoices();
     if(lastStatus?.busy){status.textContent='本地识别组件正在安装或识别，请稍后刷新状态。';return;}
     if(installed){
       status.textContent=`${label} 已安装 · 总占用约 ${fmt(lastStatus?.bytes||0)} · ${lastStatus?.detectorInstalled?'MFD 整页公式检测已就绪':'MFD 尚未就绪，请验证/修复识别组件'}`;
@@ -101,11 +117,12 @@
 
   install.onclick=async()=>{
     install.disabled=true;recognize.disabled=true;results.hidden=true;
-    const enhanced=engine.value==='unimernet';
-    const label=enhanced?'增强识别':'标准识别';
-    status.textContent=enhanced?'正在安装增强识别：先准备标准识别基础组件，再安装 UniMERNet Tiny…':'正在安装标准识别：准备 Pix2Text 与 MFD 公式检测…';
+    const installEngine=install.dataset.installEngine||'pix2text';
+    const enhanced=installEngine==='unimernet';
+    const label=enhanced?'专业版':'基础版';
+    status.textContent=enhanced?'正在安装专业版：自动包含基础版，再安装 UniMERNet Tiny…':'正在安装基础版：准备 Pix2Text 与 MFD 公式检测…';
     try{
-      const r=await request('ocrInstall',{engine:engine.value});
+      const r=await request('ocrInstall',{engine:installEngine});
       if(r.log)log.textContent=r.log;
       status.textContent=r.message||`${label}安装完成`;
       await refresh();
