@@ -146,29 +146,40 @@ extension AppDelegate {
         guard fm.fileExists(atPath:bundledOCRRunner.path) else { throw ToolFailure(message:"Formula 安装包缺少公式识别启动脚本。") }
     }
 
+    private func reportOCRPhase(_ message:String) {
+        DispatchQueue.main.async {
+            self.js("window.FormulaOCRInstallPhase?.(\(self.json(message)));")
+        }
+    }
+
     private func installOCR(_ engine:String) -> [String:Any] {
         var log=""
         do {
             let fm=FileManager.default
-            try? fm.removeItem(at:ocrReadyURL(engine))
+            // Keep installed-engine readiness markers when an update fails.
+            reportOCRPhase("检查 Python 环境及基础依赖…")
             try ensureBaseOCR(&log)
 
             if engine == "unimernet" {
+                reportOCRPhase("正在安装 UniMERNet 依赖，可能需要较长时间…")
                 var r=try run(ocrPython.path,["-m","pip","install","unimernet==0.2.3","huggingface_hub>=0.23,<1"],cwd:ocrRoot,timeout:1800);log+=r.1
                 if r.0 != 0 { throw ToolFailure(message:"安装 UniMERNet 依赖失败。UniMERNet 需要 Python 3.10+。") }
             }
 
+            reportOCRPhase("正在初始化公式区域检测模型…")
             var r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup-detector","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200);log+=r.1
             if r.0 != 0 || !r.1.contains("FORMULA_MFD_READY=1") { throw ocrFailure("数学公式区域检测（MFD）模型初始化失败。",r.1) }
             try "ready".write(to:ocrMFDReady,atomically:true,encoding:.utf8)
 
             // 标准识别是所有 OCR 能力的基础。即使用户直接安装增强识别，也必须先完成 Pix2Text MFR 初始化。
+            reportOCRPhase("正在初始化基础公式识别模型…")
             r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","pix2text","--root",ocrRoot.path],cwd:ocrRoot,timeout:1200);log+=r.1
             if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=pix2text") { throw ocrFailure("标准识别（Pix2Text）模型初始化失败。",r.1) }
             try "ready".write(to:ocrPixReady,atomically:true,encoding:.utf8)
             try? "ready".write(to:ocrLegacyReady,atomically:true,encoding:.utf8)
 
             if engine == "unimernet" {
+                reportOCRPhase("正在下载并初始化 UniMERNet Tiny 模型…")
                 r=try run(ocrPython.path,[bundledOCRRunner.path,"--warmup","--engine","unimernet","--root",ocrRoot.path],cwd:ocrRoot,timeout:2400);log+=r.1
                 if r.0 != 0 || !r.1.contains("FORMULA_OCR_READY=unimernet") { throw ocrFailure("增强识别（UniMERNet Tiny）已安装，但模型初始化失败。",r.1) }
                 try "ready".write(to:ocrUniReady,atomically:true,encoding:.utf8)
