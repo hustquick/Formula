@@ -211,3 +211,7 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 
 .preview-card .section-head #remember{border:0;background:transparent;color:#52627b;gap:5px;padding:0 5px;box-shadow:none}
 .preview-card .section-head #remember:hover{color:#2468dd;background:#edf3fc}
+/* Leave breathing room between output actions and the footer caption. */
+.preview-card{padding-bottom:34px}
+.preview-card .preview-caption{bottom:10px;line-height:14px}
+.preview-card{padding-bottom:48px}
