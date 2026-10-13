@@ -194,7 +194,10 @@ async function exportFile(kind,copying=false){
   try{const img=new Image();img.src=url;await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('图片渲染失败'));});const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(kind==='jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);}ctx.drawImage(img,0,0,w,h);const mime=kind==='jpeg'?'image/jpeg':'image/png';const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,.96));if(!blob)throw new Error('图片导出失败');return deliver(kind==='png'?await pngWithDPI(blob,scale*96):blob,'equation.'+(kind==='jpeg'?'jpg':'png'));}finally{URL.revokeObjectURL(url);}
 }
 function history(){
-  $('history').replaceChildren();state.history.forEach((item,i)=>{const text=typeof item==='string'?item:item.rawSource;const wrap=document.createElement('div');wrap.className='history-item';const b=document.createElement('button');b.textContent=text;b.title=text;b.onclick=()=>{if(typeof item==='string')loadLatex(item);else restore(item);};const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','删除收藏');del.onclick=()=>{state.history.splice(i,1);history();persist();};wrap.append(b,del);$('history').append(wrap);});
+  $('history').replaceChildren();state.history.forEach((item,i)=>{const text=typeof item==='string'?item:item.rawSource;const wrap=document.createElement('div');wrap.className='history-item';const b=document.createElement('button');b.className='favorite-preview';b.textContent=text;b.title=text;b.setAttribute('aria-label',text);b.onclick=()=>{if(typeof item==='string')loadLatex(item);else restore(item);};
+    const latex=typeof item==='string'?item:item.latex;
+    if(latex)Promise.resolve(MathJax.startup.promise).then(()=>MathJax.tex2svgPromise(latex,{display:true})).then(node=>{if(!b.isConnected)return;const svg=node.querySelector('svg');if(svg){svg.removeAttribute('width');svg.removeAttribute('height');b.replaceChildren(svg);}}).catch(()=>{});
+const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','删除收藏');del.onclick=()=>{state.history.splice(i,1);history();persist();};wrap.append(b,del);$('history').append(wrap);});
 }
 function updateOutputFormats(){
   const selected=$('output-format').value;

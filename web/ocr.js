@@ -293,7 +293,7 @@
     results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();showPanel(isDocument);refresh();
   }
   const imageTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='图片识别');
-  if(imageTab){imageTab.disabled=false;imageTab.title='本地图片公式识别';imageTab.onclick=()=>openOCR(false);}
+  if(imageTab){imageTab.dataset.tab='image';imageTab.disabled=false;imageTab.title='本地图片公式识别';imageTab.onclick=()=>openOCR(false);}
   const documentTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='文档识别');
-  if(documentTab){documentTab.disabled=false;documentTab.title='PDF / Word 文档公式识别';documentTab.onclick=()=>openOCR(true);}
+  if(documentTab){documentTab.dataset.tab='document';documentTab.disabled=false;documentTab.title='PDF / Word 文档公式识别';documentTab.onclick=()=>openOCR(true);}
 })();
