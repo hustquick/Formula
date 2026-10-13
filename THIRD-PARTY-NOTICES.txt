@@ -1,5 +1,38 @@
 Formula — Third-party notices
 
+@mathjax/mathjax-mhchem-font-extension 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-asana-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-bonum-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-dejavu-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-fira-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-modern-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-pagella-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-schola-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-stix2-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-termes-font 4.1.3 (Apache-2.0)
+
+
+@mathjax/mathjax-tex-font 4.1.3 (Apache-2.0)
+
+
 mathlive 0.111.1 (MIT)
 Copyright (c) 2017 - present Arno Gourdol. All rights reserved.
  
@@ -462,8 +495,4 @@ SOFTWARE.
 
 
 
-On-demand Word document support (installed separately, outside Formula.app):
-pypandoc_binary 1.17 / pypandoc (MIT): https://github.com/JessicaTegner/pypandoc
-Includes Pandoc (GPL-2.0-or-later): https://github.com/jgm/pandoc
-Pandoc is invoked as a separate local process with --sandbox to convert DOCX OMML to LaTeX.
-Upstream license and source: https://github.com/jgm/pandoc/blob/main/COPYRIGHT
+On-demand Word support: pypandoc_binary 1.17 (MIT), invoking Pandoc (GPL-2.0-or-later) as a standalone process. Source and license: https://github.com/jgm/pandoc/blob/main/COPYRIGHT
