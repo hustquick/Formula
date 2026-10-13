@@ -147,3 +147,6 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 .ll-item .ll-preview mjx-container{display:flex!important;align-items:center;justify-content:center;max-width:100%}
 
 .examples[hidden],.ll-template-browser[hidden]{display:none!important}
+
+.input-editors .source-card textarea{font-size:var(--editor-source-size,16px)!important}
+.input-editors math-field{font-size:var(--editor-visual-size,28px)!important}
