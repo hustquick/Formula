@@ -181,3 +181,16 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 .toolbar-customize #customize-toolbar{order:0}
 .toolbar-customize #reset-toolbar{order:1}
 .toolbar-customize .display-segments{order:2;flex:0 0 auto}
+
+.tool-deck[data-tab="custom"]{display:grid;grid-template-columns:minmax(0,1fr) 190px;grid-template-rows:100px auto;overflow:hidden}
+.tool-deck[data-tab="custom"] #tools{grid-column:1;grid-row:1;min-width:0;padding:6px 8px 6px 16px;align-content:start;overflow:hidden}
+.tool-deck[data-tab="custom"] .primary-tools{align-content:flex-start;gap:6px}
+.tool-deck[data-tab="custom"] .primary-tools button{height:38px;min-height:38px;box-sizing:border-box}
+.tool-deck[data-tab="custom"] .toolbar-customize{grid-column:2;grid-row:1;min-width:0;width:190px;height:100px;padding:8px 16px 8px 0;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;gap:8px;border-left:1px solid #edf0f4}
+.tool-deck[data-tab="custom"] .display-segments{order:0}
+.tool-deck[data-tab="custom"] #customize-toolbar{order:1}
+.tool-deck[data-tab="custom"] #reset-toolbar{order:2}
+.tool-deck[data-tab="custom"] #toolbar-options,.tool-deck[data-tab="custom"] #toolbar-remove{grid-column:1/-1}
+.display-mark{font-size:18px;line-height:1}
+.display-segment{gap:0}
+.tool-deck[data-tab="custom"]{height:auto;min-height:100px}

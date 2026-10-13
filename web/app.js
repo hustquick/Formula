@@ -332,7 +332,15 @@ function renderToolbar(){
     label.append(input,toolIcon(entry.label),document.createTextNode(entry.label));$('toolbar-options').append(label);
   }
 }
-function saveToolbar(){localStorage.setItem('formula-toolbar-layout-v2',JSON.stringify(toolbarLayout.map(id=>catalog.find(entry=>entry.id===id).key)));renderToolbar();}
+let acceptedToolbar=[...toolbarLayout];
+function saveToolbar(){
+  renderToolbar();
+  const previousDisplay=toolbar.dataset.display;toolbar.dataset.display='both';
+  const rows=new Set([...primaryToolbar.children].map(button=>Math.round(button.offsetTop)));
+  toolbar.dataset.display=previousDisplay;
+  if(rows.size>2){toolbarLayout=[...acceptedToolbar];renderToolbar();status('自定义工具最多两行，请先移除部分工具。',true);return;}
+  acceptedToolbar=[...toolbarLayout];
+  localStorage.setItem('formula-toolbar-layout-v2',JSON.stringify(toolbarLayout.map(id=>catalog.find(entry=>entry.id===id).key)));renderToolbar();}
 $('customize-toolbar').onclick=()=>{customizingToolbar=!customizingToolbar;renderToolbar();};
 $('reset-toolbar').onclick=()=>{toolbarLayout=[...defaultToolbar];saveToolbar();};
 function startToolDrag(e){const button=e.target.closest('[data-tool-id]');if(!customizingToolbar||!button)return;draggedTool=button.dataset.toolId;e.dataTransfer.setData('text/plain',draggedTool);e.dataTransfer.effectAllowed='move';}
@@ -408,7 +416,7 @@ for(const [id,step] of [['editor-size-down',-0.1],['editor-size-up',0.1]])$(id).
 for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('size').value);$('size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('size').dispatchEvent(new Event('change'));};
 document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));
 let currentTab='quick';
-function selectToolTab(tab){currentTab=tab;document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));toolbar.dataset.tab=tab;document.querySelector('.toolbar-customize').hidden=tab!=='custom';document.querySelector('.examples').hidden=tab!=='templates';$('history').hidden=tab!=='favorites';if(tab==='templates')document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));if(tab==='favorites')document.querySelector('.tool-deck').prepend($('history'));}
+function selectToolTab(tab){currentTab=tab;document.querySelectorAll('[data-tab]').forEach(button=>button.classList.toggle('active',button.dataset.tab===tab));toolbar.dataset.tab=tab;document.querySelector('.tool-deck').dataset.tab=tab;document.querySelector('.toolbar-customize').hidden=tab!=='custom';document.querySelector('.examples').hidden=tab!=='templates';$('history').hidden=tab!=='favorites';if(tab==='templates')document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));if(tab==='favorites')document.querySelector('.tool-deck').prepend($('history'));}
 document.querySelectorAll('[data-tab]').forEach(button=>button.onclick=()=>selectToolTab(button.dataset.tab));selectToolTab('quick');document.querySelector('.preview-card>.section-head').append($('remember'));
 const toolMenus=[...toolbar.querySelectorAll('.tool-group')];
 function closeToolMenus(){for(const menu of toolMenus)menu.open=false;}
