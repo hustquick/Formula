@@ -97,7 +97,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             if data["format"] as? String == "svg",let bytes=text.data(using:.utf8) {p.setData(bytes,forType:NSPasteboard.PasteboardType("public.svg-image"))}
         case "copyImage":
             let p=NSPasteboard.general;p.clearContents()
-            for (key,type) in [("png",NSPasteboard.PasteboardType.png),("pdf",.pdf),("svg",NSPasteboard.PasteboardType("public.svg-image"))] {if let encoded=data[key] as? String,let bytes=Data(base64Encoded:encoded){p.setData(bytes,forType:type)}}
+            for (key,type) in [("png",NSPasteboard.PasteboardType.png),("pdf",.pdf),("svg",NSPasteboard.PasteboardType("public.svg-image")),("jpeg",NSPasteboard.PasteboardType("public.jpeg")),("tiff",.tiff),("eps",NSPasteboard.PasteboardType("com.adobe.encapsulated-postscript"))] {if let encoded=data[key] as? String,let bytes=Data(base64Encoded:encoded){p.setData(bytes,forType:type)}}
         case "save":saveFile(data)
         case "import":
             let panel=NSOpenPanel();panel.allowedFileTypes=["tex","typ","txt","svg","pdf","mathforge","json"];panel.canChooseDirectories=false

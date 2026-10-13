@@ -87,7 +87,7 @@ function scheduleRender(){
       nativeResult=result;lastRenderKey=key;valid=true;$('source').classList.remove('invalid');
       const img=new Image();img.className='preview-image';img.src='data:image/png;base64,'+result.png;$('preview').replaceChildren(img);
       $('dimensions').textContent=`${result.width} × ${result.height} px`;
-      status('本机排版完成 · '+result.engine);persist();return;
+      updateOutputFormats();status('本机排版完成 · '+result.engine);persist();return;
     }
     await MathJax.startup.promise;
     const container=await MathJax.tex2svgPromise(latex,{display:opts.displayMode!=='inline'});
@@ -109,7 +109,7 @@ function scheduleRender(){
     const meta=document.createElementNS('http://www.w3.org/2000/svg','metadata');meta.textContent=JSON.stringify({generator:'Formula',latex,format:'mathforge-equation',version:1,state:{...opts,history:[]}});svg.prepend(meta);
     svgResult={svg,width,height};lastRenderKey=key;valid=true;$('source').classList.remove('invalid');
     $('preview').replaceChildren(svg.cloneNode(true));$('dimensions').textContent=`${Math.ceil(width)} × ${Math.ceil(height)} px`;
-    status(state.mode==='typst'?'Typst 已转换并同步；请核对预览':'已同步 · 可导出');persist();
+    updateOutputFormats();status(state.mode==='typst'?'Typst 已转换并同步；请核对预览':'已同步 · 可导出');persist();
   }).catch(e=>{if(id===renderID)invalidate(e.message);});
   return renderQueue;
 }
@@ -162,34 +162,49 @@ async function copy(text, format='text'){
   if(bridge){send('copy',{text,format});status('已复制');return;}
   try{await navigator.clipboard.writeText(text);}catch{const ta=document.createElement('textarea');ta.value=text;document.body.append(ta);ta.select();if(!document.execCommand('copy'))throw new Error('复制失败，请手动选择源码复制');ta.remove();}status('已复制');
 }
-async function exportFile(kind){
+async function exportFile(kind,copying=false){
+  const deliver=async(blob,name)=>{
+    if(!copying)return save(blob,name);
+    if(['latex','typst','mathml','project'].includes(kind))return copy(await blob.text());
+    if(bridge){send('copyImage',{[kind]:await bytesBase64(blob)});status('已复制 '+$('output-format').selectedOptions[0].textContent);return;}
+    if(!navigator.clipboard?.write||!ClipboardItem.supports(blob.type))throw new Error('此格式的复制需要本机应用');
+    await navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);status('已复制');
+  };
   await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式再导出');
-  if(kind==='project'){return save(new Blob([JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}},null,2)],{type:'application/json'}),'equation.mathforge');}
-  if(['latex','typst','mathml'].includes(kind)){if(!conversionAvailable)throw new Error('此语法暂不支持跨格式转换，可保存为可恢复公式文件');const txt=kind==='latex'?state.latex:kind==='typst'?typst(state.latex):mf.getValue('math-ml');return save(new Blob([kind==='typst'?'$ '+txt+' $':txt],{type:'text/plain;charset=utf-8'}),'equation.'+({latex:'tex',typst:'typ',mathml:'mml'}[kind]));}
+  if(kind==='project'){return deliver(new Blob([JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}},null,2)],{type:'application/json'}),'equation.mathforge');}
+  if(['latex','typst','mathml'].includes(kind)){if(!conversionAvailable)throw new Error('此语法暂不支持跨格式转换，可保存为可恢复公式文件');const txt=kind==='latex'?state.latex:kind==='typst'?typst(state.latex):mf.getValue('math-ml');return deliver(new Blob([kind==='typst'?'$ '+txt+' $':txt],{type:'text/plain;charset=utf-8'}),'equation.'+({latex:'tex',typst:'typ',mathml:'mml'}[kind]));}
   if(state.engine!=='embedded'){
     if(!nativeResult)throw new Error('本机排版结果尚未就绪');
     if(!nativeResult[kind])throw new Error(kind==='svg'?'本机 LaTeX 导出 SVG 需要可用的 dvisvgm。可在系统工具中指定路径。':kind==='eps'?'EPS 导出需要 pdftops，可在系统工具中指定路径。':'此格式未能生成，请查看编译日志');
-    return save(new Blob([Uint8Array.from(atob(nativeResult[kind]),c=>c.charCodeAt(0))],{type:({svg:'image/svg+xml',pdf:'application/pdf',png:'image/png',jpeg:'image/jpeg',tiff:'image/tiff',eps:'application/postscript'})[kind]}),'equation.'+(kind==='jpeg'?'jpg':kind));
+    return deliver(new Blob([Uint8Array.from(atob(nativeResult[kind]),c=>c.charCodeAt(0))],{type:({svg:'image/svg+xml',pdf:'application/pdf',png:'image/png',jpeg:'image/jpeg',tiff:'image/tiff',eps:'application/postscript'})[kind]}),'equation.'+(kind==='jpeg'?'jpg':kind));
   }
   if(!svgResult)throw new Error('请先修正公式再导出');
   if(['tiff','eps'].includes(kind))throw new Error('TIFF / EPS 请使用本机 LaTeX 或 Typst 引擎');
   const {width,height,svg}=svgResult;
-  if(kind==='svg')return save(new Blob([svgText()],{type:'image/svg+xml'}),'equation.svg');
+  if(kind==='svg')return deliver(new Blob([svgText()],{type:'image/svg+xml'}),'equation.svg');
   if(kind==='pdf'){
     const w=width*.75,h=height*.75;
     const pdf=new jsPDF({orientation:w>h?'landscape':'portrait',unit:'pt',format:[w,h]});
     pdf.setProperties({title:'Formula equation',subject:'MathForge:'+JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}})});
-    await pdf.svg(svg.cloneNode(true),{x:0,y:0,width:w,height:h});return save(pdf.output('blob'),'equation.pdf');
+    await pdf.svg(svg.cloneNode(true),{x:0,y:0,width:w,height:h});return deliver(pdf.output('blob'),'equation.pdf');
   }
   const scale=Number($('scale').value),w=Math.ceil(width*scale),h=Math.ceil(height*scale);
   if(w*h>50000000||w>16000||h>16000)throw new Error('PNG 尺寸过大，请降低字号或清晰度');
   const url=URL.createObjectURL(new Blob([svgText()],{type:'image/svg+xml'}));
-  try{const img=new Image();img.src=url;await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('图片渲染失败'));});const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(kind==='jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);}ctx.drawImage(img,0,0,w,h);const mime=kind==='jpeg'?'image/jpeg':'image/png';const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,.96));if(!blob)throw new Error('图片导出失败');return save(kind==='png'?await pngWithDPI(blob,scale*96):blob,'equation.'+(kind==='jpeg'?'jpg':'png'));}finally{URL.revokeObjectURL(url);}
+  try{const img=new Image();img.src=url;await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('图片渲染失败'));});const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(kind==='jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);}ctx.drawImage(img,0,0,w,h);const mime=kind==='jpeg'?'image/jpeg':'image/png';const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,.96));if(!blob)throw new Error('图片导出失败');return deliver(kind==='png'?await pngWithDPI(blob,scale*96):blob,'equation.'+(kind==='jpeg'?'jpg':'png'));}finally{URL.revokeObjectURL(url);}
 }
 function history(){
   $('history').replaceChildren();state.history.forEach((item,i)=>{const text=typeof item==='string'?item:item.rawSource;const wrap=document.createElement('div');wrap.className='history-item';const b=document.createElement('button');b.textContent=text;b.title=text;b.onclick=()=>{if(typeof item==='string')loadLatex(item);else restore(item);};const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','删除收藏');del.onclick=()=>{state.history.splice(i,1);history();persist();};wrap.append(b,del);$('history').append(wrap);});
 }
-function applyUI(){$('math-font').value=state.mathFont;$('math-font').disabled=state.engine!=='embedded';ensureResolutionOption();for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];}$('engine').value=state.engine;$('preamble').value=state.preamble;$('typst-preamble').value=state.typstPreamble;$('display-mode').value=state.displayMode;$('engine-note').textContent=state.engine==='embedded'?'MathJax 矢量排版':'本机 '+(state.engine==='typst'?'Typst':'LaTeX');updateMode();}
+function updateOutputFormats(){
+  const selected=$('output-format').value;
+  const formats=[['svg','SVG'],['pdf','PDF'],['png','PNG'],['jpeg','JPEG'],['tiff','TIFF'],['eps','EPS'],['latex','LaTeX 源码'],['typst','Typst 源码'],['mathml','MathML'],['project','MathForge']];
+  const available=formats.filter(([kind])=>kind==='project'||(['latex','typst','mathml'].includes(kind)?conversionAvailable:state.engine==='embedded'?!['tiff','eps'].includes(kind):!!nativeResult?.[kind]));
+  $('output-format').replaceChildren(...available.map(([kind,label])=>new Option(label,kind)));
+  if(available.some(([kind])=>kind===selected))$('output-format').value=selected;
+}
+
+function applyUI(){updateOutputFormats();$('math-font').value=state.mathFont;$('math-font').disabled=state.engine!=='embedded';ensureResolutionOption();for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];}$('engine').value=state.engine;$('preamble').value=state.preamble;$('typst-preamble').value=state.typstPreamble;$('display-mode').value=state.displayMode;$('engine-note').textContent=state.engine==='embedded'?'MathJax 矢量排版':'本机 '+(state.engine==='typst'?'Typst':'LaTeX');updateMode();}
 function restore(saved){
   const keepHistory=state.history;for(const k of ['latex','rawSource','mode','engine','size','padding','color','transparent','scale','mathFont','preamble','typstPreamble','displayMode'])if(saved[k]!==undefined)state[k]=saved[k];state.history=keepHistory;
   if(!bridge)state.engine='embedded';applyUI();$('source').value=state.rawSource||getModeSource();readSource();
@@ -450,10 +465,8 @@ formatting.addEventListener('click',handleToolClick);
 document.querySelectorAll('[data-example]').forEach(b=>b.onclick=()=>loadLatex(examples[b.dataset.example]));
 ensureResolutionOption();
 for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];$(key).addEventListener('change',()=>{settings();if(state.size<10||state.size>160||state.padding<0||state.padding>80){status('字号范围 10–160 pt，留白范围 0–80 px',true);return;}scheduleRender();});}
-for(const kind of ['svg','pdf','png','jpeg'])$(kind).onclick=safe(()=>exportFile(kind));
-$('extra-format').onchange=safe(async()=>{const kind=$('extra-format').value;$('extra-format').value='';if(kind)await exportFile(kind);});
-$('copy-svg').onclick=safe(async()=>{await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式');if(nativeResult){if(!nativeResult.svg)throw new Error('本机 LaTeX 的 SVG 复制需要 dvisvgm');await copy(new TextDecoder().decode(Uint8Array.from(atob(nativeResult.svg),c=>c.charCodeAt(0))),'svg');}else if(svgResult)await copy(svgText(),'svg');});
-$('copy-image').onclick=safe(async()=>{await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式');if(!bridge)throw new Error('图片复制请在 Mac 应用中使用，网页可通过导出 PNG 保存');if(nativeResult){send('copyImage',{png:nativeResult.png,pdf:nativeResult.pdf});status('已复制图片及矢量 PDF');}else{const url=URL.createObjectURL(new Blob([svgText()],{type:'image/svg+xml'}));try{const img=new Image();img.src=url;await img.decode();const c=document.createElement('canvas');c.width=Math.ceil(svgResult.width*state.scale);c.height=Math.ceil(svgResult.height*state.scale);c.getContext('2d').drawImage(img,0,0,c.width,c.height);const blob=await new Promise(resolve=>c.toBlob(resolve));send('copyImage',{png:await bytesBase64(await pngWithDPI(blob,state.scale*96)),svg:await bytesBase64(new Blob([svgText()]))});status('已复制图片及矢量 SVG');}finally{URL.revokeObjectURL(url);}}});
+$('export-selected').onclick=safe(()=>exportFile($('output-format').value));
+$('copy-selected').onclick=safe(()=>exportFile($('output-format').value,true));
 $('copy-source').onclick=safe(()=>copy($('source').value));$('copy-other').onclick=safe(()=>copy($('other-source').textContent));$('copy-mathml').onclick=safe(()=>copy($('mathml').textContent));
 $('remember').onclick=async()=>{await readSource();if(!valid)return;const item={...state,history:undefined};state.history=[item,...state.history.filter(x=>(typeof x==='string'?x:x.rawSource)!==state.rawSource)].slice(0,100);history();persist();status('已收藏当前公式及排版设置');};
 $('save-library').onclick=safe(()=>save(new Blob([JSON.stringify({format:'mathforge-library',version:1,history:state.history},null,2)],{type:'application/json'}),'formula-library.json'));
@@ -468,4 +481,4 @@ $('preview').addEventListener('mousedown',safe(async e=>{if(!e.altKey||!bridge||
 document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='e'){e.preventDefault();safe(()=>exportFile('svg'))();}if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='c'){e.preventDefault();safe(()=>copy($('source').value))();}});
 // Repair language/source mismatches saved by versions before 1.4.1.
 try{const alternate=state.mode==='latex'?typst(state.latex):state.latex;if(state.rawSource&&state.rawSource===alternate)state.rawSource=getModeSource();}catch{}
-applyUI();history();if(state.rawSource){$('source').value=state.rawSource;readSource();}else loadLatex(state.latex);if(bridge)send('scanTools');
+updateOutputFormats();applyUI();history();if(state.rawSource){$('source').value=state.rawSource;readSource();}else loadLatex(state.latex);if(bridge)send('scanTools');
