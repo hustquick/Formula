@@ -176,3 +176,8 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 .display-segments{border:0;border-radius:4px;background:transparent;box-shadow:none}
 
 .display-shapes{width:18px;height:18px;flex:0 0 18px;stroke-width:1.25}
+/* Keep display controls anchored independently of the tool buttons' widths. */
+.toolbar-customize{display:flex;width:100%;box-sizing:border-box;align-items:center;justify-content:flex-end;gap:12px}
+.toolbar-customize #customize-toolbar{order:0}
+.toolbar-customize #reset-toolbar{order:1}
+.toolbar-customize .display-segments{order:2;flex:0 0 auto}
