@@ -15,6 +15,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
    if(m.action==='ocrStatus')setTimeout(()=>FormulaNativeReply(m.id,statusResponse),0);
   }}}};
  });
+ await page.evaluate(()=>{const nav=document.createElement('nav');nav.className='input-tabs';for(const b of [...document.querySelectorAll('body>button')])nav.append(b);document.body.prepend(nav);const deck=document.createElement('div');deck.className='tool-deck';document.body.append(deck)});
  await page.addScriptTag({content:fs.readFileSync('web/ocr.js','utf8')});
  await page.getByText('图片识别',{exact:true}).click();
  await page.waitForFunction(()=>!document.querySelector('[data-recognize]').disabled);
@@ -28,7 +29,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{error:'模型初始化失败',log:'ModuleNotFoundError: pix2text'}));
  await page.waitForFunction(()=>document.querySelector('[data-status]').textContent==='模型初始化失败');
  assert.equal(await page.locator('[data-log]').textContent(),'ModuleNotFoundError: pix2text');
- assert.equal(await page.locator('details').getAttribute('open'),'');
+ assert.equal(await page.locator('.ocr-advanced').getAttribute('open'),'');
  await page.locator('[data-recognize]').click();
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{cancelled:true}));
  await page.waitForFunction(()=>document.querySelector('[data-status]').textContent==='已取消');
@@ -93,7 +94,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.evaluate(id=>FormulaNativeReply(id,{latex:'a+b',engine:'Pix2Text'}),basicId);
  await page.waitForFunction(()=>imports.at(-1)[0]==='a+b');
  await page.waitForTimeout(550);
- assert.equal(await page.locator('dialog').evaluate(x=>x.open),true);
+ assert.equal(await page.locator('#formula-ocr-dialog').isVisible(),true);
  await page.locator('[data-cancel-install]').click();
  const cancelId=await page.evaluate(()=>calls.findLast(x=>x.action==='ocrCancelInstall').id);
  await page.evaluate(id=>FormulaNativeReply(id,{cancelled:true}),cancelId);

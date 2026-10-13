@@ -196,3 +196,18 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 .tool-deck[data-tab="custom"]{height:auto;min-height:100px}
 .tool-deck[data-tab="custom"] .toolbar-customize{border-left:0;align-items:center;justify-content:center;padding:8px 16px;gap:8px}
 .tool-deck[data-tab="custom"] .toolbar-customize #customize-toolbar{align-self:center}
+
+.action-segments{display:inline-flex;align-items:stretch;gap:0;flex:0 0 auto;overflow:hidden;border:1px solid #dfe2e6;border-radius:5px}
+.action-segments>button,.settings .action-segments>button,.exports .action-segments>button{border:0!important;border-radius:0!important;margin:0;box-shadow:none}
+.action-segments>button+button{border-left:1px solid #dfe2e6!important}
+.input-format .action-segments>button{height:34px;min-width:38px;padding:0 9px;background:#f7f8fa;color:#343c49}
+
+.settings .toggle-tag{position:relative;cursor:pointer;display:inline-flex;align-items:center}
+.toggle-tag input{position:absolute;width:1px;height:1px;opacity:0}
+.toggle-tag span{display:inline-flex;align-items:center;justify-content:center;height:27px;padding:0 9px;border-radius:5px;border:1px solid #dfe2e6;background:#f7f8fa;color:#52627b;user-select:none}
+.toggle-tag input:checked+span{color:#2468dd;background:#eaf2ff;border-color:#b8d0f8}
+.toggle-tag input:focus-visible+span{outline:2px solid #2468dd;outline-offset:2px}
+.preview-card .section-head #remember{height:28px;min-height:28px;padding:0 10px;font-size:12px;line-height:1;display:inline-flex;align-items:center;justify-content:center}
+
+.preview-card .section-head #remember{border:0;background:transparent;color:#52627b;gap:5px;padding:0 5px;box-shadow:none}
+.preview-card .section-head #remember:hover{color:#2468dd;background:#edf3fc}

@@ -7,6 +7,7 @@ const path=require('node:path'),fs=require('node:fs'),assert=require('node:asser
  await page.evaluate(()=>{
   window.webkit={messageHandlers:{mathforge:{postMessage:m=>setTimeout(()=>FormulaNativeReply(m.id,m.action==='ocrStatus'?{documentInstalled:true,detectorInstalled:true,engines:{pix2text:{installed:true}}}:{formulas:[{latex:'\\mathrm{x}+\\mathrm{y}=2',source:'第 1 页'}]}),0)}}};
  });
+ await page.evaluate(()=>{const nav=document.createElement('nav');nav.className='input-tabs';for(const b of [...document.querySelectorAll('body>button')])nav.append(b);document.body.prepend(nav);const deck=document.createElement('div');deck.className='tool-deck';document.body.append(deck)});
  await page.addScriptTag({content:fs.readFileSync('web/ocr.js','utf8')});
  await page.getByText('文档识别',{exact:true}).click();
  await page.waitForFunction(()=>!document.querySelector('[data-recognize]').disabled);
