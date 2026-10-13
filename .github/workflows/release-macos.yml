@@ -74,6 +74,11 @@ jobs:
           node tests/font-controls.cjs
           node tests/chemistry.cjs
           node tests/png-dpi.cjs
+          node tests/math-fonts.cjs
+          node tests/font-native-reload.cjs
+          node tests/editor-zoom.cjs
+          node tests/output-actions.cjs
+          node tests/native-preview-size.cjs
           node tests/shortcut-previews.cjs
           python -m venv "$RUNNER_TEMP/document-venv"
           "$RUNNER_TEMP/document-venv/bin/python" -m pip install -r macos/document-requirements.txt

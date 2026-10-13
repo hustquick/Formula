@@ -13,6 +13,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
    if(m.action==='ocrDocumentCancel')setTimeout(()=>FormulaNativeReply(m.id,{cancelled:true}),0);
   }}}};
  });
+ await page.evaluate(()=>{const nav=document.createElement('nav');nav.className='input-tabs';for(const b of [...document.querySelectorAll('body>button')])nav.append(b);document.body.prepend(nav);const deck=document.createElement('div');deck.className='tool-deck';document.body.append(deck)});
  await page.addScriptTag({content:fs.readFileSync('web/ocr.js','utf8')});
  await page.getByText('文档识别',{exact:true}).click();
  await page.waitForFunction(()=>!document.querySelector('[data-recognize]').disabled);

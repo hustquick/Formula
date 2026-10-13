@@ -37,11 +37,32 @@
     .ocr-note{opacity:.72;font-size:13px;line-height:1.55}.ocr-log{max-height:150px;overflow:auto;font-size:11px;white-space:pre-wrap;background:#111;color:#ddd;padding:10px;border-radius:10px}
     .ocr-results{display:grid;gap:8px;margin-top:12px;max-height:310px;overflow:auto}.ocr-result{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,currentColor 5%,transparent);cursor:pointer}
     .ocr-result input[type=checkbox]{width:18px;height:18px;margin:0}.ocr-result .ocr-formula-preview{min-height:34px;display:flex;align-items:center;overflow:auto}.ocr-result .ocr-formula-preview svg{max-width:100%;height:auto}.ocr-result small{opacity:.62;display:block;margin-top:4px}.ocr-result.selected{outline:2px solid color-mix(in srgb,currentColor 22%,transparent)}
+    .tool-deck.show-recognition{display:block!important;height:100px;overflow:auto}
+    .tool-deck.show-recognition>*:not(#formula-ocr-dialog){display:none!important}
+    #formula-ocr-dialog{width:auto;margin:0;border:0;border-radius:0;padding:0;box-shadow:none;background:transparent}
+    #formula-ocr-dialog[hidden]{display:none!important}
+    #formula-ocr-dialog .ocr-box{padding:8px 16px;display:flex;align-items:center;flex-wrap:wrap;gap:6px 12px}
+    #formula-ocr-dialog .ocr-head{display:none}
+    #formula-ocr-dialog .ocr-grid{display:flex;align-items:center;gap:12px;margin:0}
+    #formula-ocr-dialog .ocr-field{gap:2px}
+    #formula-ocr-dialog .ocr-field label{display:none}
+    #formula-ocr-dialog .ocr-field select,#formula-ocr-dialog .ocr-mode button,#formula-ocr-dialog .ocr-actions button{min-height:28px;height:28px;font-size:12px;padding:0 9px;border-radius:5px}
+    #formula-ocr-dialog .ocr-mode{flex-shrink:0}
+    #formula-ocr-dialog .ocr-mode button{flex:0 0 auto;white-space:nowrap;min-width:82px}
+    #formula-ocr-dialog .ocr-mode button[data-mode="page"]{min-width:112px}
+    #formula-ocr-dialog .ocr-actions{margin:0;gap:6px}
+    #formula-ocr-dialog .ocr-status{order:2;flex:1 1 65%;margin:0;padding:3px 0;background:transparent;font-size:11px;border-radius:0}
+    #formula-ocr-dialog .ocr-advanced{order:3;font-size:11px;margin-left:auto}
+    #formula-ocr-dialog .ocr-advanced[open]{flex-basis:100%;margin:0}
+    #formula-ocr-dialog .ocr-results{order:4;flex-basis:100%;margin:0}
+    #formula-ocr-dialog [data-document-options]{font-size:11px}
+    #formula-ocr-dialog [data-document-options] .ocr-note{display:none}
+    #formula-ocr-dialog [data-word-install]{font-size:11px;padding:3px 6px}
   `;document.head.append(style);
 
-  const dialog=document.createElement('dialog');dialog.id='formula-ocr-dialog';
+  const dialog=document.createElement('section');dialog.id='formula-ocr-dialog';
   dialog.innerHTML=`<div class="ocr-box">
-    <div class="ocr-head"><div><h2 data-title>图片公式识别</h2><div class="ocr-note">本地模型 · 按需安装 · 安装后可离线使用</div></div><button data-close>完成</button></div>
+    <div class="ocr-head" hidden><h2 data-title>图片公式识别</h2></div>
     <div class="ocr-grid">
       <div class="ocr-field"><label>识别能力</label><select data-engine><option value="pix2text">基础识别（Pix2Text）</option><option value="unimernet">专业识别（UniMERNet Tiny）</option></select></div>
       <div class="ocr-field"><label>图片类型</label><div class="ocr-mode"><button data-mode="single" class="active">单个公式</button><button data-mode="page">整页提取公式</button></div></div>
@@ -54,8 +75,14 @@
     <div class="ocr-results" data-results hidden></div>
     <details><summary>安装/识别日志</summary><pre class="ocr-log" data-log>尚无日志</pre></details>
   </div>`;
-  document.body.append(dialog);
+  dialog.hidden=true;document.querySelector('.tool-deck').append(dialog);
 
+  const advanced=document.createElement('details');advanced.className='ocr-advanced';
+  const summary=document.createElement('summary');summary.textContent='安装与日志';advanced.append(summary);
+  advanced.append(dialog.querySelector('.ocr-install-choices'),dialog.querySelector('[data-install-panel]'),dialog.querySelector('details'));
+  const advancedActions=document.createElement('div');advancedActions.className='ocr-actions';
+  for(const key of ['install','refresh'])advancedActions.append(dialog.querySelector('[data-'+key+']'));
+  advanced.insertBefore(advancedActions,advanced.children[2]);dialog.querySelector('.ocr-box').append(advanced);
   const status=dialog.querySelector('[data-status]');
   const recognize=dialog.querySelector('[data-recognize]');
   const install=dialog.querySelector('[data-install]');
@@ -91,8 +118,7 @@
   let pageFormulas=[];
   let recognizing=false;
   const selected=new Set();
-  dialog.querySelector('[data-close]').onclick=()=>dialog.close();
-  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+
   dialog.querySelectorAll('[data-mode]').forEach(btn=>btn.onclick=()=>{
     mode=btn.dataset.mode;
     dialog.querySelectorAll('[data-mode]').forEach(x=>x.classList.toggle('active',x===btn));
@@ -154,7 +180,7 @@
       const r=await request('ocrInstall',{engine:installEngine});
       if(r.log)log.textContent=r.log;
       status.textContent=r.message||`${label}安装完成`;
-    }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
+    }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;log.parentElement.open=true;advanced.open=true;}
     finally{clearInterval(ticker);clearInterval(statePoll);installPhase="";installPanel.hidden=true;cancelInstall.hidden=true;install.disabled=false;try{lastStatus=await request("ocrStatus");updateState(true);}catch{}}
   };
 
@@ -236,9 +262,9 @@
         if(!r.latex)throw new Error('没有识别到公式');
         insertLatex(r.latex);
         status.textContent=`识别完成 · ${r.engine||engine.value} · 已送入编辑器`;
-        if(!lastStatus?.installing)setTimeout(()=>dialog.close(),500);
+        
       }
-    }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
+    }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;log.parentElement.open=true;advanced.open=true;}
     finally{cancelDocument.hidden=true;recognizing=false;engine.disabled=false;dialog.querySelectorAll('[data-mode]').forEach(x=>x.disabled=false);const outcome=status.textContent;updateState();status.textContent=outcome;}
   };
 
@@ -246,19 +272,28 @@
   wordInstall.onclick=async()=>{
     wordInstall.disabled=true;installPanel.hidden=false;cancelInstall.hidden=false;cancelInstall.disabled=false;installProgress.removeAttribute('value');
     try{const r=await request('ocrDocumentInstall');status.textContent=r.message||'Word 组件已安装';log.textContent=r.log||'';}
-    catch(e){status.textContent=e.message;log.textContent=e.log||e.message;dialog.querySelector('details').open=true;}
+    catch(e){status.textContent=e.message;log.textContent=e.log||e.message;log.parentElement.open=true;advanced.open=true;}
     finally{installPanel.hidden=true;cancelInstall.hidden=true;try{lastStatus=await request('ocrStatus');updateState(true);}catch{}wordInstall.disabled=false;}
   };
+  function showPanel(isDocument){
+    dialog.hidden=false;
+    document.querySelector('.tool-deck').classList.add('show-recognition');
+    for(const tab of document.querySelectorAll('.input-tabs button'))tab.classList.toggle('active',tab===(isDocument?documentTab:imageTab));
+  }
+  document.querySelector('.input-tabs').addEventListener('click',e=>{
+    const tab=e.target.closest('button');if(!tab||tab===imageTab||tab===documentTab)return;
+    dialog.hidden=true;document.querySelector('.tool-deck').classList.remove('show-recognition');
+  });
   function openOCR(isDocument){
-    if(recognizing){dialog.showModal();return;}
+    if(recognizing){showPanel(isDocument);return;}
     documentMode=isDocument;dialog.querySelector('[data-title]').textContent=isDocument?'文档公式识别':'图片公式识别';
     dialog.querySelector('[data-document-options]').hidden=!isDocument;
     dialog.querySelector('.ocr-mode').parentElement.hidden=isDocument;
     recognize.textContent=isDocument?'选择文档并识别':'选择图片并识别';
-    results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();dialog.showModal();refresh();
+    results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();showPanel(isDocument);refresh();
   }
   const imageTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='图片识别');
-  if(imageTab){imageTab.disabled=false;imageTab.title='本地图片公式识别';imageTab.onclick=()=>openOCR(false);}
+  if(imageTab){imageTab.dataset.tab='image';imageTab.disabled=false;imageTab.title='本地图片公式识别';imageTab.onclick=()=>openOCR(false);}
   const documentTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='文档识别');
-  if(documentTab){documentTab.disabled=false;documentTab.title='PDF / Word 文档公式识别';documentTab.onclick=()=>openOCR(true);}
+  if(documentTab){documentTab.dataset.tab='document';documentTab.disabled=false;documentTab.title='PDF / Word 文档公式识别';documentTab.onclick=()=>openOCR(true);}
 })();

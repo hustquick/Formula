@@ -23,7 +23,7 @@
 
   function normalizedLatex(entry){
     if(matrixFallback[entry?.tag])return matrixFallback[entry.tag];
-    let latex=String(entry?.latex||'').replace(/\r\n/g,'\n').trim();
+    let latex=String(entry?.latex||'').replace(/\r\n/g,'\n').replace(/^%[^\n]*mhchem[^\n]*(?:\n|$)/gmi,'').trim();
     // Audited physics entries: replace differential d, preserving I_d and variables.
     if(/^physics_(?:1|2|7|8|10|11|12)$/.test(entry?.tag||'')){
       latex=latex.replace(/Id(?=[l\s])/g,String.raw`I\mathrm{d}`);
@@ -68,7 +68,7 @@
     const b=document.createElement('button');b.type='button';b.className=kind==='template'?'ll-template-item':'ll-item';
     const latex=normalizedLatex(entry);b.dataset.exactLatex=latex;b.dataset.exactTag=entry.tag||'';b.title=label(entry);b.setAttribute('role','menuitem');
     const art=document.createElement('span');art.className='ll-preview';art.setAttribute('aria-hidden','true');art.textContent='…';
-    const text=document.createElement('span');text.className='ll-label';text.textContent=label(entry);b.append(art,text);render(art,latex);return b;
+    const text=document.createElement('span');text.className='ll-label';text.textContent=label(entry);if(kind==='template'&&/^[A-Za-z]+_\d+$/.test(text.textContent)){text.hidden=true;b.title='';b.setAttribute('aria-label',latex);}b.append(art,text);render(art,latex);return b;
   }
 
   function viewportPlace(panel,anchor,{gap=6}={}){
