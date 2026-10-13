@@ -43,8 +43,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? proces
   await page.locator('[data-tab=custom]').click();await page.locator('#customize-toolbar').click();
   assert.equal(await page.locator('#customize-toolbar').getAttribute('aria-expanded'),'true');
   assert(await page.locator('#toolbar-options').isVisible());assert(await page.locator('#toolbar-remove').isVisible());
-  await page.locator('#toolbar-display').selectOption('icons');assert.equal(await page.locator('#tools').getAttribute('data-display'),'icons');
-  await page.locator('#toolbar-display').selectOption('both');assert.equal(await page.locator('#tools').getAttribute('data-display'),'both');
+  await page.locator('#toolbar-display input[value=icons]') .check();assert.equal(await page.locator('#tools').getAttribute('data-display'),'icons');
+  await page.locator('#toolbar-display input[value=both]') .check();assert.equal(await page.locator('#tools').getAttribute('data-display'),'both');
   await page.locator('#customize-toolbar').click();assert.equal(await page.locator('#customize-toolbar').getAttribute('aria-expanded'),'false');
 
   assert.deepEqual(errors,[]);

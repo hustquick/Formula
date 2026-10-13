@@ -305,8 +305,13 @@ try{const saved=JSON.parse(localStorage.getItem('formula-toolbar-layout-v2'));if
 toolbar.prepend(primaryToolbar);
 let toolbarDisplay=localStorage.getItem('formula-toolbar-display')||'both';
 if(!['both','icons','text'].includes(toolbarDisplay))toolbarDisplay='both';
-function applyToolbarDisplay(){toolbar.dataset.display=toolbarDisplay;$('toolbar-display').value=toolbarDisplay;}
-$('toolbar-display').onchange=()=>{toolbarDisplay=$('toolbar-display').value;localStorage.setItem('formula-toolbar-display',toolbarDisplay);applyToolbarDisplay();};applyToolbarDisplay();
+function applyToolbarDisplay(){toolbar.dataset.display=toolbarDisplay;for(const input of $('toolbar-display').querySelectorAll('input'))input.checked=input.value===toolbarDisplay;}
+window.setUIMode=function setUIMode(mode){
+  const display={icon:'icons',text:'text',icontext:'both'}[mode];
+  if(!display)return;
+  toolbarDisplay=display;localStorage.setItem('formula-toolbar-display',toolbarDisplay);applyToolbarDisplay();
+};
+$('toolbar-display').onchange=e=>window.setUIMode({icons:'icon',text:'text',both:'icontext'}[e.target.value]);applyToolbarDisplay();
 function renderToolbar(){
   primaryToolbar.replaceChildren();
   for(const entry of catalog)entry.button.hidden=entry.button.parentElement===toolbar;

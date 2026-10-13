@@ -161,3 +161,16 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 .output-toolbar .exports{padding:0;margin-left:auto;flex:0 0 auto;display:flex;align-items:center;justify-content:flex-end}
 .output-toolbar #output-format{width:132px;min-width:132px;height:29px;box-sizing:border-box}
 @media(min-width:900px){.output-toolbar{flex-wrap:nowrap}.preview-card .output-toolbar .settings{flex:1 1 0;min-width:0}}
+
+.display-segments{display:inline-flex;align-items:stretch;border:1px solid #d8dfe9;border-radius:6px;overflow:hidden;background:#f7f8fa;flex-shrink:0}
+.display-segments label{position:relative;display:flex;cursor:pointer;margin:0}
+.display-segments label+label{border-left:1px solid #d8dfe9}
+.display-segments input{position:absolute;opacity:0;width:1px;height:1px}
+.display-segment{display:flex;align-items:center;justify-content:center;gap:6px;min-width:48px;height:30px;padding:0 10px;color:#52627b}
+.display-shapes{fill:none;stroke:currentColor;stroke-width:1.5;stroke-linejoin:round}
+.display-letter{font:600 18px Georgia,serif;line-height:1}
+.display-segments input:checked+.display-segment{background:#eaf2ff;color:#2468dd;box-shadow:none}
+.display-segments input:focus-visible+.display-segment{outline:2px solid #2468dd;outline-offset:-3px}
+.display-segments label:hover .display-segment{background:#eef0f3}
+
+.display-segments{border:0;border-radius:4px;background:transparent;box-shadow:none}
