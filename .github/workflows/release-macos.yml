@@ -76,6 +76,7 @@ jobs:
           node tests/png-dpi.cjs
           node tests/math-fonts.cjs
           node tests/font-native-reload.cjs
+          node tests/editor-zoom.cjs
           node tests/shortcut-previews.cjs
           python -m venv "$RUNNER_TEMP/document-venv"
           "$RUNNER_TEMP/document-venv/bin/python" -m pip install -r macos/document-requirements.txt

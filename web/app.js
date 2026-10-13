@@ -20,7 +20,7 @@ state.history = Array.isArray(state.history) ? state.history.filter(x=>typeof x=
 if(!bridge)state.engine='embedded';
 state.mode = state.mode === 'typst' ? 'typst' : 'latex';
 state.mathFont=window.FormulaMathFont||'newcm';
-state.editorZoom=Number.isFinite(state.editorZoom)?Math.max(0.5,Math.min(2.5,state.editorZoom)):1;
+for(const key of ['sourceZoom','visualZoom'])state[key]=Number.isFinite(state[key])?Math.max(0.5,Math.min(2.5,state[key])):(Number.isFinite(state.editorZoom)?state.editorZoom:1);
 let valid = true, updating = false, renderID = 0, renderQueue = Promise.resolve(), svgResult = null, nativeResult=null, sourceTimer, visualTimer, conversionAvailable=true,lastRenderKey='';
 const requests=new Map();
 function nativeRequest(action,data){return new Promise((resolve,reject)=>{const id=String(Date.now())+'-'+Math.random().toString(36).slice(2);const timer=setTimeout(()=>{requests.delete(id);reject(new Error(action==='render'?'本机排版超时，请查看编译日志':'保存操作超时'));},action==='render'?180000:600000);requests.set(id,{resolve,reject,timer});send(action,{...data,id});});}
@@ -371,9 +371,9 @@ $('math-font').onchange=async()=>{
     lastRenderKey='';if(stripDelimiters($('source').value)!==state.rawSource)await readSource();else await scheduleRender();
   }catch(e){$('math-font').value=state.mathFont;status('字体切换失败：'+e.message,true);}
 };
-function applyEditorZoom(){document.querySelector('.input-editors').style.setProperty('--editor-source-size',(16*state.editorZoom)+'px');document.querySelector('.input-editors').style.setProperty('--editor-visual-size',(28*state.editorZoom)+'px');}
+function applyEditorZoom(){document.querySelector('.input-editors').style.setProperty('--editor-source-size',(16*state.sourceZoom)+'px');document.querySelector('.input-editors').style.setProperty('--editor-visual-size',(28*state.visualZoom)+'px');}
 applyEditorZoom();
-for(const [id,step] of [['editor-size-down',-0.1],['editor-size-up',0.1]])$(id).onclick=()=>{state.editorZoom=Math.max(0.5,Math.min(2.5,Math.round((state.editorZoom+step)*10)/10));applyEditorZoom();persist();};
+for(const [id,step] of [['editor-size-down',-0.1],['editor-size-up',0.1]])$(id).onclick=()=>{const key=inputEditors.dataset.inputMode==='visual'?'visualZoom':'sourceZoom';state[key]=Math.max(0.5,Math.min(2.5,Math.round((state[key]+step)*10)/10));applyEditorZoom();persist();};
 $('input-settings').onclick=()=>$('system-tools').click();
 for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('size').value);$('size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('size').dispatchEvent(new Event('change'));};
 document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));
