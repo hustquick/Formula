@@ -199,7 +199,17 @@ function history(){
 function updateOutputFormats(){
   const selected=$('output-format').value;
   const formats=[['svg','SVG'],['pdf','PDF'],['png','PNG'],['jpeg','JPEG'],['tiff','TIFF'],['eps','EPS'],['latex','LaTeX 源码'],['typst','Typst 源码'],['mathml','MathML'],['project','MathForge']];
-  const available=formats.filter(([kind])=>kind==='project'||(['latex','typst','mathml'].includes(kind)?conversionAvailable:state.engine==='embedded'?!['tiff','eps'].includes(kind):!!nativeResult?.[kind]));
+  // Engine capabilities do not depend on a transient compile result or source conversion.
+  const available=formats.filter(([kind])=>{
+    if(['project','latex','typst','mathml'].includes(kind))return true;
+    if(state.engine==='embedded')return !['tiff','eps'].includes(kind);
+    if(kind==='eps')return !!detectedTools.pdftops?.path;
+    if(kind==='svg')return state.engine==='typst'||!!detectedTools.dvisvgm?.path;
+    return true;
+  });
+  const signature=available.map(([kind])=>kind).join(',');
+  if($('output-format').dataset.formats===signature)return;
+  $('output-format').dataset.formats=signature;
   $('output-format').replaceChildren(...available.map(([kind,label])=>new Option(label,kind)));
   if(available.some(([kind])=>kind===selected))$('output-format').value=selected;
 }
@@ -216,7 +226,7 @@ function importContent(text,ext){
   state.mode=ext==='typ'?'typst':'latex';if(state.engine!=='embedded')state.engine=state.mode==='typst'?'typst':'latex';$('source').value=text;applyUI();readSource();
 }
 let detectedTools={};
-window.FormulaTools=tools=>{detectedTools=tools;$('tool-paths').replaceChildren();for(const [key,label] of Object.entries({latex:'LaTeX',typst:'Typst',dvisvgm:'dvisvgm',pdftops:'pdftops'})){const row=document.createElement('div');row.className='tool-row';const name=document.createElement('span');name.textContent=label;const path=document.createElement('code');path.textContent=tools[key]?.path||'未检测到';const version=document.createElement('small');version.textContent=tools[key]?.version||'';path.append(version);const button=document.createElement('button');button.textContent='指定路径';button.onclick=()=>send('chooseTool',{tool:key});row.append(name,path,button);$('tool-paths').append(row);}};
+window.FormulaTools=tools=>{detectedTools=tools;updateOutputFormats();$('tool-paths').replaceChildren();for(const [key,label] of Object.entries({latex:'LaTeX',typst:'Typst',dvisvgm:'dvisvgm',pdftops:'pdftops'})){const row=document.createElement('div');row.className='tool-row';const name=document.createElement('span');name.textContent=label;const path=document.createElement('code');path.textContent=tools[key]?.path||'未检测到';const version=document.createElement('small');version.textContent=tools[key]?.version||'';path.append(version);const button=document.createElement('button');button.textContent='指定路径';button.onclick=()=>send('chooseTool',{tool:key});row.append(name,path,button);$('tool-paths').append(row);}};
 const safe=fn=>async(...args)=>{try{await fn(...args);}catch(e){status(e.message,true);}};
 window.FormulaNativeResult=(message,error=false)=>status(message,error);
 window.FormulaImport=(text,ext)=>safe(()=>importContent(text,ext))();
