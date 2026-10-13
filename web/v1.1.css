@@ -194,3 +194,5 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 .display-mark{font-size:18px;line-height:1}
 .display-segment{gap:0}
 .tool-deck[data-tab="custom"]{height:auto;min-height:100px}
+.tool-deck[data-tab="custom"] .toolbar-customize{border-left:0;align-items:center;justify-content:center;padding:8px 16px;gap:8px}
+.tool-deck[data-tab="custom"] .toolbar-customize #customize-toolbar{align-self:center}
