@@ -279,6 +279,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 let environment=source.range(of:"\\\\begin\\{(align\\*?|gather\\*?|multline\\*?|equation\\*?|eqnarray\\*?)\\}",options:.regularExpression) != nil
                 let body=environment ? source : "$\(display ? "\\displaystyle ":"")\(source)$"
                 let document="""
+                \\IfFileExists{fix-cm.sty}{\\RequirePackage{fix-cm}}{}
                 \\documentclass[border=\(padding)pt\(environment ? ",varwidth=true":"")]{standalone}
                 \\usepackage{amsmath,amssymb,xcolor}
                 \(preamble)
@@ -345,6 +346,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     }
     func latexFallback(source:String,size:Double,padding:Double,color:String,preamble:String,display:Bool) -> String {
         return """
+        \\IfFileExists{fix-cm.sty}{\\RequirePackage{fix-cm}}{}
         \\documentclass{article}
         \\usepackage{amsmath,amssymb,xcolor}
         \(preamble)

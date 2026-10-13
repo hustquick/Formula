@@ -85,7 +85,7 @@ function scheduleRender(){
       const result=await nativeRequest('render',{engine:opts.engine,source:opts.rawSource,options:{size:opts.size,padding:opts.padding,color:opts.color,transparent:opts.transparent,scale:opts.scale,preamble:opts.preamble,typstPreamble:opts.typstPreamble,displayMode:opts.displayMode}});
       if(id!==renderID)return;
       nativeResult=result;lastRenderKey=key;valid=true;$('source').classList.remove('invalid');
-      const img=new Image();img.className='preview-image';img.src='data:image/png;base64,'+result.png;$('preview').replaceChildren(img);
+      const img=new Image();img.className='preview-image';img.style.width=(result.width/opts.scale)+'px';img.style.height=(result.height/opts.scale)+'px';img.src='data:image/png;base64,'+result.png;$('preview').replaceChildren(img);
       $('dimensions').textContent=`${result.width} × ${result.height} px`;
       updateOutputFormats();status('本机排版完成 · '+result.engine);persist();return;
     }
