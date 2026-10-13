@@ -342,6 +342,17 @@ function saveToolbar(){
   acceptedToolbar=[...toolbarLayout];
   localStorage.setItem('formula-toolbar-layout-v2',JSON.stringify(toolbarLayout.map(id=>catalog.find(entry=>entry.id===id).key)));renderToolbar();}
 $('customize-toolbar').onclick=()=>{customizingToolbar=!customizingToolbar;renderToolbar();};
+function closeToolbarCustomization(){
+  if(!customizingToolbar)return;
+  customizingToolbar=false;draggedTool=null;renderToolbar();
+}
+document.addEventListener('pointerdown',e=>{
+  if(customizingToolbar&&!e.target.closest('#toolbar-options,#toolbar-remove,#primary-tools,.toolbar-customize'))closeToolbarCustomization();
+});
+document.addEventListener('keydown',e=>{
+  if(e.key==='Escape'&&customizingToolbar){e.preventDefault();closeToolbarCustomization();$('customize-toolbar').focus();}
+});
+
 $('reset-toolbar').onclick=()=>{toolbarLayout=[...defaultToolbar];saveToolbar();};
 function startToolDrag(e){const button=e.target.closest('[data-tool-id]');if(!customizingToolbar||!button)return;draggedTool=button.dataset.toolId;e.dataTransfer.setData('text/plain',draggedTool);e.dataTransfer.effectAllowed='move';}
 primaryToolbar.addEventListener('dragstart',startToolDrag);$('toolbar-options').addEventListener('dragstart',startToolDrag);
