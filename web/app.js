@@ -13,6 +13,9 @@ const examples = {
 let state = {latex: examples.efficiency, rawSource:'', mode:'latex', engine:'embedded', history:[], size:32, padding:12, color:'#000000', transparent:true, scale:300/96, preamble:String.raw`\usepackage{amsmath,amssymb}
 \usepackage{xcolor}`,typstPreamble:'',displayMode:'display'};
 try { Object.assign(state, window.FormulaSavedState || JSON.parse(localStorage.getItem('mathforge') || '{}')); } catch {}
+// WKWebView reinjects its launch snapshot on every reload. A font change
+// restores the current editor snapshot once instead of that stale launch state.
+try{const pending=sessionStorage.getItem('formula-font-reload-state');if(pending){Object.assign(state,JSON.parse(pending));sessionStorage.removeItem('formula-font-reload-state');}}catch{}
 state.history = Array.isArray(state.history) ? state.history.filter(x=>typeof x==='string'||(x&&typeof x.rawSource==='string')).slice(0,100) : [];
 if(!bridge)state.engine='embedded';
 state.mode = state.mode === 'typst' ? 'typst' : 'latex';
@@ -350,7 +353,7 @@ $('input-visual').onclick=()=>{clearTimeout(sourceTimer);readSource();setInputPa
 const originalFocus=mf.focus.bind(mf);mf.focus=(...args)=>{setInputPane('visual');return originalFocus(...args);};
 $('clear-input').onclick=()=>{clearTimeout(sourceTimer);clearTimeout(visualTimer);mf.setValue('');syncVisual(true);svgResult=null;nativeResult=null;valid=false;state.latex='';state.rawSource='';persist();$('source').value='';$('preview').replaceChildren();status('请输入公式');};
 $('math-font').value=state.mathFont;
-$('math-font').onchange=async()=>{await readSource();state.mathFont=$('math-font').value;localStorage.setItem('formula-math-font',state.mathFont);persist();location.reload();};
+$('math-font').onchange=async()=>{await readSource();state.mathFont=$('math-font').value;localStorage.setItem('formula-math-font',state.mathFont);sessionStorage.setItem('formula-font-reload-state',JSON.stringify(state));persist();location.reload();};
 $('input-settings').onclick=()=>$('system-tools').click();
 for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('size').value);$('size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('size').dispatchEvent(new Event('change'));};
 document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));
