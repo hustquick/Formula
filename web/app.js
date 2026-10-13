@@ -389,7 +389,7 @@ $('math-font').onchange=async()=>{
 function applyEditorZoom(){document.querySelector('.input-editors').style.setProperty('--editor-source-size',(16*state.sourceZoom)+'px');document.querySelector('.input-editors').style.setProperty('--editor-visual-size',(28*state.visualZoom)+'px');}
 applyEditorZoom();
 for(const [id,step] of [['editor-size-down',-0.1],['editor-size-up',0.1]])$(id).onclick=()=>{const key=inputEditors.dataset.inputMode==='visual'?'visualZoom':'sourceZoom';state[key]=Math.max(0.5,Math.min(2.5,Math.round((state[key]+step)*10)/10));applyEditorZoom();persist();};
-$('input-settings').onclick=()=>$('system-tools').click();
+
 for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('size').value);$('size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('size').dispatchEvent(new Event('change'));};
 document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));
 let currentTab='quick';
@@ -470,15 +470,15 @@ $('copy-selected').onclick=safe(()=>exportFile($('output-format').value,true));
 $('copy-source').onclick=safe(()=>copy($('source').value));$('copy-other').onclick=safe(()=>copy($('other-source').textContent));$('copy-mathml').onclick=safe(()=>copy($('mathml').textContent));
 $('remember').onclick=async()=>{await readSource();if(!valid)return;const item={...state,history:undefined};state.history=[item,...state.history.filter(x=>(typeof x==='string'?x:x.rawSource)!==state.rawSource)].slice(0,100);history();persist();status('已收藏当前公式及排版设置');};
 $('save-library').onclick=safe(()=>save(new Blob([JSON.stringify({format:'mathforge-library',version:1,history:state.history},null,2)],{type:'application/json'}),'formula-library.json'));
-$('import').onclick=()=>{if(bridge){send('import');return;}const f=document.createElement('input');f.type='file';f.accept='.tex,.typ,.txt,.svg,.mathforge,.json';f.onchange=safe(async()=>{const file=f.files[0];if(file)importContent(await file.text(),file.name.split('.').pop());});f.click();};
-$('system-tools').onclick=()=>{$('tool-dialog').showModal();if(bridge)send('scanTools');else{$('tool-paths').textContent='本机路径检测仅在 Mac 应用中可用。';}};
+window.FormulaChooseImport=()=>{if(bridge){send('import');return;}const f=document.createElement('input');f.type='file';f.accept='.tex,.typ,.txt,.svg,.mathforge,.json';f.onchange=safe(async()=>{const file=f.files[0];if(file)importContent(await file.text(),file.name.split('.').pop());});f.click();};
+$('input-settings').onclick=()=>{$('tool-dialog').showModal();if(bridge)send('scanTools');else{$('tool-paths').textContent='本机路径检测仅在 Mac 应用中可用。';}};
 $('close-tools').onclick=()=>{$('tool-dialog').close();};$('scan-tools').onclick=()=>send('scanTools');
 for(const [id,key] of [['preamble','preamble'],['typst-preamble','typstPreamble'],['display-mode','displayMode']])$(id).addEventListener('change',()=>{state[key]=$(id).value;persist();readSource();});
 $('engine').onchange=safe(async()=>{const engine=$('engine').value;if(engine!=='embedded'&&!bridge){$('engine').value=state.engine;throw new Error('本机排版需要 Mac 应用');}if(engine==='latex'&&state.mode==='typst'){if(!conversionAvailable)throw new Error('此 Typst 语法无法转换为 LaTeX');$('source').value=state.latex;state.mode='latex';}else if(engine==='typst'&&state.mode==='latex'){$('source').value=typst(state.latex);state.mode='typst';}state.engine=engine;applyUI();await readSource();});
 for(const kind of ['svg','pdf'])$('batch-'+kind).onclick=safe(async()=>{const lines=$('batch-source').value.split('\n').map(x=>x.trim()).filter(Boolean);if(!lines.length)throw new Error('请输入待导出的公式');if(lines.length>100)throw new Error('每次最多批量导出 100 条');const original={...state};try{for(const line of lines){$('source').value=line;await exportFile(kind);if(!valid)throw new Error('批量导出已停止，请核对公式');}}finally{restore(original);}});
 $('preview').title='Mac 应用中按住 Option 拖动，可将公式文件拖到桌面或其他应用';
 $('preview').addEventListener('mousedown',safe(async e=>{if(!e.altKey||!bridge||!valid)return;e.preventDefault();if(nativeResult){const kind=nativeResult.svg?'svg':'pdf';send('drag',{name:'equation.'+kind,base64:nativeResult[kind]});}else if(svgResult){send('drag',{name:'equation.svg',base64:await bytesBase64(new Blob([svgText()]))});}}));
-document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='e'){e.preventDefault();safe(()=>exportFile('svg'))();}if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='c'){e.preventDefault();safe(()=>copy($('source').value))();}});
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='o'){e.preventDefault();window.FormulaChooseImport();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='e'){e.preventDefault();safe(()=>exportFile('svg'))();}if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='c'){e.preventDefault();safe(()=>copy($('source').value))();}});
 // Repair language/source mismatches saved by versions before 1.4.1.
 try{const alternate=state.mode==='latex'?typst(state.latex):state.latex;if(state.rawSource&&state.rawSource===alternate)state.rawSource=getModeSource();}catch{}
 updateOutputFormats();applyUI();history();if(state.rawSource){$('source').value=state.rawSource;readSource();}else loadLatex(state.latex);if(bridge)send('scanTools');
