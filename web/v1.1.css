@@ -150,5 +150,4 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 
 .input-editors .source-card textarea{font-size:var(--editor-source-size,16px)!important}
 .input-editors math-field{font-size:var(--editor-visual-size,28px)!important}
-.settings #input-size-down,.settings #input-size-up{height:28px;min-height:28px;min-width:34px;padding:0 8px;border-radius:5px;font-size:12px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
-.settings input[type=number],.settings select{height:28px;box-sizing:border-box}
+.settings #input-size-down,.settings #input-size-up{height:29px;min-height:29px;min-width:40px;padding:0 8px;border-radius:5px;font-size:12px;line-height:1;display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box}
