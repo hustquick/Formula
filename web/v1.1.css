@@ -215,3 +215,5 @@ button{transition:background-color .12s,border-color .12s,color .12s,box-shadow 
 .preview-card{padding-bottom:34px}
 .preview-card .preview-caption{bottom:10px;line-height:14px}
 .preview-card{padding-bottom:48px}
+.input-format .action-segments{height:36px;box-sizing:border-box;align-items:stretch}
+.input-format .action-segments>button{height:100%;min-height:0;box-sizing:border-box}

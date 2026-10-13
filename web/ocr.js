@@ -47,6 +47,9 @@
     #formula-ocr-dialog .ocr-field{gap:2px}
     #formula-ocr-dialog .ocr-field label{display:none}
     #formula-ocr-dialog .ocr-field select,#formula-ocr-dialog .ocr-mode button,#formula-ocr-dialog .ocr-actions button{min-height:28px;height:28px;font-size:12px;padding:0 9px;border-radius:5px}
+    #formula-ocr-dialog .ocr-mode{flex-shrink:0}
+    #formula-ocr-dialog .ocr-mode button{flex:0 0 auto;white-space:nowrap;min-width:82px}
+    #formula-ocr-dialog .ocr-mode button[data-mode="page"]{min-width:112px}
     #formula-ocr-dialog .ocr-actions{margin:0;gap:6px}
     #formula-ocr-dialog .ocr-status{order:2;flex:1 1 65%;margin:0;padding:3px 0;background:transparent;font-size:11px;border-radius:0}
     #formula-ocr-dialog .ocr-advanced{order:3;font-size:11px;margin-left:auto}
