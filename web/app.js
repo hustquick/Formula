@@ -353,7 +353,23 @@ $('input-visual').onclick=()=>{clearTimeout(sourceTimer);readSource();setInputPa
 const originalFocus=mf.focus.bind(mf);mf.focus=(...args)=>{setInputPane('visual');return originalFocus(...args);};
 $('clear-input').onclick=()=>{clearTimeout(sourceTimer);clearTimeout(visualTimer);mf.setValue('');syncVisual(true);svgResult=null;nativeResult=null;valid=false;state.latex='';state.rawSource='';persist();$('source').value='';$('preview').replaceChildren();status('请输入公式');};
 $('math-font').value=state.mathFont;
-$('math-font').onchange=async()=>{await readSource();state.mathFont=$('math-font').value;localStorage.setItem('formula-math-font',state.mathFont);sessionStorage.setItem('formula-font-reload-state',JSON.stringify(state));persist();location.reload();};
+let fontSwitchID=0;
+$('math-font').onchange=async()=>{
+  const requested=$('math-font').value,id=++fontSwitchID;
+  try{
+    await MathJax.startup.promise;
+    await MathJax.loader.load('[fonts]/mathjax-'+requested+'-font/svg');
+    if(id!==fontSwitchID)return;
+    const classes=MathJax._.output.fonts['mathjax-'+requested].svg_ts;
+    const Font=Object.values(classes).find(value=>typeof value==='function');
+    const jax=MathJax.startup.document.outputJax;
+    jax.font=new Font({dynamicPrefix:'[fonts]/mathjax-'+requested+'-font/svg/dynamic'});
+    jax.clearFontCache();
+    state.mathFont=requested;window.FormulaMathFont=requested;
+    localStorage.setItem('formula-math-font',requested);persist();
+    lastRenderKey='';if(stripDelimiters($('source').value)!==state.rawSource)await readSource();else await scheduleRender();
+  }catch(e){$('math-font').value=state.mathFont;status('字体切换失败：'+e.message,true);}
+};
 $('input-settings').onclick=()=>$('system-tools').click();
 for(const [id,step] of [['input-size-down',-2],['input-size-up',2]])$(id).onclick=()=>{const value=Number($('size').value);$('size').value=Math.max(10,Math.min(160,(Number.isFinite(value)?value:state.size)+step));$('size').dispatchEvent(new Event('change'));};
 document.querySelector('.tool-deck').prepend(document.querySelector('.examples'));
