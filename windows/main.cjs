@@ -82,7 +82,7 @@ ipcMain.on('formula-load-state',e=>{e.returnValue=readJson(statePath(),{});});
 ipcMain.on('formula-native',async(event,data)=>{try{const action=data?.action;
   if(action==='state'){writeJson(statePath(),data.state||{});return;}
   if(action==='copy'){clipboard.writeText(String(data.text||''));return;}
-  if(action==='copyImage'){if(data.png){const img=nativeImage.createFromBuffer(Buffer.from(data.png,'base64'));clipboard.writeImage(img);}return;}
+  if(action==='copyImage'){clipboard.clear();for(const [kind,mime] of [['png','image/png'],['jpeg','image/jpeg'],['svg','image/svg+xml'],['pdf','application/pdf'],['tiff','image/tiff'],['eps','application/postscript']]){if(!data[kind])continue;const bytes=Buffer.from(data[kind],'base64');if(['png','jpeg'].includes(kind))clipboard.writeImage(nativeImage.createFromBuffer(bytes));clipboard.writeBuffer(mime,bytes);if(kind==='svg')clipboard.writeText(bytes.toString('utf8'));}return;}
   if(action==='save'){const r=await dialog.showSaveDialog(win,{defaultPath:data.name});if(r.canceled)return reply(data.id,{cancelled:true});await fsp.writeFile(r.filePath,Buffer.from(data.base64,'base64'));return reply(data.id,{saved:true});}
   if(action==='import'){const r=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Formula files',extensions:['tex','typ','txt','svg','mathforge','json']}]});if(r.canceled||!r.filePaths[0])return;const file=r.filePaths[0],text=await fsp.readFile(file,'utf8');return send('formula-import',text,path.extname(file).slice(1).toLowerCase());}
   if(action==='scanTools'){scanTools();return;}
