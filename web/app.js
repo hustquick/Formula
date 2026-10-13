@@ -10,7 +10,7 @@ const examples = {
   quadratic: String.raw`x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}`,
   matrix: String.raw`\mathbf{A}=\begin{pmatrix}a&b\\c&d\end{pmatrix}`
 };
-let state = {latex: examples.efficiency, rawSource:'', mode:'latex', engine:'embedded', history:[], size:32, padding:12, color:'#18232f', transparent:true, scale:300/96, preamble:String.raw`\usepackage{amsmath,amssymb}
+let state = {latex: examples.efficiency, rawSource:'', mode:'latex', engine:'embedded', history:[], size:32, padding:12, color:'#000000', transparent:true, scale:300/96, preamble:String.raw`\usepackage{amsmath,amssymb}
 \usepackage{xcolor}`,typstPreamble:'',displayMode:'display'};
 try { Object.assign(state, window.FormulaSavedState || JSON.parse(localStorage.getItem('mathforge') || '{}')); } catch {}
 state.history = Array.isArray(state.history) ? state.history.filter(x=>typeof x==='string'||(x&&typeof x.rawSource==='string')).slice(0,100) : [];
