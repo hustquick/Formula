@@ -1,0 +1,1 @@
+LaTeX Workshop MIT completion data. Upstream https://github.com/James-Yu/LaTeX-Workshop commit 475476b5e79566a125d3ccf8a5ebab36617473c4. macros.json and environments.json are bundled for completion. LICENSE.txt must accompany distribution. Completion suggests syntax, not availability of every package in MathJax.

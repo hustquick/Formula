@@ -54,6 +54,7 @@ extension AppDelegate {
         panel.allowedContentTypes=[.pdf,UTType(filenameExtension:"docx")!,UTType(filenameExtension:"doc")!]
         panel.beginSheetModal(for:window){response in
             guard response == .OK,let url=panel.url else {self.ocrBusy=false;self.reply(id,["cancelled":true]);return}
+            self.js("window.FormulaOCRInput?.(\(self.json(id)),\(self.json(["kind":"document","name":url.lastPathComponent])));")
             if let notice=self.legacyWordNotice(url) {self.ocrBusy=false;self.reply(id,["error":notice]);return}
             self.ocrWorker.async {
                 let result=self.recognizeDocument(url,engine:engine,first:first,last:last,id:id)

@@ -2,9 +2,12 @@ import Cocoa
 import WebKit
 import UniformTypeIdentifiers
 import PDFKit
+import ImageIO
 
 extension AppDelegate {
-    private var ocrRoot: URL { support.appendingPathComponent("OCR", isDirectory: true).standardizedFileURL.resolvingSymlinksInPath() }
+    // Fixed shared OCR environment: independent of app identity and debug data roots.
+    // Keep the existing location; moving venvs would invalidate their absolute shebangs.
+    private var ocrRoot: URL { FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("MathForge/OCR", isDirectory: true).standardizedFileURL.resolvingSymlinksInPath() }
     private var ocrVenv: URL { ocrRoot.appendingPathComponent("venv", isDirectory: true) }
     private var ocrUniVenv: URL { ocrRoot.appendingPathComponent("venv-unimernet", isDirectory: true) }
     private var ocrUniPython: URL { ocrUniVenv.appendingPathComponent("bin/python3") }
@@ -113,11 +116,28 @@ extension AppDelegate {
         guard !page || FileManager.default.fileExists(atPath:ocrMFDReady.path) else {
             reply(id,["error":"整页公式检测模型尚未安装。请对当前识别能力执行一次“安装/验证”。"]);return
         }
+        if let encoded=data["imageBase64"] as? String {
+            guard encoded.count <= 140_000_000,let bytes=Data(base64Encoded:encoded),!bytes.isEmpty else {reply(id,["error":"剪贴板图片无效或过大。"]);return}
+            let temporary=FileManager.default.temporaryDirectory.appendingPathComponent("formula-paste-"+UUID().uuidString+".png")
+            do {try bytes.write(to:temporary,options:.atomic)} catch {reply(id,["error":error.localizedDescription]);return}
+            ocrBusy=true
+            ocrWorker.async {
+                let result=self.recognizeFormula(temporary,engine:engine,page:page)
+                try? FileManager.default.removeItem(at:temporary)
+                DispatchQueue.main.async {self.ocrBusy=false;self.reply(id,result)}
+            }
+            return
+        }
         ocrBusy=true
         let panel=NSOpenPanel();panel.title=page ? "选择包含公式的整页图片" : "选择公式图片";panel.canChooseDirectories=false;panel.canChooseFiles=true;panel.allowsMultipleSelection=false
         panel.allowedContentTypes=[.image]
         panel.beginSheetModal(for:window){response in
             guard response == .OK,let url=panel.url else { self.ocrBusy=false;self.reply(id,["cancelled":true]);return }
+            self.js("window.FormulaOCRInput?.(\(self.json(id)),\(self.json(["kind":"image","name":url.lastPathComponent])));")
+            self.ocrWorker.async {
+                let thumbnail=self.ocrInputThumbnail(url)
+                DispatchQueue.main.async {self.js("window.FormulaOCRInput?.(\(self.json(id)),\(self.json(["kind":"image","name":url.lastPathComponent,"thumbnail":thumbnail])));")}
+            }
             let engineLabel=engine == "unimernet" ? "UniMERNet Tiny" : "Pix2Text"
             let phase=page ? "正在检测整页公式区域并用 \(engineLabel) 识别" : "正在用 \(engineLabel) 识别"
             self.js("window.FormulaOCRProgress?.(\(self.json(id)),\(self.json(["message":phase+"："+url.lastPathComponent])));")
@@ -126,6 +146,13 @@ extension AppDelegate {
                 DispatchQueue.main.async { self.ocrBusy=false;self.reply(id,result) }
             }
         }
+    }
+
+    func ocrInputThumbnail(_ url:URL) -> String {
+        guard let source=CGImageSourceCreateWithURL(url as CFURL,nil),let image=CGImageSourceCreateThumbnailAtIndex(source,0,[kCGImageSourceCreateThumbnailFromImageAlways:true,kCGImageSourceThumbnailMaxPixelSize:128,kCGImageSourceCreateThumbnailWithTransform:true] as CFDictionary) else{return ""}
+        let bitmap=NSBitmapImageRep(cgImage:image)
+        guard let bytes=bitmap.representation(using:.png,properties:[:]) else{return ""}
+        return "data:image/png;base64,"+bytes.base64EncodedString()
     }
 
     private func discoverPython3() -> String? {

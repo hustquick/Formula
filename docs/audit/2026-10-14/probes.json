@@ -1,0 +1,2826 @@
+{
+  "templates": [
+    {
+      "group": "algebra",
+      "entries": [
+        {
+          "id": "algebra_1",
+          "latex": "\\left(x-1\\right)\\left(x+3\\right)",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_2",
+          "latex": "\\sqrt{\n  a^2+b^2\n}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_3",
+          "latex": "\\left ( \\frac{a}{b}\\right )^{n}= \\frac{a^{n}}{b^{n}}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_4",
+          "latex": "\\frac{a}{b}\\pm \\frac{c}{d}= \\frac{ad \\pm bc}{bd}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_5",
+          "latex": "\\frac{x^{2}}{a^{2}}-\\frac{y^{2}}{b^{2}}=1",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_6",
+          "latex": "\\frac{\n  1\n}{\n  \\sqrt{a}\n}=\\frac{\n  \\sqrt{a}\n}{\n  a\n},a\\ge 0\\frac{\n  1\n}{\n  \\sqrt{a}\n}=\\frac{\n  \\sqrt{a}\n}{\n  a\n},a\\ge 0",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_7",
+          "latex": "\\sqrt[n]{a^{n}}=\\left ( \\sqrt[n]{a}\\right )^{n}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_8",
+          "latex": "x ={-b \\pm \\sqrt{b^2-4ac}\\over 2a}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_9",
+          "latex": "y-y_{1}=k \\left( x-x_{1}\\right)",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_10",
+          "latex": "\\left\\{\\begin{matrix}\n  x=a + r\\text{cos}\\theta \\\\\n  y=b + r\\text{sin}\\theta \n\\end{matrix}\\right.",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_11",
+          "latex": "\\begin{array}{l}\n  \\text{对于方程形如：}x^{3}-1=0 \\\\\n  \\text{设}\\text{:}\\omega =\\frac{\n  -1+\\sqrt{3}i\n}{\n  2\n} \\\\\n  x_{1}=1,x_{2}= \\omega =\\frac{\n  -1+\\sqrt{3}i\n}{\n  2\n} \\\\\n  x_{3}= \\omega ^{2}=\\frac{\n  -1-\\sqrt{3}i\n}{\n  2\n} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_12",
+          "latex": "\\begin{array}{l}\n  a\\mathop{{x}}\\nolimits^{{2}}+bx+c=0 \\\\\n  \\Delta =\\mathop{{b}}\\nolimits^{{2}}-4ac \\\\\n  \\left\\{\\begin{matrix}\n    \\Delta \\gt 0\\text{方程有两个不相等的实根} \\\\\n    \\Delta = 0\\text{方程有两个不相等的实根} \\\\\n    \\Delta \\lt 0\\text{方程有两个不相等的实根} \n  \\end{matrix}\\right.    \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "algebra_13",
+          "latex": "\\begin{array}{l}\n  a\\mathop{{x}}\\nolimits^{{2}}+bx+c=0 \\\\\n  \\Delta =\\mathop{{b}}\\nolimits^{{2}}-4ac \\\\\n  \\mathop{{x}}\\nolimits_{{1,2}}=\\frac{\n  {-b \\pm  \n  \\sqrt{\n  {\\mathop{{b}}\\nolimits^{{2}}-4ac}\n  }}\n}{\n  {2a}\n} \\\\\n  \\mathop{{x}}\\nolimits_{{1}}+\\mathop{{x}}\\nolimits_{{2}}=-\\frac{{b}}{{a}} \\\\\n  \\mathop{{x}}\\nolimits_{{1}}\\mathop{{x}}\\nolimits_{{2}}=\\frac{{c}}{{a}} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "geometry",
+      "entries": [
+        {
+          "id": "geometry_1",
+          "latex": "\\Delta A B C",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_2",
+          "latex": "a \\parallel c,b \\parallel c \\Rightarrow a \\parallel b",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_3",
+          "latex": "l \\perp \\beta ,l \\subset \\alpha \\Rightarrow \\alpha \\perp \\beta",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_4",
+          "latex": "\\left.\\begin{matrix}\n  a \\perp \\alpha \\\\\n  b \\perp \\alpha \n\\end{matrix}\\right\\}\\Rightarrow a \\parallel b",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_5",
+          "latex": "P \\in \\alpha ,P \\in \\beta , \\alpha \\cap \\beta =l \\Rightarrow P \\in l",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_6",
+          "latex": "\\alpha \\perp \\beta , \\alpha \\cap \\beta =l,a \\subset \\alpha ,a \\perp l  \n  \\Rightarrow a \\perp \\beta",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_7",
+          "latex": "\\left.\\begin{matrix}\n  a \\subset \\beta ,b \\subset \\beta ,a \\cap b=P \\\\\n  a \\parallel \\partial ,b \\parallel \\partial  \n\\end{matrix}\\right\\}\\Rightarrow \\beta \\parallel \\alpha",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_8",
+          "latex": "\\alpha \\parallel \\beta , \\gamma \\cap \\alpha =a, \\gamma \\cap \\beta =b \\Rightarrow a \\parallel b",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_9",
+          "latex": "A \\in l,B \\in l,A \\in \\alpha ,B \\in \\alpha \\Rightarrow l \\subset \\alpha",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_10",
+          "latex": "\\left.\\begin{matrix}\n  m \\subset \\alpha ,n \\subset \\alpha ,m \\cap n=P \\\\\n  a \\perp m,a \\perp n \n\\end{matrix}\\right\\}\\Rightarrow a \\perp \\alpha",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "geometry_11",
+          "latex": "\\begin{array}{c}\n  \\text{直角三角形中,直角边长a,b,斜边边长c} \\\\\n  a^{2}+b^{2}=c^{2} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "inequality",
+      "entries": [
+        {
+          "id": "inequality_1",
+          "latex": "a > b,b > c \\Rightarrow a > c",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_2",
+          "latex": "a > b,c > d \\Rightarrow a+c > b+d",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_3",
+          "latex": "a > b > 0,c > d > 0 \\Rightarrow ac bd",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_4",
+          "latex": "\\begin{array}{c}\n  a \\gt b,c \\gt 0 \\Rightarrow ac \\gt bc \\\\\n  a \\gt b,c \\lt 0 \\Rightarrow ac \\lt bc \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_5",
+          "latex": "\\left | a-b \\right | \\geqslant \\left | a \\right | -\\left | b \\right |",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_6",
+          "latex": "-\\left | a \\right |\\leq a\\leqslant \\left | a \\right |",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_7",
+          "latex": "\\left | a \\right |\\leqslant b \\Rightarrow -b \\leqslant a \\leqslant \\left | b \\right |",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_8",
+          "latex": "\\left | a+b \\right | \\leqslant \\left | a \\right | + \\left | b \\right |",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_9",
+          "latex": "\\begin{array}{c}\n  a \\gt b \\gt 0,n \\in N^{\\ast},n \\gt 1 \\\\\n  \\Rightarrow a^{n}\\gt b^{n}, \\sqrt[n]{a}\\gt \\sqrt[n]{b} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_10",
+          "latex": "\\left( \\sum_{k=1}^n a_k b_k \\right)^{\\!\\!2}\\leq   \n\\left( \\sum_{k=1}^n a_k^2 \\right) \\left( \\sum_{k=1}^n b_k^2 \\right)",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_11",
+          "latex": "\\begin{array}{c}\n  a,b \\in R^{+} \\\\\n  \\Rightarrow \\frac{\n  a+b\n}{\n  {2}\n}\\ge \\sqrt{ab} \\\\\n  \\left( \\text{当且仅当}a=b\\text{时取“}=\\text{”号}\\right) \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_12",
+          "latex": "\\begin{array}{c}\n  a,b \\in R \\\\\n  \\Rightarrow a^{2}+b^{2}\\gt 2ab \\\\\n  \\left( \\text{当且仅当}a=b\\text{时取“}=\\text{”号}\\right) \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "inequality_13",
+          "latex": "\\begin{array}{c}\n  H_{n}=\\frac{\n  n\n}{\n  \\sum \\limits_{i=1}^{n}\\frac{1}{x_{i}}\n}= \\frac{\n  n\n}{\n  \\frac{1}{x_{1}}+ \\frac{1}{x_{2}}+ \\cdots + \\frac{1}{x_{n}}\n} \\\\\n  G_{n}=\\sqrt[n]{\n  \\prod \\limits_{i=1}^{n}x_{i}\n}= \\sqrt[n]{x_{1}x_{2}\\cdots x_{n}} \\\\\n  A_{n}=\\frac{1}{n}\\sum \\limits_{i=1}^{n}x_{i}=\\frac{\n  x_{1}+ x_{2}+ \\cdots + x_{n}\n}{\n  n\n} \\\\\n  Q_{n}=\\sqrt{\n  \\sum \\limits_{i=1}^{n}x_{i}^{2}\n}= \\sqrt{\n  \\frac{\n  x_{1}^{2}+ x_{2}^{2}+ \\cdots + x_{n}^{2}\n  }{\n  n\n  }\n} \\\\\n  H_{n}\\leq G_{n}\\leq A_{n}\\leq Q_{n} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "calculous",
+      "entries": [
+        {
+          "id": "calculous_1",
+          "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}x^n=nx^{n-1}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_2",
+          "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}e^{ax}=a\\,e^{ax}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_3",
+          "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\ln(x)=\\frac{1}{x}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_4",
+          "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\sin x=\\cos x",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_5",
+          "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\cos x=-\\sin x",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_6",
+          "latex": "\\int k\\mathrm{d}x = kx+C",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_7",
+          "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\tan x=\\sec^2 x",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_8",
+          "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\cot x=-\\csc^2 x",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_9",
+          "latex": "\\int \\frac{1}{x}\\mathrm{d}x= \\ln \\left| x \\right| +C",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_10",
+          "latex": "\\int \\frac{\n  1\n}{\n  \\sqrt{1-x^{2}}\n}\\mathrm{d}x= \\arcsin x +C",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_11",
+          "latex": "\\int \\frac{\n  1\n}{\n  1+x^{2}\n}\\mathrm{d}x= \\arctan x +C",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_12",
+          "latex": "\\int u \\frac{\\mathrm{d}v}{\\mathrm{d}x}\\,\\mathrm{d}x=uv-\\int \\frac{\\mathrm{d}u}{\\mathrm{d}x}v\\,\\mathrm{d}x",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_13",
+          "latex": "f(x) = \\int_{-\\infty}^\\infty  \\hat f(x)\\xi\\,e^{2 \\pi i \\xi x}  \\,\\mathrm{d}\\xi",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "calculous_14",
+          "latex": "\\int x^{\\mu}\\mathrm{d}x=\\frac{\n  x^{\\mu +1}\n}{\n  \\mu +1\n}+C, \\left({\\mu \\neq -1}\\right)",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "array",
+      "entries": [
+        {
+          "id": "array_1",
+          "latex": "\\begin{pmatrix}\n  1 & 0 \\\\\n  0 & 1  \n\\end{pmatrix}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "array_2",
+          "latex": "\\begin{pmatrix}\n  a_{11} & a_{12} & a_{13} \\\\\n  a_{21} & a_{22} & a_{23} \\\\\n  a_{31} & a_{32} & a_{33}  \n\\end{pmatrix}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "array_3",
+          "latex": "\\begin{pmatrix}\n  a_{11} & \\cdots & a_{1n} \\\\\n  \\vdots & \\ddots & \\vdots \\\\\n  a_{m1} & \\cdots & a_{mn}  \n\\end{pmatrix}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "array_4",
+          "latex": "\\begin{array}{c}\n  A=A^{T}  \\\\\n  A=-A^{T} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "array_5",
+          "latex": "O = \\begin{bmatrix}\n  0 & 0 & \\cdots & 0 \\\\\n  0 & 0 & \\cdots & 0 \\\\\n  \\vdots & \\vdots & \\ddots & \\vdots \\\\\n  0 & 0 & \\cdots & 0  \n\\end{bmatrix}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "array_6",
+          "latex": "A_{m\\times n}=  \n\\begin{bmatrix}\n  a_{11}& a_{12}& \\cdots  & a_{1n} \\\\\n  a_{21}& a_{22}& \\cdots  & a_{2n} \\\\\n  \\vdots & \\vdots & \\ddots & \\vdots \\\\\n  a_{m1}& a_{m2}& \\cdots  & a_{mn}  \n\\end{bmatrix}  \n=\\left [ a_{ij}\\right ]",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "array_7",
+          "latex": "\\begin{array}{c}\n  A={\\left[ a_{ij}\\right]_{m \\times n}},B={\\left[ b_{ij}\\right]_{n \\times s}} \\\\\n  c_{ij}= \\sum \\limits_{k=1}^{{n}}a_{ik}b_{kj} \\\\\n  C=AB=\\left[ c_{ij}\\right]_{m \\times s}  \n  = \\left[ \\sum \\limits_{k=1}^{n}a_{ik}b_{kj}\\right]_{m \\times s} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "array_8",
+          "latex": "\\mathbf{V}_1 \\times \\mathbf{V}_2 =  \n\\begin{vmatrix}\n  \\mathbf{i}& \\mathbf{j}& \\mathbf{k} \\\\\n  \\frac{\\partial X}{\\partial u}& \\frac{\\partial Y}{\\partial u}& 0 \\\\\n  \\frac{\\partial X}{\\partial v}& \\frac{\\partial Y}{\\partial v}& 0 \\\\\n\\end{vmatrix}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "trigonometry",
+      "entries": [
+        {
+          "id": "trigonometry_1",
+          "latex": "e^{i \\theta}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_2",
+          "latex": "\\left(\\frac{\\pi}{2}-\\theta \\right )",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_3",
+          "latex": "\\text{sin}^{2}\\frac{\\alpha}{2}=\\frac{1- \\text{cos}\\alpha}{2}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_4",
+          "latex": "\\text{cos}^{2}\\frac{\\alpha}{2}=\\frac{\n  1+ \\text{cos}\\alpha\n}{\n  2\n}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_5",
+          "latex": "\\text{tan}\\frac{\\alpha}{2}=\\frac{\n  \\text{sin}\\alpha\n}{\n  1+ \\text{cos}\\alpha\n}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_6",
+          "latex": "\\sin \\alpha + \\sin \\beta =2 \\sin \\frac{\n  \\alpha + \\beta\n}{\n  2\n}\\cos \\frac{\\alpha - \\beta}{2}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_7",
+          "latex": "\\sin \\alpha - \\sin \\beta =2 \\cos \\frac{\n  \\alpha + \\beta\n}{\n  2\n}\\sin \\frac{\\alpha - \\beta}{2}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_8",
+          "latex": "\\cos \\alpha + \\cos \\beta =2 \\cos \\frac{\n  \\alpha + \\beta\n}{\n  2\n}\\cos \\frac{\\alpha - \\beta}{2}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_9",
+          "latex": "\\cos \\alpha - \\cos \\beta =-2\\sin \\frac{\n  \\alpha + \\beta\n}{\n  2\n}\\sin \\frac{\\alpha - \\beta}{2}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_10",
+          "latex": "a^{2}=b^{2}+c^{2}-2bc\\cos A",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_11",
+          "latex": "\\frac{\\sin A}{a}=\\frac{\\sin B}{b}=\\frac{\\sin C}{c}=\\frac{1}{2R}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_12",
+          "latex": "\\sin \\left ( \\frac{\\pi}{2}-\\alpha \\right ) = \\cos \\alpha",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "trigonometry_13",
+          "latex": "\\sin \\left ( \\frac{\\pi}{2}+\\alpha \\right ) = \\cos \\alpha",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "statistics",
+      "entries": [
+        {
+          "id": "statistics_1",
+          "latex": "C_{r}^{n}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_2",
+          "latex": "\\frac{n!}{r!(n-r)!}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_3",
+          "latex": "\\sum_{i=1}^{n}{X_i}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_4",
+          "latex": "\\sum_{i=1}^{n}{X_i^2}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_5",
+          "latex": "X_1, \\cdots,X_n",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_6",
+          "latex": "\\frac{x-\\mu}{\\sigma}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_7",
+          "latex": "\\sum_{i=1}^{n}{(X_i - \\overline{X})^2}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_8",
+          "latex": "\\begin{array}{c}\n  \\text{若}P \\left( AB \\right) =P \\left( A \\right) P \\left( B \\right) \\\\\n  \\text{则}P \\left( A \\left| B\\right. \\right) =P \\left({B}\\right) \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_9",
+          "latex": "P(E) ={n \\choose k}p^k (1-p)^{n-k}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_10",
+          "latex": "P \\left( A \\right) = \\lim \\limits_{n \\to \\infty}f_{n}\\left ( A \\right )",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_11",
+          "latex": "P \\left( \\bigcup \\limits_{i=1}^{+ \\infty}A_{i}\\right) = \\prod \\limits_{i=1}^{+ \\infty}P{\\left( A_{i}\\right)}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_12",
+          "latex": "\\begin{array}{c}\n  P \\left( \\emptyset \\right) =0 \\\\\n  P \\left( S \\right) =1 \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_13",
+          "latex": "\\begin{array}{c}\n  \\forall A \\in S \\\\\n  P \\left( A \\right) \\ge 0 \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_14",
+          "latex": "P \\left( \\bigcup \\limits_{i=1}^{n}A_{i}\\right) = \\prod \\limits_{i=1}^{n}P \\left( A_{i}\\right)",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_15",
+          "latex": "\\begin{array}{c}\n  S= \\binom{N}{n},A_{k}=\\binom{M}{k}\\cdot \\binom{N-M}{n-k} \\\\\n  P\\left ( A_{k}\\right ) = \\frac{\n  \\binom{M}{k}\\cdot \\binom{N-M}{n-k}\n}{\n  \\binom{N}{n}\n} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "statistics_16",
+          "latex": "\\begin{array}{c}\n  P_{n}=n! \\\\\n  A_{n}^{k}=\\frac{\n  n!\n}{\n  \\left( n-k \\left) !\\right. \\right.\n} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "sequence",
+      "entries": [
+        {
+          "id": "sequence_1",
+          "latex": "a_{n}=a_{1}q^{n-1}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_2",
+          "latex": "a_{n}=a_{1}+ \\left( n-1 \\left) d\\right. \\right.",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_3",
+          "latex": "S_{n}=na_{1}+\\frac{n \\left( n-1 \\right)}{{2}}d",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_4",
+          "latex": "S_{n}=\\frac{\n  n \\left( a_{1}+a_{n}\\right)\n}{\n  2\n}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_5",
+          "latex": "\\frac{\n  1\n}{\n  n \\left( n+k \\right)\n}= \\frac{1}{k}\\left( \\frac{1}{n}-\\frac{\n  1\n}{\n  n+k\n}\\right)",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_6",
+          "latex": "\\frac{1}{n^{2}-1}= \\frac{1}{2}\\left( \\frac{1}{n-1}-\\frac{\n  1\n}{\n  n+1\n}\\right)",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_7",
+          "latex": "\\frac{1}{4n^{2}-1}=\\frac{1}{2}\\left( \\frac{1}{2n-1}-\\frac{\n  1\n}{\n  2n+1\n}\\right)",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_8",
+          "latex": "\\frac{\n  n+1\n}{\n  n \\left( n-1 \\left) \\cdot 2^{n}\\right. \\right.\n}= \\frac{\n  1\n}{\n  \\left( n-1 \\left) \\cdot 2^{n-1}\\right. \\right.\n}-\\frac{1}{n \\cdot 2^{n}}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_9",
+          "latex": "\\begin{array}{c}\n  \\text{若}\\left \\{a_{n}\\right \\}、\\left \\{b_{n}\\right \\}\\text{为等差数列}, \\\\\n  \\text{则}\\left \\{a_{n}+ b_{n}\\right \\}\\text{为等差数列} \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "sequence_10",
+          "latex": "(1+x)^{n} =1 + \\frac{nx}{1!} + \\frac{n(n-1)x^{2}}{2!} + \\cdots",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "physics",
+      "entries": [
+        {
+          "id": "physics_1",
+          "latex": "\\sum {{{ \\vec{F} }_i}} = \\frac{{d \\vec{v} }}{{dt}} = 0",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_2",
+          "latex": "\\vec{F}  = m \\vec{a}  = m \\frac{{{d^2} \\vec{r} }}{{d{t^2}}}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_3",
+          "latex": "{{ \\vec{F} }_{12}} =  - {{ \\vec{F} }_{21}}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_4",
+          "latex": "{E_p} = -\\frac{{GMm}}{r}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_5",
+          "latex": "\\vec{F}  = k \\frac{{Qq}}{{{r^2}}} \\hat{r}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_6",
+          "latex": "\\oint_L { \\vec{E} } \\cdot { \\rm{d}} \\vec{l}  = 0",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_7",
+          "latex": "d \\vec{B} = \\frac{{{ \\mu _0}}}{{4 \\pi }} \\frac{{Idl \\times \\vec{r} }}{{{r^3}}} =  \\frac{{{ \\mu _0}}}{{4 \\pi }} \\frac{{Idl \\sin \\theta }}{{{r^2}}}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_8",
+          "latex": "d \\vec{F}= Id \\vec{l} \\times \\vec{B}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_9",
+          "latex": "E = n{{ \\Delta \\Phi } \\over {\\Delta {t} }}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_10",
+          "latex": "\\mathop \\Phi \\nolimits_e = \\oint { \\vec{E} \\cdot {d \\vec{S}}  = {1 \\over {{\\varepsilon _0}}}\\sum {q} }",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_11",
+          "latex": "\\oint { \\vec{E} \\cdot {d\\vec{l}}  =  - {{d{\\varphi _B}} \\over {dt}}}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_12",
+          "latex": "\\oint { \\vec{B} \\cdot {d \\vec{l}}  = { \\mu _0}} I + { \\mu _0}{I_d}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_13",
+          "latex": "Q = I ^ { 2 } R \\mathrm { t }",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_14",
+          "latex": "F = G{{Mm} \\over {{r^2}}}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_15",
+          "latex": "{E_k} = hv - {W_0}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_16",
+          "latex": "\\lambda = \\frac{\n  { \\frac{{{c^2}}}{v}}\n}{\n  { \\frac{{m{c^2}}}{h}}\n} = \\frac{h}{{mv}} = \\frac{h}{p}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_17",
+          "latex": "\\Delta {x} \\Delta {p} \\ge \\frac{h}{{4 \\pi }}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_18",
+          "latex": "l = {l_0} \\sqrt{\n  1 - {{( \\frac{v}{c})}^2}\n}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_19",
+          "latex": "{y_0} = A \\cos ( \\omega {t} + { \\varphi _0})",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_20",
+          "latex": "y(t) = A \\cos ( \\frac{{2 \\pi {x}}}{ \\lambda } +  \\varphi )",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_21",
+          "latex": "\\begin{array}{l}\n  \\nabla \\cdot \\mathbf{E} =\\cfrac{\\rho}{\\varepsilon _0}  \\\\\n  \\nabla \\cdot \\mathbf{B} = 0 \\\\\n  \\nabla \\times  \\mathbf{E} = -\\cfrac{\\partial \\mathbf{B}}{\\partial t }  \\\\\n  \\nabla \\times  \\mathbf{B} = \\mu _0\\mathbf{J} + \\mu _0\\varepsilon_0 \\cfrac{\\partial \\mathbf{E}}{\\partial t }   \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_22",
+          "latex": "%此公式需要在设置中开启unicode扩展支持 \n\\begin{array}{l}  \n  {\\huge \\unicode{8751}}_\\mathbb{S}  \\mathbf{E} \\cdot\\mathrm{d}s= \\cfrac{Q}{\\varepsilon_0}  \\\\  \n  {\\huge \\unicode{8751}}_\\mathbb{S}  \\mathbf{B} \\cdot\\mathrm{d}s= 0 \\\\  \n  {\\huge \\oint}_{\\mathbb{L}}^{} \\mathbf{E} \\cdot \\mathrm{d}l=-\\cfrac{\\mathrm{d}\\Phi _{\\mathbf{B}}}{\\mathrm{d}t }  \\\\  \n  {\\huge \\oint}_{\\mathbb{L}}^{} \\mathbf{B} \\cdot \\mathrm{d}l=\\mu_0I+ \\mu_0 \\varepsilon_0\\cfrac{\\mathrm{d}\\Phi _{\\mathbf{E}}}{\\mathrm{d}t }   \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_23",
+          "latex": "\\begin{array}{l}\n  \\nabla \\cdot \\mathbf{D} =\\rho _f \\\\\n  \\nabla \\cdot \\mathbf{B} = 0 \\\\\n  \\nabla \\times  \\mathbf{E} = -\\cfrac{\\partial \\mathbf{B}}{\\partial t }  \\\\\n  \\nabla \\times  \\mathbf{H} = \\mathbf{J}_f +  \\cfrac{\\partial \\mathbf{D}}{\\partial t }   \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "physics_24",
+          "latex": "%此公式需要在设置中开启unicode扩展支持 \n\\begin{array}{l}  \n  {\\huge \\unicode{8751}}_\\mathbb{S}  \\mathbf{D} \\cdot\\mathrm{d}s= Q_f \\\\  \n  {\\huge \\unicode{8751}}_\\mathbb{S}  \\mathbf{B} \\cdot\\mathrm{d}s= 0 \\\\  \n  {\\huge \\oint}_{\\mathbb{L}}^{} \\mathbf{E} \\cdot \\mathrm{d}l=-\\cfrac{\\mathrm{d}\\Phi _{\\mathbf{B}}}{\\mathrm{d}t }  \\\\  \n  {\\huge \\oint}_{\\mathbb{L}}^{} \\mathbf{H} \\cdot \\mathrm{d}l=I_f+\\cfrac{\\mathrm{d}\\Phi _{\\mathbf{D}}}{\\mathrm{d}t }   \n\\end{array}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    },
+    {
+      "group": "chemistry",
+      "entries": [
+        {
+          "id": "chemistry_1",
+          "latex": "%此公式需要在【设置】中开启mhchem扩展支持 具体用法请参考【帮助】2.11.2 \n\\ce{SO4^2- + Ba^2+ -> BaSO4 v}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "chemistry_2",
+          "latex": "%此公式需要在【设置】中开启mhchem扩展支持 具体用法请参考【帮助】2.11.2 \n\\ce{A v B (v) -> B ^ B (^)}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "chemistry_3",
+          "latex": "%此公式需要在【设置】中开启mhchem扩展支持 具体用法请参考【帮助】2.11.2 \n\\ce{Hg^2+ ->[I-]  $\\underset{\\mathrm{red}}{\\ce{HgI2}}$  ->[I-]  $\\underset{\\mathrm{red}}{\\ce{[Hg^{II}I4]^2-}}$}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        },
+        {
+          "id": "chemistry_4",
+          "latex": "%此公式需要在【设置】中开启mhchem扩展支持 具体用法请参考【帮助】2.11.2 \n\\ce{Zn^2+  <=>[+ 2OH-][+ 2H+]  $\\underset{\\text{amphoteres Hydroxid}}{\\ce{Zn(OH)2 v}}$  <=>[+ 2OH-][+ 2H+]  $\\underset{\\text{Hydroxozikat}}{\\ce{[Zn(OH)4]^2-}}$}",
+          "keys": [
+            "tag",
+            "name",
+            "latex",
+            "cursor",
+            "standby",
+            "padding",
+            "size",
+            "zh",
+            "en"
+          ]
+        }
+      ]
+    }
+  ],
+  "scroll": [
+    {
+      "n": 1,
+      "top": 14.375,
+      "bottom": -14.375,
+      "scrollHeight": 142,
+      "height": 142
+    },
+    {
+      "n": 10,
+      "top": 1,
+      "bottom": -1.171875,
+      "scrollHeight": 1052,
+      "height": 142
+    },
+    {
+      "n": 50,
+      "top": 1,
+      "bottom": -0.75,
+      "scrollHeight": 5214,
+      "height": 142
+    }
+  ],
+  "layout": [
+    {
+      "width": 760,
+      "rows": [
+        {
+          "tab": "quick",
+          "editor": {
+            "x": 25,
+            "y": 364,
+            "width": 710,
+            "height": 305
+          },
+          "preview": {
+            "x": 41,
+            "y": 761,
+            "width": 678,
+            "height": 200
+          }
+        },
+        {
+          "tab": "templates",
+          "editor": {
+            "x": 25,
+            "y": 364,
+            "width": 710,
+            "height": 305
+          },
+          "preview": {
+            "x": 41,
+            "y": 761,
+            "width": 678,
+            "height": 200
+          }
+        },
+        {
+          "tab": "favorites",
+          "editor": {
+            "x": 25,
+            "y": 364,
+            "width": 710,
+            "height": 305
+          },
+          "preview": {
+            "x": 41,
+            "y": 761,
+            "width": 678,
+            "height": 200
+          }
+        },
+        {
+          "tab": "custom",
+          "editor": {
+            "x": 25,
+            "y": 364,
+            "width": 710,
+            "height": 305
+          },
+          "preview": {
+            "x": 41,
+            "y": 761,
+            "width": 678,
+            "height": 200
+          }
+        }
+      ]
+    },
+    {
+      "width": 820,
+      "rows": [
+        {
+          "tab": "quick",
+          "editor": {
+            "x": 25,
+            "y": 364,
+            "width": 770,
+            "height": 305
+          },
+          "preview": {
+            "x": 41,
+            "y": 761,
+            "width": 738,
+            "height": 200
+          }
+        },
+        {
+          "tab": "templates",
+          "editor": {
+            "x": 25,
+            "y": 364,
+            "width": 770,
+            "height": 305
+          },
+          "preview": {
+            "x": 41,
+            "y": 761,
+            "width": 738,
+            "height": 200
+          }
+        },
+        {
+          "tab": "favorites",
+          "editor": {
+            "x": 25,
+            "y": 364,
+            "width": 770,
+            "height": 305
+          },
+          "preview": {
+            "x": 41,
+            "y": 761,
+            "width": 738,
+            "height": 200
+          }
+        },
+        {
+          "tab": "custom",
+          "editor": {
+            "x": 25,
+            "y": 364,
+            "width": 770,
+            "height": 305
+          },
+          "preview": {
+            "x": 41,
+            "y": 761,
+            "width": 738,
+            "height": 200
+          }
+        }
+      ]
+    },
+    {
+      "width": 1180,
+      "rows": [
+        {
+          "tab": "quick",
+          "editor": {
+            "x": 25,
+            "y": 293,
+            "width": 1130,
+            "height": 154
+          },
+          "preview": {
+            "x": 41,
+            "y": 509,
+            "width": 1098,
+            "height": 144
+          }
+        },
+        {
+          "tab": "templates",
+          "editor": {
+            "x": 25,
+            "y": 293,
+            "width": 1130,
+            "height": 154
+          },
+          "preview": {
+            "x": 41,
+            "y": 509,
+            "width": 1098,
+            "height": 144
+          }
+        },
+        {
+          "tab": "favorites",
+          "editor": {
+            "x": 25,
+            "y": 293,
+            "width": 1130,
+            "height": 154
+          },
+          "preview": {
+            "x": 41,
+            "y": 509,
+            "width": 1098,
+            "height": 144
+          }
+        },
+        {
+          "tab": "custom",
+          "editor": {
+            "x": 25,
+            "y": 293,
+            "width": 1130,
+            "height": 154
+          },
+          "preview": {
+            "x": 41,
+            "y": 509,
+            "width": 1098,
+            "height": 144
+          }
+        }
+      ]
+    },
+    {
+      "width": 1440,
+      "rows": [
+        {
+          "tab": "quick",
+          "editor": {
+            "x": 135,
+            "y": 293,
+            "width": 1170,
+            "height": 154
+          },
+          "preview": {
+            "x": 151,
+            "y": 509,
+            "width": 1138,
+            "height": 144
+          }
+        },
+        {
+          "tab": "templates",
+          "editor": {
+            "x": 135,
+            "y": 293,
+            "width": 1170,
+            "height": 154
+          },
+          "preview": {
+            "x": 151,
+            "y": 509,
+            "width": 1138,
+            "height": 144
+          }
+        },
+        {
+          "tab": "favorites",
+          "editor": {
+            "x": 135,
+            "y": 293,
+            "width": 1170,
+            "height": 154
+          },
+          "preview": {
+            "x": 151,
+            "y": 509,
+            "width": 1138,
+            "height": 144
+          }
+        },
+        {
+          "tab": "custom",
+          "editor": {
+            "x": 135,
+            "y": 293,
+            "width": 1170,
+            "height": 154
+          },
+          "preview": {
+            "x": 151,
+            "y": 509,
+            "width": 1138,
+            "height": 144
+          }
+        }
+      ]
+    }
+  ],
+  "paletteSelectAll": {
+    "start": 3,
+    "end": 3,
+    "len": 3,
+    "messages": [
+      {
+        "action": "nativeEdit",
+        "edit": "selectAll"
+      },
+      {
+        "action": "commandStates",
+        "states": {
+          "undo": false,
+          "redo": false,
+          "newFormula": true,
+          "openFormula": true,
+          "saveFormula": true,
+          "saveAs": true,
+          "exportFormula": true,
+          "settings": true,
+          "switchToSource": true,
+          "switchToVisual": true,
+          "workspace1": true,
+          "workspace2": true,
+          "workspace3": true,
+          "copyRenderedImage": true,
+          "copySource": true,
+          "copyLatex": true,
+          "copyTypst": true,
+          "copy": true,
+          "cut": true,
+          "paste": true,
+          "selectAll": true,
+          "switchLatex": true,
+          "switchTypst": true,
+          "applyStyle": true,
+          "insertStructure": true,
+          "accent.hat": true,
+          "accent.widehat": true,
+          "accent.tilde": true,
+          "accent.widetilde": true,
+          "accent.bar": true,
+          "accent.overline": true,
+          "accent.vec": true,
+          "accent.dot": true,
+          "accent.ddot": true,
+          "accent.breve": true,
+          "accent.check": true,
+          "accent.acute": true,
+          "accent.grave": true,
+          "accent.overset": true,
+          "accent.underset": true,
+          "superscript": true,
+          "subscript": true,
+          "scripts": true,
+          "fraction": true,
+          "root": true,
+          "nthRoot": true,
+          "brackets": true,
+          "absolute": true,
+          "norm": true,
+          "matrix": true,
+          "cases": true,
+          "sourceAccept": true,
+          "matrixEdit": true,
+          "insertTemplate": true,
+          "showTemplates": true,
+          "showFavorites": true,
+          "importContent": true,
+          "commandPalette": true,
+          "showHistory": true,
+          "find": true,
+          "findNext": true,
+          "findPrevious": true
+        }
+      }
+    ]
+  },
+  "paletteCopy": [
+    {
+      "action": "nativeEdit",
+      "edit": "selectAll"
+    },
+    {
+      "action": "commandStates",
+      "states": {
+        "undo": false,
+        "redo": false,
+        "newFormula": true,
+        "openFormula": true,
+        "saveFormula": true,
+        "saveAs": true,
+        "exportFormula": true,
+        "settings": true,
+        "switchToSource": true,
+        "switchToVisual": true,
+        "workspace1": true,
+        "workspace2": true,
+        "workspace3": true,
+        "copyRenderedImage": true,
+        "copySource": true,
+        "copyLatex": true,
+        "copyTypst": true,
+        "copy": true,
+        "cut": true,
+        "paste": true,
+        "selectAll": true,
+        "switchLatex": true,
+        "switchTypst": true,
+        "applyStyle": true,
+        "insertStructure": true,
+        "accent.hat": true,
+        "accent.widehat": true,
+        "accent.tilde": true,
+        "accent.widetilde": true,
+        "accent.bar": true,
+        "accent.overline": true,
+        "accent.vec": true,
+        "accent.dot": true,
+        "accent.ddot": true,
+        "accent.breve": true,
+        "accent.check": true,
+        "accent.acute": true,
+        "accent.grave": true,
+        "accent.overset": true,
+        "accent.underset": true,
+        "superscript": true,
+        "subscript": true,
+        "scripts": true,
+        "fraction": true,
+        "root": true,
+        "nthRoot": true,
+        "brackets": true,
+        "absolute": true,
+        "norm": true,
+        "matrix": true,
+        "cases": true,
+        "sourceAccept": true,
+        "matrixEdit": true,
+        "insertTemplate": true,
+        "showTemplates": true,
+        "showFavorites": true,
+        "importContent": true,
+        "commandPalette": true,
+        "showHistory": true,
+        "find": true,
+        "findNext": true,
+        "findPrevious": true
+      }
+    }
+  ],
+  "history": {
+    "entries": 1,
+    "commands": [
+      {
+        "id": "undo",
+        "title": "撤销",
+        "category": "编辑",
+        "shortcut": "meta+z",
+        "enabled": false
+      },
+      {
+        "id": "redo",
+        "title": "重做",
+        "category": "编辑",
+        "shortcut": "meta+shift+z",
+        "enabled": false
+      },
+      {
+        "id": "newFormula",
+        "title": "新建公式",
+        "category": "文件",
+        "shortcut": "meta+n",
+        "enabled": true
+      },
+      {
+        "id": "openFormula",
+        "title": "打开…",
+        "category": "文件",
+        "shortcut": "meta+o",
+        "enabled": true
+      },
+      {
+        "id": "saveFormula",
+        "title": "保存公式",
+        "category": "文件",
+        "shortcut": "meta+s",
+        "enabled": true
+      },
+      {
+        "id": "saveAs",
+        "title": "另存为…",
+        "category": "文件",
+        "shortcut": "meta+shift+s",
+        "enabled": true
+      },
+      {
+        "id": "exportFormula",
+        "title": "导出…",
+        "category": "文件",
+        "shortcut": "meta+shift+e",
+        "enabled": true
+      },
+      {
+        "id": "settings",
+        "title": "设置…",
+        "category": "应用",
+        "shortcut": "meta+,",
+        "enabled": true
+      },
+      {
+        "id": "switchToSource",
+        "title": "源码模式",
+        "category": "视图",
+        "shortcut": "meta+l",
+        "enabled": true
+      },
+      {
+        "id": "switchToVisual",
+        "title": "可视化模式",
+        "category": "视图",
+        "shortcut": "meta+e",
+        "enabled": true
+      },
+      {
+        "id": "workspace1",
+        "title": "聚焦源码",
+        "category": "视图",
+        "shortcut": "meta+1",
+        "enabled": true
+      },
+      {
+        "id": "workspace2",
+        "title": "聚焦可视化",
+        "category": "视图",
+        "shortcut": "meta+2",
+        "enabled": true
+      },
+      {
+        "id": "workspace3",
+        "title": "聚焦结果",
+        "category": "视图",
+        "shortcut": "meta+3",
+        "enabled": true
+      },
+      {
+        "id": "copyRenderedImage",
+        "title": "复制渲染结果",
+        "category": "编辑",
+        "shortcut": "meta+shift+c",
+        "enabled": true
+      },
+      {
+        "id": "copySource",
+        "title": "复制当前源码",
+        "category": "编辑",
+        "shortcut": "meta+alt+c",
+        "enabled": true
+      },
+      {
+        "id": "copyLatex",
+        "title": "复制为 LaTeX",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "copyTypst",
+        "title": "复制为 Typst",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "copy",
+        "title": "复制",
+        "category": "编辑",
+        "shortcut": "meta+c",
+        "enabled": true
+      },
+      {
+        "id": "cut",
+        "title": "剪切",
+        "category": "编辑",
+        "shortcut": "meta+x",
+        "enabled": true
+      },
+      {
+        "id": "paste",
+        "title": "粘贴",
+        "category": "编辑",
+        "shortcut": "meta+v",
+        "enabled": true
+      },
+      {
+        "id": "selectAll",
+        "title": "全选",
+        "category": "编辑",
+        "shortcut": "meta+a",
+        "enabled": true
+      },
+      {
+        "id": "switchLatex",
+        "title": "转换为 LaTeX",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "switchTypst",
+        "title": "转换为 Typst",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "applyStyle",
+        "title": "应用文字样式",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "insertStructure",
+        "title": "插入公式结构",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.hat",
+        "title": "hat 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.widehat",
+        "title": "widehat 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.tilde",
+        "title": "tilde 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.widetilde",
+        "title": "widetilde 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.bar",
+        "title": "bar 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.overline",
+        "title": "overline 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.vec",
+        "title": "vec 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.dot",
+        "title": "dot 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.ddot",
+        "title": "ddot 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.breve",
+        "title": "breve 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.check",
+        "title": "check 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.acute",
+        "title": "acute 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.grave",
+        "title": "grave 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.overset",
+        "title": "overset 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "accent.underset",
+        "title": "underset 修饰",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "superscript",
+        "title": "上标 superscript",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "subscript",
+        "title": "下标 subscript",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "scripts",
+        "title": "上下标",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "fraction",
+        "title": "分式 fraction",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "root",
+        "title": "根式 root",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "nthRoot",
+        "title": "n 次根",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "brackets",
+        "title": "括号 brackets",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "absolute",
+        "title": "绝对值",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "norm",
+        "title": "范数",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "matrix",
+        "title": "矩阵 matrix",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "cases",
+        "title": "分段 cases",
+        "category": "结构",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "sourceAccept",
+        "title": "接受源码补全",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "matrixEdit",
+        "title": "编辑矩阵",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "insertTemplate",
+        "title": "插入模板",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "showTemplates",
+        "title": "公式模板",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "showFavorites",
+        "title": "收藏夹",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "importContent",
+        "title": "导入 / 识别公式",
+        "category": "文件",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "commandPalette",
+        "title": "命令面板",
+        "category": "视图",
+        "shortcut": "meta+k",
+        "enabled": true
+      },
+      {
+        "id": "showHistory",
+        "title": "编辑历史",
+        "category": "公式",
+        "shortcut": "",
+        "enabled": true
+      },
+      {
+        "id": "find",
+        "title": "查找源码",
+        "category": "编辑",
+        "shortcut": "meta+f",
+        "enabled": true
+      },
+      {
+        "id": "findNext",
+        "title": "查找下一个",
+        "category": "编辑",
+        "shortcut": "meta+g",
+        "enabled": true
+      },
+      {
+        "id": "findPrevious",
+        "title": "查找上一个",
+        "category": "编辑",
+        "shortcut": "meta+shift+g",
+        "enabled": true
+      }
+    ],
+    "signature": true
+  },
+  "long": {
+    "left": 1,
+    "right": -1.5,
+    "width": 6863,
+    "viewport": 1096
+  }
+}

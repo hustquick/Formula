@@ -1,0 +1,43 @@
+{
+  "environment": "installed /Applications/Formula.app; existing version, not current workspace bundle",
+  "desktop": "interactive after user unlock",
+  "ocr": {
+    "fixture": "tests/fixtures/ocr-single.jpg",
+    "engine": "Pix2Text 1.1.7",
+    "result": "\\mathrm{x}+\\mathrm{y}=2",
+    "native_ui_status": "识别完成 · Pix2Text 1.1.7 · 已送入编辑器",
+    "typst_source": "upright(x) + upright(y) = 2",
+    "embedded_dimensions": "104 × 35 px"
+  },
+  "renderers": {
+    "typst": "本机排版完成 · typst; 326 × 109 px",
+    "latex": "original formula restored; 本机排版完成 · xelatex; 777 × 210 px"
+  },
+  "copy": "clicked SVG copy; not pasted into target app, no compatibility claim",
+  "export": {
+    "svg": "manual-ocr.svg; 3381 bytes, contains SVG",
+    "project": "manual-ocr.mathforge; 552 bytes, typst/source verified",
+    "reopen": "cleared editor, reopened saved project through native open panel; source and embedded dimensions restored"
+  },
+  "editing_observations": {
+    "sequence": "new x -> Visual -> Cmd+A -> superscript -> type 2 -> Source",
+    "source_observed": "x2^{}",
+    "accent_observed": "x2^{}\\hat{}",
+    "classification": "manual workflow failed expected result; focus/selection not independently confirmed; cause not isolated, do not attribute solely to wrapper helper"
+  },
+  "restoration": {
+    "original_formula": true,
+    "engine": "latex",
+    "source_mode": "latex",
+    "pane": "source",
+    "toolbar": "quick",
+    "output_format": "svg",
+    "user_assets_deleted": false,
+    "model_download_or_install": false
+  },
+  "limitations": [
+    "new workspace History/Palette/native Registry not installed",
+    "full native 19-step workflow not passed",
+    "Word/WPS/Pages not tested"
+  ]
+}

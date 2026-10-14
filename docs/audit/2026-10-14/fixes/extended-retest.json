@@ -1,0 +1,17 @@
+[
+  {
+    "suite": "compact-layout",
+    "exit": 0,
+    "output": "compact layout passed\n"
+  },
+  {
+    "suite": "custom-toolbar",
+    "exit": 0,
+    "output": "PASS: toolbar add/remove, actual drag, persistence, selection action, reset\n"
+  },
+  {
+    "suite": "visual-tools",
+    "exit": 0,
+    "output": "PASS actual current menu piecewise placeholder typing and matrix row/column operations\n"
+  }
+]

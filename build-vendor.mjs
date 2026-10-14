@@ -14,6 +14,9 @@ await build({entryPoints:['web/app.js'],bundle:true,format:'iife',target:['safar
 const names=['@mathjax/mathjax-mhchem-font-extension',...mathFonts.filter(x=>x!=='newcm').map(x=>`@mathjax/mathjax-${x}-font`),'mathlive','mathjax','@mathjax/mathjax-newcm-font','tex2typst','jspdf','svg2pdf.js'];
 let notices='Formula — Third-party notices\n\n';
 for(const name of names){const p=JSON.parse(await readFile(`node_modules/${name}/package.json`));notices+=`${name} ${p.version} (${p.license})\n`;for(const file of ['LICENSE','LICENSE.txt','LICENSE.md']){try{notices+=await readFile(`node_modules/${name}/${file}`,'utf8');break;}catch{}}notices+='\n\n';}
+notices+='LaTeX Workshop completion data (MIT), adapted for Formula. See web/completion-data/README.md and LICENSE.txt.\n'+await readFile('web/completion-data/LICENSE.txt','utf8');
 await writeFile('THIRD-PARTY-NOTICES.txt',notices);
 await writeFile('THIRD-PARTY-NOTICES.txt',(await readFile('THIRD-PARTY-NOTICES.txt','utf8'))+'\nOn-demand Word support: pypandoc_binary 1.17 (MIT), invoking Pandoc (GPL-2.0-or-later) as a standalone process. Source and license: https://github.com/jgm/pandoc/blob/main/COPYRIGHT\n');
 console.log('Offline editor and exporters bundled.');
+
+await import('node:fs/promises').then(async fs=>{await fs.copyFile('web/completion-data/LICENSE.txt','web/vendor/LaTeX-Workshop-LICENSE.txt');});

@@ -1,3 +1,4 @@
+import {formatLatexSource} from '../web/format-latex.mjs';
 import {mkdir, writeFile} from 'node:fs/promises';
 import {dirname, resolve} from 'node:path';
 
@@ -11,8 +12,7 @@ function findSection(parsed, name) {
 }
 
 // LaTeX Live contains several old plain-TeX constructions that MathJax can
-// display but MathLive cannot edit reliably. Keep the upstream JSON intact and
-// modernize only the runtime catalog shipped to Formula.
+// display but MathLive cannot edit reliably. Retain upstream provenance in the script; ship normalized readable source in both catalog representations.
 function normalizeMathLiveLatex(latex) {
   let value = String(latex || '').replace(/\r\n/g, '\n').trim();
   // Old vector notation used throughout the physics templates:
@@ -22,7 +22,7 @@ function normalizeMathLiveLatex(latex) {
     /\\mathord\s*\{\s*\\buildrel\s*\{\s*\\lower3pt\s*\\hbox\s*\{\$\s*\\scriptscriptstyle\s*\\rightharpoonup\s*\$\}\s*\}\s*\\over\s*([A-Za-z]|\\[A-Za-z]+)\s*\}/g,
     (_, symbol) => `\\vec{${symbol}}`
   );
-  return value;
+  return formatLatexSource(value);
 }
 
 function normalizeCatalog(parsed) {
@@ -62,7 +62,7 @@ if (physics.some(entry => /\\buildrel|\\hbox/.test(entry?.latex || ''))) {
   throw new Error('Legacy physics TeX survived MathLive compatibility normalization');
 }
 await mkdir(dirname(jsonOutput), {recursive: true});
-await writeFile(jsonOutput, text, 'utf8');
+await writeFile(jsonOutput, JSON.stringify(runtime,null,2)+'\n', 'utf8');
 await writeFile(jsOutput, `window.LaTeXLiveCatalog=${JSON.stringify(runtime)};\n`, 'utf8');
 console.log(`Bundled LaTeXLive catalog: ${jsonOutput} (${Buffer.byteLength(text)} bytes)`);
 console.log(`Generated file-safe catalog: ${jsOutput}; normalized ${changed} legacy formulas for MathLive`);

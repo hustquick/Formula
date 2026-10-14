@@ -1,7 +1,20 @@
-import {tex2typst, typst2tex} from 'tex2typst';
+import {FormulaHistory} from './formula-history.mjs';
+import {isRasterFormat,isVectorFormat,outputScale} from './output-formats.mjs';
+import {migrateTypesetting,attachDerivedLanguage,classifyRenderError} from './typesetting.mjs';
+import {CommandRegistry,RevisionHistory} from './commands.mjs';
+import {applyVisualStructure,selectionStructure} from './editor-transforms.mjs';
+import {installSourceIndentation} from './source-indentation.mjs';
+import {installSourceSurface} from './source-surface.mjs';
+import {installSourceAssist} from './source-assist.mjs';
+import {formatLatexSource,formatTypstSource} from './format-latex.mjs';
+import {tex2typst, typst2tex} from './source-conversion.mjs';
 import {jsPDF} from 'jspdf';
 import 'svg2pdf.js';
 
+window.FormulaApplyVisualStructure=applyVisualStructure;
+window.FormulaSelectionStructure=selectionStructure;
+window.FormulaFormatLatex=formatLatexSource;
+window.FormulaFormatGenerated=(text,mode=state.sourceLanguage)=>mode==='typst'?formatTypstSource(text):formatLatexSource(text);
 const $ = id => document.getElementById(id);
 const bridge = window.webkit?.messageHandlers?.mathforge;
 const examples = {
@@ -10,15 +23,16 @@ const examples = {
   quadratic: String.raw`x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}`,
   matrix: String.raw`\mathbf{A}=\begin{pmatrix}a&b\\c&d\end{pmatrix}`
 };
-let state = {latex: examples.efficiency, rawSource:'', mode:'latex', engine:'embedded', history:[], size:32, padding:12, color:'#000000', transparent:true, scale:300/96, preamble:String.raw`\usepackage{amsmath,amssymb}
+for(const key of Object.keys(examples))examples[key]=formatLatexSource(examples[key]);
+let state = {latex: examples.efficiency, rawSource:'', editorMode:'latex', history:[], size:32, padding:12, color:'#000000', transparent:true, scale:300/96, preamble:String.raw`\usepackage{amsmath,amssymb}
 \usepackage{xcolor}`,typstPreamble:'',displayMode:'display'};
-try { Object.assign(state, window.FormulaSavedState || JSON.parse(localStorage.getItem('mathforge') || '{}')); } catch {}
+try { Object.assign(state, migrateTypesetting(window.FormulaSavedState || JSON.parse(localStorage.getItem('mathforge') || '{}'))); } catch {}
 // WKWebView reinjects its launch snapshot on every reload. A font change
 // restores the current editor snapshot once instead of that stale launch state.
-try{const pending=sessionStorage.getItem('formula-font-reload-state');if(pending){Object.assign(state,JSON.parse(pending));sessionStorage.removeItem('formula-font-reload-state');}}catch{}
+try{const pending=sessionStorage.getItem('formula-font-reload-state');if(pending){Object.assign(state,migrateTypesetting(JSON.parse(pending)));sessionStorage.removeItem('formula-font-reload-state');}}catch{}
 state.history = Array.isArray(state.history) ? state.history.filter(x=>typeof x==='string'||(x&&typeof x.rawSource==='string')).slice(0,100) : [];
-if(!bridge)state.engine='embedded';
-state.mode = state.mode === 'typst' ? 'typst' : 'latex';
+state=attachDerivedLanguage(migrateTypesetting(state));
+let renderBackendUsed='builtin',localAttemptSource=null;
 state.mathFont=window.FormulaMathFont||'newcm';
 for(const key of ['sourceZoom','visualZoom'])state[key]=Number.isFinite(state[key])?Math.max(0.5,Math.min(2.5,state[key])):(Number.isFinite(state.editorZoom)?state.editorZoom:1);
 let valid = true, updating = false, renderID = 0, renderQueue = Promise.resolve(), svgResult = null, nativeResult=null, sourceTimer, visualTimer, conversionAvailable=true,lastRenderKey='';
@@ -54,40 +68,50 @@ function compactVisualLatex(source){
   return result;
 }
 function typst(latex){ return tex2typst(latex,{nonStrict:false}); }
-function getModeSource(){return state.mode==='latex'?state.latex:typst(state.latex);}
+function getModeSource(){return state.sourceLanguage==='latex'?state.latex:typst(state.latex);}
 function invalidate(message){
-  valid=false;svgResult=null;nativeResult=null;$('source').classList.toggle('invalid',state.engine==='embedded');$('preview').replaceChildren();$('dimensions').textContent='排版失败';
+  state.rawSource=stripDelimiters($('source').value);persist();
+  const src=stripDelimiters($('source').value),category=classifyRenderError(message,src,state.sourceLanguage,renderBackendUsed);
+  const feedback=$('render-feedback');feedback.replaceChildren();feedback.dataset.category=category;feedback.hidden=false;
+  const feedbackText=document.createElement('span');feedbackText.textContent=message;feedback.append(feedbackText);
+  if(category==='capability'){const label=state.sourceLanguage==='typst'?'Typst':'LaTeX';feedbackText.textContent='当前内容无法由内置引擎完成，可尝试本机 '+label+' 环境。';const retry=document.createElement('button');retry.textContent='尝试本机 '+label;retry.onclick=()=>window.FormulaCommands.execute('tryLocalTypesetting');feedback.append(retry);}
+  if(category==='environment'||category==='local-failure'){const configure=document.createElement('button');configure.textContent='配置本机环境';configure.onclick=()=>window.FormulaCommands.execute('settings');feedback.append(configure);const retry=document.createElement('button');retry.textContent='重试';retry.onclick=()=>readSource();feedback.append(retry);}
+
+  valid=false;svgResult=null;nativeResult=null;$('source').classList.toggle('invalid',renderBackendUsed==='builtin');if($('preview').querySelector('svg,.preview-image')){$('preview').dataset.stale='true';$('dimensions').textContent='上一有效结果 · 当前输入未完成';status(message,true);return;}$('preview').replaceChildren();$('dimensions').textContent='排版失败';
   const box=document.createElement('div');box.className='render-error';const text=document.createElement('p');text.textContent=message;box.append(text);
-  if(state.engine!=='embedded'){const log=document.createElement('button');log.textContent='查看完整编译日志';log.onclick=()=>{$('tool-dialog').showModal();$('compile-log').parentElement.open=true;$('compile-log').scrollIntoView({block:'nearest'});};const copyLog=document.createElement('button');copyLog.textContent='复制日志';copyLog.onclick=safe(()=>copy($('compile-log').textContent));const retry=document.createElement('button');retry.textContent='重试';retry.onclick=()=>readSource();box.append(log,copyLog,retry);}
+  if(renderBackendUsed!=='builtin'){const log=document.createElement('button');log.textContent='查看完整编译日志';log.onclick=()=>{$('tool-dialog').showModal();$('compile-log').parentElement.open=true;$('compile-log').scrollIntoView({block:'nearest'});};const copyLog=document.createElement('button');copyLog.textContent='复制日志';copyLog.onclick=safe(()=>copy($('compile-log').textContent));const retry=document.createElement('button');retry.textContent='重试';retry.onclick=()=>readSource();box.append(log,copyLog,retry);}
   $('preview').append(box);status(message,true);
 }
 function updateAlternates(){
-  $('other-label').textContent=state.mode==='latex'?'Typst':'LaTeX';
-  try{$('other-source').textContent=conversionAvailable?(state.mode==='latex'?typst(state.latex):state.latex):'本机可排版；此语法暂不支持转换为另一种源码。';}catch(e){$('other-source').textContent='此公式暂不支持转换为 Typst：'+e.message;}
+  window.FormulaSourceSurface?.refresh();
+  $('other-label').textContent=state.sourceLanguage==='latex'?'Typst':'LaTeX';
+  try{$('other-source').textContent=conversionAvailable?(state.sourceLanguage==='latex'?typst(state.latex):state.latex):'本机可排版；此语法暂不支持转换为另一种源码。';}catch(e){$('other-source').textContent='此公式暂不支持转换为 Typst：'+e.message;}
   try{$('mathml').textContent=conversionAvailable?mf.getValue('math-ml'):'此语法暂不支持 MathML 转换。';}catch{$('mathml').textContent='当前编辑结构尚未完成。';}
 }
 function updateMode(){
-  $('mode-latex').classList.toggle('active',state.mode==='latex');$('mode-typst').classList.toggle('active',state.mode==='typst');
-  $('source-hint').textContent=state.mode==='typst'?'Typst 数学模式，可粘贴 $…$；不支持整篇文档或自定义函数':'可粘贴带 $…$ 或 \\[ … \\] 的公式';
-  $('source').setAttribute('aria-label',state.mode+' 公式源码');
+  for(const [id,mode] of [['input-visual','visual'],['mode-latex','latex'],['mode-typst','typst']]){const button=$(id),selected=state.editorMode===mode;button.classList.toggle('active',selected);button.setAttribute('aria-checked',String(selected));button.tabIndex=selected?0:-1;}
+  document.querySelector('.input-editors').dataset.inputMode=state.editorMode==='visual'?'visual':'source';
+  $('source-hint').textContent=state.sourceLanguage==='typst'?'Typst 数学模式，可粘贴 $…$；不支持整篇文档或自定义函数':'可粘贴带 $…$ 或 \\[ … \\] 的公式';
+  $('source').setAttribute('aria-label',state.sourceLanguage+' 公式源码');
 }
 function settings(){for(const key of ['size','padding','scale'])state[key]=Number($(key).value);state.color=$('color').value;state.transparent=$('transparent').checked;}
 function scheduleRender(){
-  const key=JSON.stringify({latex:state.latex,rawSource:state.rawSource,engine:state.engine,size:state.size,padding:state.padding,color:state.color,transparent:state.transparent,scale:state.scale,preamble:state.preamble,typstPreamble:state.typstPreamble,displayMode:state.displayMode});
+  renderBackendUsed=localAttemptSource===state.sourceLanguage+':'+state.rawSource?'local':'builtin';
+  const key=JSON.stringify({latex:state.latex,rawSource:state.rawSource,editorMode:state.editorMode,backend:renderBackendUsed,size:state.size,padding:state.padding,color:state.color,transparent:state.transparent,scale:state.scale,preamble:state.preamble,typstPreamble:state.typstPreamble,displayMode:state.displayMode});
   if(key===lastRenderKey&&valid&&(svgResult||nativeResult))return renderQueue;
-  const id=++renderID, latex=state.latex, opts={...state};
+  const id=++renderID, latex=state.latex, opts={...state,sourceLanguage:state.sourceLanguage,backend:renderBackendUsed,persisted:{...state}};
   svgResult=null;nativeResult=null;
   renderQueue=renderQueue.catch(()=>{}).then(async()=>{
     if(id!==renderID)return;
-    if(opts.engine!=='embedded'){
+    if(opts.backend!=='builtin'){
       if(!bridge)throw new Error('本机引擎需要在 Formula Mac 应用中使用');
-      status('正在调用本机 '+(opts.engine==='typst'?'Typst':'LaTeX')+'…');
-      const result=await nativeRequest('render',{engine:opts.engine,source:opts.rawSource,options:{size:opts.size,padding:opts.padding,color:opts.color,transparent:opts.transparent,scale:opts.scale,preamble:opts.preamble,typstPreamble:opts.typstPreamble,displayMode:opts.displayMode}});
+      status('正在调用本机 '+(opts.sourceLanguage==='typst'?'Typst':'LaTeX')+'…');
+      const result=await nativeRequest('render',{engine:opts.sourceLanguage,source:opts.rawSource,options:{size:opts.size,padding:opts.padding,color:opts.color,transparent:opts.transparent,scale:1,preamble:opts.preamble,typstPreamble:opts.typstPreamble,displayMode:opts.displayMode}});
       if(id!==renderID)return;
-      nativeResult=result;lastRenderKey=key;valid=true;$('source').classList.remove('invalid');
-      const img=new Image();img.className='preview-image';img.style.width=(result.width/opts.scale)+'px';img.style.height=(result.height/opts.scale)+'px';img.src='data:image/png;base64,'+result.png;$('preview').replaceChildren(img);
+      $('render-feedback').hidden=true;delete $('preview').dataset.stale;nativeResult=result;lastRenderKey=key;valid=true;$('source').classList.remove('invalid');
+      const img=new Image();img.className='preview-image';img.style.width=(result.width/1)+'px';img.style.height=(result.height/1)+'px';img.src='data:image/png;base64,'+result.png;$('preview').replaceChildren(img);
       $('dimensions').textContent=`${result.width} × ${result.height} px`;
-      updateOutputFormats();status('本机排版完成 · '+result.engine);persist();return;
+      applyUI();status('本机排版完成 · '+result.engine);persist();return;
     }
     await MathJax.startup.promise;
     const container=await MathJax.tex2svgPromise(latex,{display:opts.displayMode!=='inline'});
@@ -106,10 +130,10 @@ function scheduleRender(){
     svg.querySelectorAll('g').forEach(g=>{if(g.getAttribute('fill')==='currentColor')g.setAttribute('fill',opts.color);if(g.getAttribute('stroke')==='currentColor')g.setAttribute('stroke',opts.color);});
     svg.setAttribute('color',opts.color);
     if(!opts.transparent){const rect=document.createElementNS('http://www.w3.org/2000/svg','rect');Object.entries({x:vb[0]-pad,y:vb[1]-pad,width:vb[2]+2*pad,height:vb[3]+2*pad,fill:'#ffffff'}).forEach(([k,v])=>rect.setAttribute(k,String(v)));svg.prepend(rect);}
-    const meta=document.createElementNS('http://www.w3.org/2000/svg','metadata');meta.textContent=JSON.stringify({generator:'Formula',latex,format:'mathforge-equation',version:1,state:{...opts,history:[]}});svg.prepend(meta);
+    const meta=document.createElementNS('http://www.w3.org/2000/svg','metadata');meta.textContent=JSON.stringify({generator:'Formula',latex,format:'mathforge-equation',version:1,state:{...opts.persisted,history:[]}});svg.prepend(meta);
     svgResult={svg,width,height};lastRenderKey=key;valid=true;$('source').classList.remove('invalid');
     $('preview').replaceChildren(svg.cloneNode(true));$('dimensions').textContent=`${Math.ceil(width)} × ${Math.ceil(height)} px`;
-    updateOutputFormats();status(state.mode==='typst'?'Typst 已转换并同步；请核对预览':'已同步 · 可导出');persist();
+    $('render-feedback').hidden=true;delete $('preview').dataset.stale;applyUI();status(state.sourceLanguage==='typst'?'Typst 已转换并同步；请核对预览':'已同步 · 可导出');persist();
   }).catch(e=>{if(id===renderID)invalidate(e.message);});
   return renderQueue;
 }
@@ -117,28 +141,29 @@ function readSource(){
   clearTimeout(sourceTimer);clearTimeout(visualTimer);
   try {
     const src=stripDelimiters($('source').value);
+    renderBackendUsed=localAttemptSource===state.sourceLanguage+':'+src?'local':'builtin';
+    $('render-feedback').hidden=true;applyUI();state.rawSource=src;
     if(!src)throw new Error('请输入公式');
-    if(state.engine!=='typst'&&state.mode==='typst' && /#|\b(?:set|show|let|import|include)\b/.test(src))throw new Error('内置模式只支持 Typst 数学公式；文档指令或自定义函数请使用本机 Typst');
+    if(!(renderBackendUsed==='local'&&state.sourceLanguage==='typst')&&state.sourceLanguage==='typst' && /#|\b(?:set|show|let|import|include)\b/.test(src))throw new Error('内置模式只支持 Typst 数学公式；文档指令或自定义函数请使用本机 Typst');
     state.rawSource=src;
     let latex;
-    try{latex=state.mode==='typst'?typst2tex(src):src;conversionAvailable=true;mf.readOnly=false;}
-    catch(e){if(state.engine!=='typst')throw e;conversionAvailable=false;mf.readOnly=true;latex='';}
+    try{latex=state.sourceLanguage==='typst'?typst2tex(src):src;conversionAvailable=true;mf.readOnly=false;}
+    catch(e){if(!(renderBackendUsed==='local'&&state.sourceLanguage==='typst'))throw e;conversionAvailable=false;mf.readOnly=true;latex='';}
     updating=true;mf.setValue(latex,{silenceNotifications:true});updating=false;
     state.latex=latex;valid=true;updateAlternates();return scheduleRender();
   }catch(e){updating=false;++renderID;invalidate(e.message);return Promise.resolve();}
 }
 async function switchMode(mode){
-  if(state.engine==='latex'&&mode==='typst'){status('本机 LaTeX 使用 LaTeX 源码。请切换到内置排版或本机 Typst。',true);return;}
-  if(state.engine==='typst'&&mode==='latex'){status('本机 Typst 使用 Typst 源码。请切换到内置排版或本机 LaTeX。',true);return;}
-  if(mode===state.mode)return;
+  if(mode===state.sourceLanguage)return;
   // Keep the canonical LaTeX when the generated alternate source is untouched.
   // Only parse again after an actual source edit, avoiding lossy round trips.
   if(stripDelimiters($('source').value)!==state.rawSource){await readSource();if(!valid)return;}
+  if(!valid){status('请先修正当前源码，原内容已保留。',true);return;}
   if(!conversionAvailable){status('此语法暂不支持转换为另一种源码。',true);return;}
-  try{const next=mode==='latex'?state.latex:typst(state.latex);state.mode=mode;$('source').value=next;state.rawSource=stripDelimiters(next);updateMode();updateAlternates();persist();scheduleRender();}
+  try{const next=mode==='latex'?state.latex:formatTypstSource(typst(state.latex));state.sourceLanguage=mode;$('source').value=next;state.rawSource=stripDelimiters(next);applyUI();updateAlternates();persist();scheduleRender();}
   catch(e){status('无法切换：'+e.message,true);}
 }
-function loadLatex(latex){state.latex=latex;conversionAvailable=true;mf.readOnly=false;updating=true;mf.setValue(latex,{silenceNotifications:true});updating=false;try{$('source').value=getModeSource();}catch{state.mode='latex';$('source').value=latex;}state.rawSource=stripDelimiters($('source').value);updateMode();updateAlternates();scheduleRender();}
+function loadLatex(latex){latex=formatLatexSource(latex);state.latex=latex;conversionAvailable=true;mf.readOnly=false;updating=true;mf.setValue(latex,{silenceNotifications:true});updating=false;try{$('source').value=window.FormulaFormatGenerated(getModeSource());}catch{state.sourceLanguage='latex';$('source').value=latex;}state.rawSource=stripDelimiters($('source').value);updateMode();updateAlternates();scheduleRender();}
 function svgText(){return '<?xml version="1.0" encoding="UTF-8"?>\n'+new XMLSerializer().serializeToString(svgResult.svg);}
 async function pngWithDPI(blob,dpi){
   const bytes=new Uint8Array(await blob.arrayBuffer());
@@ -166,14 +191,16 @@ async function exportFile(kind,copying=false){
   const deliver=async(blob,name)=>{
     if(!copying)return save(blob,name);
     if(['latex','typst','mathml','project'].includes(kind))return copy(await blob.text());
-    if(bridge){send('copyImage',{[kind]:await bytesBase64(blob)});status('已复制 '+$('output-format').selectedOptions[0].textContent);return;}
+    if(bridge){const payload={[kind]:await bytesBase64(blob),equation:JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}})};if(kind!=='png'){if(nativeResult?.png)payload.png=nativeResult.png;else if(svgResult){try{payload.png=await bytesBase64(await rasterBlob('png'));}catch{}}}send('copyImage',payload);status('已复制 '+$('output-format').selectedOptions[0].textContent);return;}
     if(!navigator.clipboard?.write||!ClipboardItem.supports(blob.type))throw new Error('此格式的复制需要本机应用');
     await navigator.clipboard.write([new ClipboardItem({[blob.type]:blob})]);status('已复制');
   };
-  await readSource();await renderQueue;if(!valid)throw new Error('请先修正公式再导出');
+  await readSource();await renderQueue;
   if(kind==='project'){return deliver(new Blob([JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}},null,2)],{type:'application/json'}),'equation.mathforge');}
-  if(['latex','typst','mathml'].includes(kind)){if(!conversionAvailable)throw new Error('此语法暂不支持跨格式转换，可保存为可恢复公式文件');const txt=kind==='latex'?state.latex:kind==='typst'?typst(state.latex):mf.getValue('math-ml');return deliver(new Blob([kind==='typst'?'$ '+txt+' $':txt],{type:'text/plain;charset=utf-8'}),'equation.'+({latex:'tex',typst:'typ',mathml:'mml'}[kind]));}
-  if(state.engine!=='embedded'){
+  if(!valid)throw new Error('请先修正公式再导出');
+  if(['latex','typst','mathml'].includes(kind)){if(!conversionAvailable)throw new Error('此语法暂不支持跨格式转换，可保存为可恢复公式文件');const txt=kind==='latex'?(state.sourceLanguage==='latex'?state.rawSource:formatLatexSource(state.latex)):kind==='typst'?(state.sourceLanguage==='typst'?state.rawSource:formatTypstSource(typst(state.latex))):mf.getValue('math-ml');return deliver(new Blob([kind==='typst'?'$ '+txt+' $':txt],{type:'text/plain;charset=utf-8'}),'equation.'+({latex:'tex',typst:'typ',mathml:'mml'}[kind]));}
+  if(renderBackendUsed!=='builtin'){
+    if(isRasterFormat(kind))nativeResult=await nativeRequest('render',{engine:state.sourceLanguage,source:state.rawSource,options:{size:state.size,padding:state.padding,color:state.color,transparent:state.transparent,scale:outputScale(kind,state.scale),preamble:state.preamble,typstPreamble:state.typstPreamble,displayMode:state.displayMode}});
     if(!nativeResult)throw new Error('本机排版结果尚未就绪');
     if(!nativeResult[kind])throw new Error(kind==='svg'?'本机 LaTeX 导出 SVG 需要可用的 dvisvgm。可在系统工具中指定路径。':kind==='eps'?'EPS 导出需要 pdftops，可在系统工具中指定路径。':'此格式未能生成，请查看编译日志');
     return deliver(new Blob([Uint8Array.from(atob(nativeResult[kind]),c=>c.charCodeAt(0))],{type:({svg:'image/svg+xml',pdf:'application/pdf',png:'image/png',jpeg:'image/jpeg',tiff:'image/tiff',eps:'application/postscript'})[kind]}),'equation.'+(kind==='jpeg'?'jpg':kind));
@@ -188,10 +215,14 @@ async function exportFile(kind,copying=false){
     pdf.setProperties({title:'Formula equation',subject:'MathForge:'+JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}})});
     await pdf.svg(svg.cloneNode(true),{x:0,y:0,width:w,height:h});return deliver(pdf.output('blob'),'equation.pdf');
   }
-  const scale=Number($('scale').value),w=Math.ceil(width*scale),h=Math.ceil(height*scale);
+  return deliver(await rasterBlob(kind),'equation.'+(kind==='jpeg'?'jpg':'png'));
+}
+async function rasterBlob(kind='png'){
+  const {width,height}=svgResult;
+  const scale=Number(state.scale),w=Math.ceil(width*scale),h=Math.ceil(height*scale);
   if(w*h>50000000||w>16000||h>16000)throw new Error('PNG 尺寸过大，请降低字号或清晰度');
   const url=URL.createObjectURL(new Blob([svgText()],{type:'image/svg+xml'}));
-  try{const img=new Image();img.src=url;await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('图片渲染失败'));});const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(kind==='jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);}ctx.drawImage(img,0,0,w,h);const mime=kind==='jpeg'?'image/jpeg':'image/png';const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,.96));if(!blob)throw new Error('图片导出失败');return deliver(kind==='png'?await pngWithDPI(blob,scale*96):blob,'equation.'+(kind==='jpeg'?'jpg':'png'));}finally{URL.revokeObjectURL(url);}
+  try{const img=new Image();img.src=url;await new Promise((resolve,reject)=>{img.onload=resolve;img.onerror=()=>reject(new Error('图片渲染失败'));});const canvas=document.createElement('canvas');canvas.width=w;canvas.height=h;const ctx=canvas.getContext('2d');if(kind==='jpeg'){ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);}ctx.drawImage(img,0,0,w,h);const mime=kind==='jpeg'?'image/jpeg':'image/png';const blob=await new Promise(resolve=>canvas.toBlob(resolve,mime,.96));if(!blob)throw new Error('图片导出失败');return kind==='png'?await pngWithDPI(blob,scale*96):blob;}finally{URL.revokeObjectURL(url);}
 }
 function history(){
   $('history').replaceChildren();state.history.forEach((item,i)=>{const text=typeof item==='string'?item:item.rawSource;const wrap=document.createElement('div');wrap.className='history-item';const b=document.createElement('button');b.className='favorite-preview';b.textContent=text;b.title=text;b.setAttribute('aria-label',text);b.onclick=()=>{if(typeof item==='string')loadLatex(item);else restore(item);};
@@ -199,41 +230,45 @@ function history(){
     if(latex)Promise.resolve(MathJax.startup.promise).then(()=>MathJax.tex2svgPromise(latex,{display:true})).then(node=>{if(!b.isConnected)return;const svg=node.querySelector('svg');if(svg){svg.removeAttribute('width');svg.removeAttribute('height');b.replaceChildren(svg);}}).catch(()=>{});
 const del=document.createElement('button');del.textContent='×';del.setAttribute('aria-label','删除收藏');del.onclick=()=>{state.history.splice(i,1);history();persist();};wrap.append(b,del);$('history').append(wrap);});
 }
+function updateResolution(){const raster=isRasterFormat($('output-format').value);$('scale').disabled=!raster;$('scale').closest('label').classList.toggle('resolution-disabled',!raster);$('scale').title=raster?'位图输出分辨率':'矢量或源码格式不受分辨率设置影响';}
+$('output-format').addEventListener('change',updateResolution);
 function updateOutputFormats(){
+  if(window.FormulaCommands)updateCommandState();
   const selected=$('output-format').value;
   const formats=[['svg','SVG'],['pdf','PDF'],['png','PNG'],['jpeg','JPEG'],['tiff','TIFF'],['eps','EPS'],['latex','LaTeX 源码'],['typst','Typst 源码'],['mathml','MathML'],['project','MathForge']];
   // Engine capabilities do not depend on a transient compile result or source conversion.
   const available=formats.filter(([kind])=>{
     if(['project','latex','typst','mathml'].includes(kind))return true;
-    if(state.engine==='embedded')return !['tiff','eps'].includes(kind);
+    if(renderBackendUsed==='builtin')return !['tiff','eps'].includes(kind);
     if(kind==='eps')return !!detectedTools.pdftops?.path;
-    if(kind==='svg')return state.engine==='typst'||!!detectedTools.dvisvgm?.path;
+    if(kind==='svg')return state.sourceLanguage==='typst'||!!detectedTools.dvisvgm?.path;
     return true;
   });
   const signature=available.map(([kind])=>kind).join(',');
-  if($('output-format').dataset.formats===signature)return;
+  if($('output-format').dataset.formats===signature){updateResolution();return;}
   $('output-format').dataset.formats=signature;
   $('output-format').replaceChildren(...available.map(([kind,label])=>new Option(label,kind)));
-  if(available.some(([kind])=>kind===selected))$('output-format').value=selected;
+  if(available.some(([kind])=>kind===selected))$('output-format').value=selected;updateResolution();
 }
 
-function applyUI(){updateOutputFormats();$('math-font').value=state.mathFont;$('math-font').disabled=state.engine!=='embedded';ensureResolutionOption();for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];}$('engine').value=state.engine;$('preamble').value=state.preamble;$('typst-preamble').value=state.typstPreamble;$('display-mode').value=state.displayMode;$('engine-note').textContent=state.engine==='embedded'?'MathJax 矢量排版':'本机 '+(state.engine==='typst'?'Typst':'LaTeX');updateMode();}
+function applyUI(){updateOutputFormats();$('math-font').value=state.mathFont;$('math-font').disabled=renderBackendUsed!=='builtin';ensureResolutionOption();for(const key of ['size','padding','scale','color','transparent']){if(key==='transparent')$(key).checked=state[key];else $(key).value=state[key];}$('preamble').value=state.preamble;$('typst-preamble').value=state.typstPreamble;$('display-mode').value=state.displayMode;$('engine-note').textContent=(state.sourceLanguage==='typst'?'Typst':'LaTeX')+' · '+(renderBackendUsed==='builtin'?'内置':'本机');updateMode();}
 function restore(saved){
-  const keepHistory=state.history;for(const k of ['latex','rawSource','mode','engine','size','padding','color','transparent','scale','mathFont','preamble','typstPreamble','displayMode'])if(saved[k]!==undefined)state[k]=saved[k];state.history=keepHistory;
-  if(!bridge)state.engine='embedded';applyUI();$('source').value=state.rawSource||getModeSource();readSource();
+  saved=migrateTypesetting(saved);localAttemptSource=null;renderBackendUsed='builtin';const keepHistory=state.history;for(const k of ['latex','rawSource','editorMode','size','padding','color','transparent','scale','mathFont','preamble','typstPreamble','displayMode'])if(saved[k]!==undefined)state[k]=saved[k];state.history=keepHistory;
+  applyUI();$('source').value=state.rawSource||getModeSource();readSource();
 }
 function importContent(text,ext){
+  if(window.FormulaDocumentHistory)window.FormulaDocumentHistory.previous=null;
   if(['mathforge','json'].includes(ext)){const data=JSON.parse(text);if(data.format==='mathforge-library'){state.history=data.history.slice(0,100);history();persist();status('收藏已恢复');return;}if(data.format!=='mathforge-equation')throw new Error('无法识别的公式文件');restore(data.state);return;}
   if(ext==='svg'){const meta=new DOMParser().parseFromString(text,'image/svg+xml').querySelector('metadata');if(!meta)throw new Error('SVG 中没有可恢复源码');const data=JSON.parse(meta.textContent);if(data.state)restore(data.state);else loadLatex(data.latex);return;}
-  if(ext==='tex'&&text.includes('\\begin{document}')){const body=text.match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/);if(!body)throw new Error('LaTeX 文档不完整');state.preamble=text.split('\\begin{document}')[0].replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/,'').trim();text=body[1];if(bridge)state.engine='latex';}
-  state.mode=ext==='typ'?'typst':'latex';if(state.engine!=='embedded')state.engine=state.mode==='typst'?'typst':'latex';$('source').value=text;applyUI();readSource();
+  if(ext==='tex'&&text.includes('\\begin{document}')){const body=text.match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/);if(!body)throw new Error('LaTeX 文档不完整');state.preamble=text.split('\\begin{document}')[0].replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/,'').trim();text=body[1];}
+  state.sourceLanguage=ext==='typ'?'typst':'latex';$('source').value=text;applyUI();readSource();
 }
 let detectedTools={};
 window.FormulaTools=tools=>{detectedTools=tools;updateOutputFormats();$('tool-paths').replaceChildren();for(const [key,label] of Object.entries({latex:'LaTeX',typst:'Typst',dvisvgm:'dvisvgm',pdftops:'pdftops'})){const row=document.createElement('div');row.className='tool-row';const name=document.createElement('span');name.textContent=label;const path=document.createElement('code');path.textContent=tools[key]?.path||'未检测到';const version=document.createElement('small');version.textContent=tools[key]?.version||'';path.append(version);const button=document.createElement('button');button.textContent='指定路径';button.onclick=()=>send('chooseTool',{tool:key});row.append(name,path,button);$('tool-paths').append(row);}};
 const safe=fn=>async(...args)=>{try{await fn(...args);}catch(e){status(e.message,true);}};
 window.FormulaNativeResult=(message,error=false)=>status(message,error);
 window.FormulaImport=(text,ext)=>safe(()=>importContent(text,ext))();
-window.FormulaAction=kind=>safe(async()=>{if(kind==='copy')await copy($('source').value);else if(kind==='import')$('import').click();else await exportFile(kind);})();
+window.FormulaAction=kind=>safe(async()=>{if(kind==='copy')await copy($('source').value);else if(kind==='import')window.FormulaChooseImport();else await exportFile(kind);})();
 window.FormulaTest={pngWithDPI,compactVisualLatex,exportFile,readSource,stripDelimiters,getState:()=>state,getSVG:()=>svgResult?svgText():null};
 
 MathLive.MathfieldElement.fontsDirectory=new URL('vendor/mathlive/fonts',document.baseURI).href;
@@ -254,17 +289,17 @@ mf.addEventListener('keyup',event=>{
   }
 });
 function syncVisual(force=false){
-  if(updating||mf.readOnly||mf.mode==='latex')return;
+  if(updating||mf.readOnly||mf.mode==='latex'||(!force&&document.querySelector('.input-editors').dataset.inputMode!=='visual'))return;
   try{
     const latex=compactVisualLatex(mf.getValue('latex-without-placeholders'));
     if(!force&&latex===state.latex)return;
     clearTimeout(sourceTimer);clearTimeout(visualTimer);state.latex=latex;conversionAvailable=true;
-    try{$('source').value=getModeSource();}catch{state.mode='latex';state.engine='embedded';$('source').value=latex;applyUI();}
-    state.rawSource=stripDelimiters($('source').value);updateAlternates();persist();
+    try{$('source').value=window.FormulaFormatGenerated(getModeSource());}catch{state.sourceLanguage='latex';$('source').value=formatLatexSource(latex);applyUI();}
+    state.rawSource=stripDelimiters($('source').value);updateAlternates();persist();window.FormulaRecordVisual?.();
     ++renderID;svgResult=null;nativeResult=null;
     if(!state.rawSource){$('preview').replaceChildren();$('dimensions').textContent='等待输入';status('请输入公式');return;}
     status('源码已同步 · 正在准备预览…');
-    visualTimer=setTimeout(scheduleRender,state.engine==='embedded'?100:650);
+    visualTimer=setTimeout(scheduleRender,renderBackendUsed==='builtin'?100:650);
   }catch(e){status('编辑同步失败：'+e.message,true);}
 }
 for(const event of ['input','change','keyup','compositionend','blur'])mf.addEventListener(event,()=>syncVisual());
@@ -275,8 +310,8 @@ if(mf.shadowRoot){new MutationObserver(()=>{
 }).observe(mf.shadowRoot,{childList:true,subtree:true,characterData:true});}
 // A click in the editor's whitespace should focus its keyboard sink too.
 mf.addEventListener('pointerdown',()=>{if(!mf.readOnly)mf.focus();});
-$('source').addEventListener('input',()=>{clearTimeout(sourceTimer);svgResult=null;nativeResult=null;sourceTimer=setTimeout(readSource,state.engine==='embedded'?220:650);});
-$('mode-latex').onclick=()=>switchMode('latex');$('mode-typst').onclick=()=>switchMode('typst');
+$('source').addEventListener('input',()=>{localAttemptSource=null;renderBackendUsed='builtin';clearTimeout(sourceTimer);svgResult=null;nativeResult=null;sourceTimer=setTimeout(readSource,renderBackendUsed==='builtin'?220:650);});
+$('mode-latex').onclick=()=>changeEditorMode('latex');$('mode-typst').onclick=()=>changeEditorMode('typst');
 // A persistent, draggable primary toolbar; extended groups remain available.
 const toolbar=$('tools'), primaryToolbar=document.createElement('div');
 primaryToolbar.className='primary-tools';primaryToolbar.id='primary-tools';
@@ -400,10 +435,8 @@ $('font-menu').addEventListener('pointerdown',e=>e.preventDefault());
 $('font-menu').onclick=()=>{formatting.hidden=!formatting.hidden;const r=$('font-menu').getBoundingClientRect();formatting.style.left=Math.max(8,Math.min(r.left,innerWidth-formatting.offsetWidth-8))+'px';formatting.style.top=(r.bottom+6+formatting.offsetHeight>innerHeight?r.top-formatting.offsetHeight-6:r.bottom+6)+'px';};
 formatting.addEventListener('click',()=>formatting.hidden=true);
 const inputEditors=document.querySelector('.input-editors');
-function setInputPane(mode){inputEditors.dataset.inputMode=mode;for(const id of ['mode-latex','mode-typst'])$(id).disabled=mode==='visual';$('input-source').classList.toggle('active',mode==='source');$('input-visual').classList.toggle('active',mode==='visual');}
-$('input-source').onclick=()=>{setInputPane('source');$('source').focus();};
-$('input-visual').onclick=()=>{clearTimeout(sourceTimer);readSource();setInputPane('visual');mf.focus();};
-const originalFocus=mf.focus.bind(mf);mf.focus=(...args)=>{setInputPane('visual');return originalFocus(...args);};
+function setInputPane(mode){if(mode==='visual')state.editorMode='visual';else if(state.editorMode==='visual')state.editorMode='latex';updateMode();}
+const originalFocus=mf.focus.bind(mf);mf.focus=(...args)=>{setInputPane('visual');if(document.activeElement!==mf)mf.blur();originalFocus(...args);mf.shadowRoot?.querySelector('[part=keyboard-sink]')?.focus({preventScroll:true});};
 $('clear-input').onclick=()=>{clearTimeout(sourceTimer);clearTimeout(visualTimer);mf.setValue('');syncVisual(true);svgResult=null;nativeResult=null;valid=false;state.latex='';state.rawSource='';persist();$('source').value='';$('preview').replaceChildren();status('请输入公式');};
 $('math-font').value=state.mathFont;
 let fontSwitchID=0;
@@ -455,46 +488,36 @@ window.addEventListener('resize',closeToolMenus);window.addEventListener('scroll
 formatting.addEventListener('pointerdown',e=>e.preventDefault());
 $('tools').addEventListener('pointerdown',e=>{if(!customizingToolbar&&e.target.closest('[data-insert],[data-command],[data-style],summary'))e.preventDefault();});
 function handleToolClick(e){
-  if(e.target.closest('.format-popup')&&inputEditors.dataset.inputMode==='source'){
-    const source=$('source');let start=source.selectionStart,end=source.selectionEnd;
-    if(start===end){start=0;end=source.value.length;}
-    readSource();
-    if(state.mode==='latex'&&end>start){
-      const button=e.target.closest('[data-style],[data-insert]');
-      const commands={'normal:up':'mathrm','normal:bold':'mathbf','double-struck:up':'mathbb','calligraphic:up':'mathcal'};
-      const command=commands[button?.dataset.style];
-      const template=command?'\\'+command+'{#@}':button?.dataset.insert;
-      if(template){source.setRangeText(template.replace('#@',source.value.slice(start,end)),start,end,'select');readSource();return;}
-    }
-    mf.select();
+  const undoButton=e.target.closest('[data-command="undo"],[data-command="redo"]');if(undoButton&&window.FormulaCommands){window.FormulaCommands.execute(undoButton.dataset.command);return;}
+  const sourceButton=e.target.closest('[data-insert],[data-style]');
+  if(sourceButton&&inputEditors.dataset.inputMode==='source'&&state.sourceLanguage==='latex'){
+    const source=$('source'),start=source.selectionStart,end=source.selectionEnd;
+    const commands={'normal:up':'mathrm','normal:bold':'mathbf','double-struck:up':'mathbb','calligraphic:up':'mathcal'};
+    const command=commands[sourceButton.dataset.style];
+    const template=command?'\\'+command+'{#@}':sourceButton.dataset.insert;
+    if(template&&window.FormulaCommands){window.FormulaCommands.execute('insertStructure',{template});return;}
   }
   if(e.target.closest('[data-insert],[data-command],[data-style]'))setInputPane('visual');
   if(customizingToolbar&&e.target.closest('#primary-tools'))return;
   const font=e.target.closest('[data-style]');
   if(font){
     if(mf.readOnly){status('此语法请在源码区编辑。',true);return;}
-    mf.focus();const [variant,variantStyle]=font.dataset.style.split(':');
+    const [variant,variantStyle]=font.dataset.style.split(':');if(window.FormulaCommands){window.FormulaCommands.execute('applyStyle',{variant,variantStyle});return;}mf.focus();
     mf.applyStyle({variant,variantStyle},{operation:'set'});syncVisual(true);return;
   }
   const action=e.target.closest('[data-command]');
   if(action){
     if(mf.readOnly){status('此语法请在源码区编辑。',true);return;}
     mf.focus();
+    if(['undo','redo'].includes(action.dataset.command)){window.FormulaCommands?.execute(action.dataset.command);return;}
+    if(window.FormulaExecuteMatrixCommand){window.FormulaExecuteMatrixCommand(action.dataset.command);return;}
     const result=mf.executeCommand(action.dataset.command);
     if(result===false)status('请先点击分段公式或矩阵中的单元格，再增删行列。',true);
     syncVisual(true);return;
   }
   const b=e.target.closest('[data-insert]');if(b){
   if(mf.readOnly){status('当前原生 Typst 语法不支持可视化修改，请在源码区编辑。',true);return;}
-  let template=b.dataset.insert;
-  if(template==='\\sqrt{#?}')template=mf.selectionIsCollapsed?'\\sqrt{#?}':'\\sqrt{#@}';
-  if(!mf.selectionIsCollapsed){
-    if(template==='#@_{#?}^{#?}')template='_{#@}^{#?}';
-    else if(template.startsWith('#@_'))template='_{#@}';
-    else if(template.startsWith('#@^'))template='^{#@}';
-    else if(template.startsWith('\\int')||template.startsWith('\\sum')||template.startsWith('\\begin{pmatrix}'))template=template.replace('}#?','}#@');
-  }
-  mf.focus();mf.insert(template,{mode:'math',format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',silenceNotifications:false,focus:true});syncVisual(true);
+  window.FormulaApplyVisualStructure(mf,b.dataset.insert);syncVisual(true);
 }}
 $('tools').addEventListener('click',handleToolClick);
 formatting.addEventListener('click',handleToolClick);
@@ -511,11 +534,170 @@ window.FormulaChooseImport=()=>{if(bridge){send('import');return;}const f=docume
 $('input-settings').onclick=()=>{$('tool-dialog').showModal();if(bridge)send('scanTools');else{$('tool-paths').textContent='本机路径检测仅在 Mac 应用中可用。';}};
 $('close-tools').onclick=()=>{$('tool-dialog').close();};$('scan-tools').onclick=()=>send('scanTools');
 for(const [id,key] of [['preamble','preamble'],['typst-preamble','typstPreamble'],['display-mode','displayMode']])$(id).addEventListener('change',()=>{state[key]=$(id).value;persist();readSource();});
-$('engine').onchange=safe(async()=>{const engine=$('engine').value;if(engine!=='embedded'&&!bridge){$('engine').value=state.engine;throw new Error('本机排版需要 Mac 应用');}if(engine==='latex'&&state.mode==='typst'){if(!conversionAvailable)throw new Error('此 Typst 语法无法转换为 LaTeX');$('source').value=state.latex;state.mode='latex';}else if(engine==='typst'&&state.mode==='latex'){$('source').value=typst(state.latex);state.mode='typst';}state.engine=engine;applyUI();await readSource();});
 for(const kind of ['svg','pdf'])$('batch-'+kind).onclick=safe(async()=>{const lines=$('batch-source').value.split('\n').map(x=>x.trim()).filter(Boolean);if(!lines.length)throw new Error('请输入待导出的公式');if(lines.length>100)throw new Error('每次最多批量导出 100 条');const original={...state};try{for(const line of lines){$('source').value=line;await exportFile(kind);if(!valid)throw new Error('批量导出已停止，请核对公式');}}finally{restore(original);}});
 $('preview').title='Mac 应用中按住 Option 拖动，可将公式文件拖到桌面或其他应用';
 $('preview').addEventListener('mousedown',safe(async e=>{if(!e.altKey||!bridge||!valid)return;e.preventDefault();if(nativeResult){const kind=nativeResult.svg?'svg':'pdf';send('drag',{name:'equation.'+kind,base64:nativeResult[kind]});}else if(svgResult){send('drag',{name:'equation.svg',base64:await bytesBase64(new Blob([svgText()]))});}}));
-document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='o'){e.preventDefault();window.FormulaChooseImport();}if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==='e'){e.preventDefault();safe(()=>exportFile('svg'))();}if((e.metaKey||e.ctrlKey)&&e.shiftKey&&e.key.toLowerCase()==='c'){e.preventDefault();safe(()=>copy($('source').value))();}});
+
 // Repair language/source mismatches saved by versions before 1.4.1.
-try{const alternate=state.mode==='latex'?typst(state.latex):state.latex;if(state.rawSource&&state.rawSource===alternate)state.rawSource=getModeSource();}catch{}
+try{const alternate=state.sourceLanguage==='latex'?typst(state.latex):state.latex;if(state.rawSource&&state.rawSource===alternate)state.rawSource=getModeSource();}catch{}
+if(state.editorMode==='visual'&&state.rawSource){state.rawSource=state.latex||state.rawSource;}
 updateOutputFormats();applyUI();history();if(state.rawSource){$('source').value=state.rawSource;readSource();}else loadLatex(state.latex);if(bridge)send('scanTools');
+
+installSourceAssist($('source'),()=>state.sourceLanguage);
+installSourceIndentation($('source'),()=>state.sourceLanguage);
+window.FormulaSourceSurface=installSourceSurface($('source'),()=>state.sourceLanguage);
+
+// All public editing/navigation/clipboard entry points share this registry.
+const captureRevision=()=>({visualLatex:mf.getValue('latex'),focus:document.activeElement===mf?'visual':document.activeElement===$('preview')?'preview':'source',latex:mf.getValue('latex-without-placeholders'),rawSource:$('source').value,editorMode:state.editorMode,size:state.size,padding:state.padding,color:state.color,transparent:state.transparent,scale:state.scale,mathFont:state.mathFont,preamble:state.preamble,typstPreamble:state.typstPreamble,displayMode:state.displayMode,sourceSelection:[$('source').selectionStart,$('source').selectionEnd],sourceScroll:[$('source').scrollLeft,$('source').scrollTop],visualSelection:JSON.parse(JSON.stringify(mf.selection))});
+let savedFormulaHistory={};try{savedFormulaHistory=JSON.parse(localStorage.getItem('formula-document-history')||'{}');}catch{}
+const formulaHistory=new FormulaHistory(savedFormulaHistory);let formulaHistoryTimer;
+// Preserve meaningful content changes from the previous operation-history store once.
+if(!savedFormulaHistory.migrated){try{const old=JSON.parse(localStorage.getItem('formula-operation-history')||'{}');for(const entry of old.entries||[]){const snapshot=migrateTypesetting(entry.snapshot||{});if(snapshot.rawSource?.trim())formulaHistory.observe(snapshot,entry.title||'历史公式版本');}}catch{}savedFormulaHistory.migrated=true;}
+
+function saveFormulaHistory(){try{localStorage.setItem('formula-document-history',JSON.stringify({...formulaHistory.serialize(),migrated:true}));}catch{status('历史空间不足，当前公式未受影响',true);}}
+function observeFormula(){if(!valid||revisions.restoring)return;formulaHistory.observe(captureRevision());saveFormulaHistory();}
+window.FormulaDocumentHistory=formulaHistory;
+const revisions=new RevisionHistory(captureRevision,snapshot=>{
+  snapshot=migrateTypesetting(snapshot);localAttemptSource=null;renderBackendUsed='builtin';
+  const fontChanged=snapshot.mathFont&&snapshot.mathFont!==state.mathFont;clearTimeout(sourceTimer);clearTimeout(visualTimer);for(const key of ['editorMode','latex','rawSource','size','padding','color','transparent','scale','mathFont','preamble','typstPreamble','displayMode'])if(snapshot[key]!==undefined)state[key]=snapshot[key];$('source').value=snapshot.rawSource;applyUI();readSource();updateMode();
+  $('source').setSelectionRange(...(snapshot.sourceSelection||[0,0]));$('source').scrollLeft=(snapshot.sourceScroll||[0,0])[0];$('source').scrollTop=(snapshot.sourceScroll||[0,0])[1];
+  if(snapshot.editorMode==='visual'){updating=true;mf.setValue(snapshot.visualLatex||snapshot.latex,{silenceNotifications:true});updating=false;mf.focus();try{mf.selection=snapshot.visualSelection;}catch{}}else $('source').focus();persist();if(fontChanged)return $('math-font').onchange();
+});
+const registry=new CommandRegistry(()=>updateCommandState());registry.onError=e=>status(e.message,true);
+window.FormulaCommands=registry;window.FormulaRevisions=revisions;
+let commandDepth=0;
+async function editTransaction(title,execute){revisions.flush();revisions.record('编辑公式');commandDepth++;try{await execute();}finally{commandDepth--;revisions.record(title,'command');}}
+const register=(id,title,shortcut,category,execute,enabled=()=>true)=>registry.register({id,title,shortcut,category,execute,enabled});
+const auxiliaryInput=()=>{const n=document.activeElement;return n!==$('source')&&n!==mf&&!!n?.matches('input:not([type=checkbox]):not([type=color]):not([type=range]):not([type=button]),textarea,[contenteditable=true]');};
+register('undo','撤销','meta+z','编辑',()=>auxiliaryInput()?nativeEdit('undo'):revisions.undo(),()=>auxiliaryInput()||revisions.canUndo);
+register('redo','重做','meta+shift+z','编辑',()=>auxiliaryInput()?nativeEdit('redo'):revisions.redo(),()=>auxiliaryInput()||revisions.canRedo);
+register('newFormula','新建公式','meta+n','文件',()=>editTransaction('新建公式',()=>{formulaHistory.previous=null;state.latex='';state.rawSource='';$('source').value='';updating=true;mf.setValue('');updating=false;++renderID;valid=false;svgResult=null;nativeResult=null;$('preview').replaceChildren();persist();}));
+register('openFormula','打开…','meta+o','文件',()=>window.FormulaChooseImport());
+register('saveFormula','保存公式','meta+s','文件',()=>exportFile('project'));
+register('saveAs','另存为…','meta+shift+s','文件',()=>exportFile('project'));
+register('exportFormula','导出…','meta+shift+e','文件',()=>exportFile($('output-format').value),()=>valid&&!!(svgResult||nativeResult));
+register('settings','设置…','meta+,','应用',()=>{$('tool-dialog').showModal();if(bridge)send('scanTools');});
+async function changeEditorMode(mode){
+  if(!['visual','latex','typst'].includes(mode))return;
+  const source=$('source');
+  if(mode==='visual'){
+    if(state.editorMode!=='visual'){
+      if(stripDelimiters(source.value)!==state.rawSource){await readSource();if(!valid)return;}
+      if(!valid){status('请先修正当前源码，原内容已保留。',true);return;}
+      if(!conversionAvailable){status('此源码暂不支持可视化编辑，已保留原内容。',true);return;}
+      if(state.sourceLanguage==='typst'){await switchMode('latex');if(state.sourceLanguage!=='latex')return;}
+    }
+    setInputPane('visual');mf.focus();persist();return;
+  }
+  const previousMode=state.editorMode;if(previousMode==='visual'){syncVisual(true);state.editorMode='latex';}
+  await switchMode(mode);if(state.sourceLanguage!==mode){state.editorMode=previousMode;updateMode();return;}
+  state.editorMode=mode;updateMode();mf.blur();source.focus();persist();
+}
+const changePane=mode=>changeEditorMode(mode==='visual'?'visual':state.sourceLanguage);
+register('switchToSource','LaTeX 编辑','meta+l','视图',()=>changeEditorMode('latex'));
+register('switchToVisual','可视化编辑','meta+e','视图',()=>changeEditorMode('visual'));
+register('workspace1','聚焦 LaTeX','meta+1','视图',()=>changeEditorMode('latex'));
+register('workspace2','聚焦可视化','meta+2','视图',()=>changeEditorMode('visual'));
+$('preview').tabIndex=0;
+register('workspace3','聚焦结果','meta+3','视图',()=>{$('preview').focus({preventScroll:true});});
+const graphicKind=()=>['svg','pdf','png','jpeg','tiff','eps'].includes($('output-format').value)?$('output-format').value:nativeResult?.svg||svgResult?'svg':'pdf';
+register('copySelected','复制所选格式',null,'编辑',()=>exportFile($('output-format').value,true),()=>valid&&!!(svgResult||nativeResult));
+register('copyRenderedImage','复制渲染结果','meta+shift+c','编辑',()=>exportFile(graphicKind(),true),()=>valid&&!!(svgResult||nativeResult));
+register('copySource','复制当前源码','meta+alt+c','编辑',()=>copy($('source').value));
+register('copyLatex','复制为 LaTeX',null,'公式',()=>exportFile('latex',true));
+register('copyTypst','复制为 Typst',null,'公式',()=>exportFile('typst',true));
+register('copy','复制','meta+c','编辑',()=>{if(auxiliaryInput())return nativeEdit('copy');if(document.activeElement===$('source'))return copy($('source').value.slice($('source').selectionStart,$('source').selectionEnd));if(document.activeElement===mf&&!mf.selectionIsCollapsed)return copy(mf.getValue(mf.selection,'latex'));return exportFile(graphicKind(),true);});
+const nativeEdit=action=>{if(bridge)send('nativeEdit',{edit:action});else {document.execCommand(action);}};
+for(const [id,title,key] of [['cut','剪切','x'],['paste','粘贴','v'],['selectAll','全选','a']])register(id,title,'meta+'+key,'编辑',()=>{if(document.activeElement===mf&&id==='selectAll'){mf.select();return;}return nativeEdit(id);});
+register('tryLocalTypesetting','尝试本机排版',null,'视图',()=>{if(!bridge){status('本机环境需要在 Formula Mac 应用中使用',true);return;}const src=stripDelimiters($('source').value);localAttemptSource=state.sourceLanguage+':'+src;return readSource();},()=>!$('render-feedback').hidden&&$('render-feedback').dataset.category==='capability');
+register('switchLatex','转换为 LaTeX',null,'公式',()=>editTransaction('转换为 LaTeX',()=>changeEditorMode('latex')));
+register('switchTypst','转换为 Typst',null,'公式',()=>editTransaction('转换为 Typst',()=>changeEditorMode('typst')));
+const describeStructure=t=>/^#?@?[_^]|^[{].*[_^]/.test(t)?'应用上下标':/\\(?:hat|tilde|dot|ddot|vec|bar|overline|widehat|widetilde)/.test(t)?'应用修饰符':/\\(?:frac|dfrac|tfrac)/.test(t)?'插入分式':/\\sqrt/.test(t)?'插入根式':/matrix/.test(t)?'插入矩阵':/\\left/.test(t)?'添加括号':'插入公式结构';
+register('applyStyle','应用文字样式',null,'公式',args=>editTransaction('应用文字样式',()=>{mf.focus();mf.applyStyle(args,{operation:'set'});syncVisual(true);}));
+register('insertStructure','插入公式结构',null,'公式',args=>editTransaction(args?.title||describeStructure(args.template),()=>{if(inputEditors.dataset.inputMode==='source'){const source=$('source'),selected=source.value.slice(source.selectionStart,source.selectionEnd);let text=args.transform===false?args.template:selectionStructure(args.template,selected).replaceAll('#?','');text=state.sourceLanguage==='typst'?formatTypstSource(typst(text)):formatLatexSource(text);source.focus();document.execCommand('insertText',false,text);source.dispatchEvent(new Event('input',{bubbles:true}));readSource();}else applyVisualStructure(mf,args.template,{transform:args.transform!==false});}));
+window.FormulaApplyVisualStructure=(editor,template,options={})=>registry.execute('insertStructure',{template,...options});
+for(const [id,title,template] of [
+  ...['hat','widehat','tilde','widetilde','bar','overline','vec','dot','ddot','breve','check','acute','grave','overset','underset'].map(name=>['accent.'+name,name+' 修饰', '\\'+name+(name==='overset'||name==='underset'?'{}{}':'{}')]),
+  ['superscript','上标 superscript','^{}'],['subscript','下标 subscript','_{}'],['scripts','上下标','_{}^{}'],
+  ['fraction','分式 fraction','\\frac{}{}'],['root','根式 root','\\sqrt{}'],['nthRoot','n 次根','\\sqrt[]{}'],
+  ['brackets','括号 brackets','\\left(\\right)'],['absolute','绝对值','\\left|\\right|'],['norm','范数','\\left\\lVert\\right\\rVert'],
+  ['matrix','矩阵 matrix','\\begin{pmatrix}#@&#?\\\\#?&#?\\end{pmatrix}'],['cases','分段 cases','\\begin{cases}#@&#?\\\\#?&#?\\end{cases}']
+])registry.register({id,title,category:'结构',undoable:true,enabled:()=>!mf.readOnly,execute:()=>registry.execute('insertStructure',{template,title})});
+
+register('sourceAccept','接受源码补全',null,'公式',args=>editTransaction('接受源码补全',args.execute));
+register('matrixEdit','编辑矩阵',null,'公式',args=>editTransaction('编辑矩阵',()=>{mf.focus();mf.executeCommand(args.command);syncVisual(true);}));
+window.FormulaExecuteMatrixCommand=command=>registry.execute(['undo','redo'].includes(command)?command:'matrixEdit',{command});
+register('insertTemplate','插入模板',null,'公式',args=>editTransaction('插入模板',()=>loadLatex(args.latex)));
+for(const b of document.querySelectorAll('[data-example]'))b.onclick=()=>registry.execute('insertTemplate',{latex:examples[b.dataset.example]});
+register('showTemplates','公式模板',null,'公式',()=>selectToolTab('templates'));
+register('showFavorites','收藏夹',null,'公式',()=>selectToolTab('favorites'));
+const originalImport=window.FormulaImport;register('importContent','导入 / 识别公式',null,'文件',args=>editTransaction('导入 / 识别公式',async()=>{await originalImport(args.text,args.ext);await renderQueue;}));window.FormulaImport=(text,ext)=>registry.execute('importContent',{text,ext});
+for(const [id,command] of [['input-visual','switchToVisual'],['copy-selected','copySelected'],['export-selected','exportFormula'],['copy-source','copySource'],['input-settings','settings'],['mode-latex','switchLatex'],['mode-typst','switchTypst'],['clear-input','newFormula']]){
+  $(id).onclick=safe(()=>registry.execute(command));const item=registry.commands.get(command);$(id).title=item.title+(item.shortcut?' ('+shortcutLabel(item.shortcut)+')':'');
+}
+const formatButtons=()=>{for(const [id,command] of [['copy-selected','copySelected'],['export-selected','exportFormula']])$(id).disabled=!registry.enabled(command);for(const b of formatting.querySelectorAll('[data-command="undo"],[data-command="redo"]')){const id=b.dataset.command;b.disabled=!registry.enabled(id);}};
+
+function shortcutLabel(key){return key.replace('meta','⌘').replace('alt','⌥').replace('shift','⇧').replaceAll('+','').toUpperCase();}
+const commandPanel=document.createElement('div');commandPanel.className='command-overlay';commandPanel.hidden=true;
+commandPanel.innerHTML='<input aria-label="搜索命令或历史" placeholder="搜索命令"><div class="find-replace" hidden><input aria-label="替换为" placeholder="替换为"><button data-replace="one">替换</button><button data-replace="all">全部替换</button></div><div class="command-list"></div>';document.body.append(commandPanel);
+const commandSearch=commandPanel.querySelector('input'),commandList=commandPanel.querySelector('.command-list');let panelKind='commands',panelSelection=0,returnContext=null;
+function closeCommands(){commandPanel.hidden=true;if(returnContext?.focus==='preview'){$('preview').focus({preventScroll:true});return;}if(returnContext?.editorMode==='visual'){mf.focus();try{mf.selection=returnContext.visualSelection;}catch{}}else{$('source').focus();if(returnContext)$('source').setSelectionRange(...returnContext.sourceSelection);}}
+function showCommands(kind){commandPanel.querySelector('.find-replace').hidden=true;returnContext=captureRevision();revisions.flush();panelKind=kind;panelSelection=0;commandSearch.value='';commandSearch.placeholder=kind==='history'?'搜索编辑历史':'搜索命令';commandPanel.hidden=false;drawCommands();commandSearch.focus();}
+function drawCommands(){commandList.replaceChildren();const term=commandSearch.value.toLowerCase();const items=panelKind==='history'?revisions.entries.map((entry,i)=>({title:entry.title+' · '+new Date(entry.time).toLocaleTimeString(),enabled:true,execute:()=>revisions.go(i),active:i===revisions.index})).reverse():registry.list().filter(c=>!['tryLocalTypesetting','insertStructure','matrixEdit','sourceAccept','applyStyle','insertTemplate','importContent'].includes(c.id)).map(c=>({...c,title:c.title+(c.shortcut?' · '+shortcutLabel(c.shortcut):''),execute:()=>registry.execute(c.id)}));
+  for(const item of items.filter(c=>(c.title+' '+(c.id||'')).toLowerCase().includes(term))){const b=document.createElement('button');b.textContent=item.title;b.disabled=!item.enabled;if(item.active)b.classList.add('active');b.onpointerdown=e=>e.preventDefault();b.onclick=async()=>{closeCommands();await item.execute();};commandList.append(b);}
+  const buttons=[...commandList.querySelectorAll('button:not(:disabled)')];panelSelection=Math.min(panelSelection,Math.max(0,buttons.length-1));buttons.forEach((b,i)=>b.classList.toggle('selected',i===panelSelection));
+}
+register('commandPalette','命令面板','meta+k','视图',()=>showCommands('commands'));
+register('showHistory','历史公式',null,'公式',()=>showFormulaHistory());
+function showFormulaHistory(){
+  returnContext=captureRevision();revisions.flush();if(valid)observeFormula();panelKind='formulas';commandPanel.querySelector('.find-replace').hidden=true;commandPanel.hidden=false;commandSearch.value='';commandSearch.placeholder='搜索历史公式';drawFormulaHistory();commandSearch.focus();
+}
+function drawFormulaHistory(){
+  commandList.replaceChildren();const clear=document.createElement('button');clear.textContent='清空历史公式';clear.onclick=()=>{formulaHistory.clear();saveFormulaHistory();drawFormulaHistory();};commandList.append(clear);
+  for(const item of formulaHistory.formulas.filter(x=>x.snapshot.rawSource.toLowerCase().includes(commandSearch.value.toLowerCase()))){
+    const row=document.createElement('div');row.className='formula-history-row';const open=document.createElement('button');open.className='formula-history-preview';open.textContent=item.snapshot.rawSource;open.setAttribute('aria-label','打开历史公式 '+item.snapshot.rawSource);open.onclick=()=>{closeCommands();registry.execute('importContent',{text:JSON.stringify({format:'mathforge-equation',state:item.snapshot}),ext:'mathforge'});};
+    if(item.snapshot.latex)MathJax.startup.promise.then(()=>MathJax.tex2svgPromise(item.snapshot.latex,{display:true})).then(node=>{const svg=node.querySelector('svg');if(svg&&open.isConnected){svg.removeAttribute('width');svg.removeAttribute('height');open.replaceChildren(svg);}}).catch(()=>{});
+    const time=document.createElement('small');time.textContent=new Date(item.time).toLocaleString()+' · '+(item.snapshot.editorMode==='typst'?'Typst':'LaTeX');const remove=document.createElement('button');remove.textContent='×';remove.setAttribute('aria-label','删除历史公式');remove.onclick=()=>{formulaHistory.remove(item.id);saveFormulaHistory();drawFormulaHistory();};row.append(open,time,remove);commandList.append(row);
+  }
+}
+function drawVersionHistory(){const list=$('formula-versions');list.replaceChildren();for(const version of [...formulaHistory.versions].reverse()){const item=document.createElement('details'),summary=document.createElement('summary');summary.textContent=new Date(version.time).toLocaleString()+' · '+version.title;const before=document.createElement('pre'),after=document.createElement('pre');before.textContent='Before\n'+version.before.rawSource;after.textContent='After\n'+version.after.rawSource;item.append(summary,before,after);list.append(item);}if(!list.children.length)list.textContent='尚无公式内容版本变化';}
+$('show-formula-versions').onclick=drawVersionHistory;
+
+let findText='';
+function findSource(back=false){changePane('source');if(!findText)return;const text=$('source').value,start=back?$('source').selectionStart-1:$('source').selectionEnd;let at=back?text.lastIndexOf(findText,start):text.indexOf(findText,start);if(at<0)at=back?text.lastIndexOf(findText):text.indexOf(findText);if(at>=0){$('source').setSelectionRange(at,at+findText.length);$('source').focus();}else status('未找到 '+findText,true);}
+register('find','查找源码','meta+f','编辑',()=>{commandPanel.querySelector('.find-replace').hidden=false;returnContext=captureRevision();panelKind='find';commandPanel.hidden=false;commandSearch.value=findText;commandSearch.placeholder='查找源码';commandList.replaceChildren();commandSearch.focus();});
+const replacement=commandPanel.querySelector('.find-replace input');
+register('replace','替换当前匹配',null,'编辑',()=>editTransaction('替换源码',()=>{findText=commandSearch.value;if(!findText)return;changePane('source');const source=$('source');if(source.value.slice(source.selectionStart,source.selectionEnd)!==findText)findSource();if(source.value.slice(source.selectionStart,source.selectionEnd)===findText){document.execCommand('insertText',false,replacement.value);source.dispatchEvent(new Event('input',{bubbles:true}));readSource();}}));
+register('replaceAll','全部替换匹配',null,'编辑',()=>editTransaction('全部替换源码',()=>{findText=commandSearch.value;if(!findText)return;changePane('source');const source=$('source'),next=source.value.split(findText).join(replacement.value);source.select();document.execCommand('insertText',false,next);source.dispatchEvent(new Event('input',{bubbles:true}));readSource();}));
+for(const b of commandPanel.querySelectorAll('[data-replace]')){b.onpointerdown=e=>e.preventDefault();b.onclick=()=>registry.execute(b.dataset.replace==='all'?'replaceAll':'replace');}
+register('findNext','查找下一个','meta+g','编辑',()=>findSource());
+register('findPrevious','查找上一个','meta+shift+g','编辑',()=>findSource(true));
+commandSearch.oninput=()=>{panelSelection=0;if(panelKind==='formulas')drawFormulaHistory();else if(panelKind!=='find')drawCommands();};
+commandSearch.onkeydown=e=>{if(e.key==='Escape'){e.preventDefault();closeCommands();return;}if(panelKind==='find'&&e.key==='Enter'){e.preventDefault();findText=commandSearch.value;closeCommands();findSource(e.shiftKey);return;}if(['ArrowDown','ArrowUp'].includes(e.key)){e.preventDefault();const count=commandList.querySelectorAll('button:not(:disabled)').length;panelSelection=(panelSelection+(e.key==='ArrowDown'?1:-1)+count)%Math.max(1,count);drawCommands();}if(e.key==='Enter'&&panelKind!=='find'){e.preventDefault();commandList.querySelectorAll('button:not(:disabled)')[panelSelection]?.click();}};
+document.addEventListener('pointerdown',e=>{if(!commandPanel.hidden&&!commandPanel.contains(e.target))closeCommands();});
+$('preview').addEventListener('contextmenu',e=>{e.preventDefault();showCommands('commands');});
+const historyEntry=document.createElement('button');historyEntry.className='history-menu-entry';historyEntry.textContent='历史公式';historyEntry.onclick=()=>registry.execute('showHistory');document.querySelector('.editor-card>.section-head').insertBefore(historyEntry,$('input-settings'));
+function updateCommandState(){const list=registry.list();send('commandStates',{states:Object.fromEntries(list.map(c=>[c.id,c.enabled]))});formatButtons();if(!commandPanel.hidden&&panelKind!=='find'&&panelKind!=='formulas')drawCommands();}
+revisions.onOversize=()=>status('公式超过历史快照容量，本次内容未写入历史。',true);
+revisions.onChange=()=>{clearTimeout(formulaHistoryTimer);if(!revisions.restoring)formulaHistoryTimer=setTimeout(observeFormula,1800);updateCommandState();try{localStorage.setItem('formula-operation-history',JSON.stringify({index:revisions.index,entries:revisions.entries}));}catch{}};
+// Native edit events are grouped; structural registry operations are separate transactions.
+$('source').addEventListener('input',e=>{if(!commandDepth)revisions.schedule(e.inputType?.includes('Paste')?'粘贴源码':e.inputType?.includes('delete')?'删除内容':'输入源码','source');});
+window.FormulaRecordVisual=()=>{if(!commandDepth)revisions.schedule('可视化编辑','visual');};
+mf.addEventListener('input',window.FormulaRecordVisual);
+window.addEventListener('beforeunload',()=>{revisions.flush();if(valid)observeFormula();});
+try{const saved=JSON.parse(localStorage.getItem('formula-operation-history')||'null');if(saved&&Array.isArray(saved.entries)&&JSON.stringify(saved).length<=revisions.bytes){revisions.entries=saved.entries.filter(e=>e.snapshot&&typeof e.snapshot.rawSource==='string').slice(-100).map(e=>({...e,snapshot:migrateTypesetting(e.snapshot)}));revisions.index=Math.min(Math.max(0,saved.index),revisions.entries.length-1);revisions.counter=Math.max(0,...revisions.entries.map(e=>Number(e.id)||0));}}catch{}
+revisions.record('当前公式','initial');
+// Native paste/cut/select-all and system quit/close stay in the responder chain.
+registry.keyboardContext=(id)=>!(auxiliaryInput()&&['undo','redo','copy','cut','paste','selectAll'].includes(id));
+registry.bindKeyboard(document);
+// Pinned MathLive 0.111.1 adapter: menu, virtual keyboard and public executeCommand share history.
+const internal=mf._mathfield;
+if(internal){const originalExecute=internal.executeCommand.bind(internal);internal.executeCommand=command=>{const id=Array.isArray(command)?command[0]:command;if(['undo','redo'].includes(id)){registry.execute(id).catch(registry.onError);return true;}return originalExecute(command);};internal.canUndo=()=>revisions.canUndo;internal.canRedo=()=>revisions.canRedo;}
+for(const key of ['size','padding','scale','color','transparent','math-font','preamble','typst-preamble','display-mode'])$(key).addEventListener('change',()=>revisions.record('修改排版设置','settings'));
+document.addEventListener('focusin',()=>updateCommandState());
+window.FormulaAction=kind=>registry.execute(({import:'openFormula',copy:'copySource',project:'saveFormula'})[kind]||'exportFormula');
+for(const id of ['newFormula','switchLatex','switchTypst','insertStructure','matrixEdit','sourceAccept','applyStyle','insertTemplate','importContent','replace','replaceAll'])registry.commands.get(id).undoable=true;
+send('registerCommands',{commands:registry.list().filter(c=>!['tryLocalTypesetting','sourceAccept','applyStyle','insertTemplate','importContent'].includes(c.id))});
+document.querySelector('footer>span:last-child').textContent='⌘K 命令面板 · ⇧⌘E 导出 · ⇧⌘C 复制结果';
+
+for(const button of document.querySelectorAll('.editor-mode [role=radio]')){button.onkeydown=event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const modes=['visual','latex','typst'],at=modes.indexOf(state.editorMode),next=event.key==='Home'?0:event.key==='End'?2:(at+(event.key==='ArrowRight'?1:2))%3;registry.execute({visual:'switchToVisual',latex:'switchLatex',typst:'switchTypst'}[modes[next]]).then(()=>document.querySelector('.editor-mode [aria-checked=true]').focus());};}

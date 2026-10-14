@@ -1,0 +1,4 @@
+const{spawnSync}=require('node:child_process');
+const tests=['ocr-layout','ux-five','typesetting','revision-history','commands','command-shortcuts','audit-regressions','source-surface','source-indentation','source-conversion','selection-transforms','generated-source','template-generated-source','visual-format','source-assist','source-candidates','source-mode','last-valid-preview','preview-overflow','reference-layout','compact-layout','custom-toolbar','visual-tools'];let failed=[];
+for(const name of tests){const result=spawnSync(process.execPath,['tests/'+name+'.cjs'],{stdio:'inherit',timeout:90000});if(result.status!==0){failed.push(name);console.error('FAIL',name,result.error?.message||'');}}
+if(failed.length){console.error('Failed:',failed.join(', '));process.exit(1);}console.log('PASS all '+tests.length+' editor regression suites');

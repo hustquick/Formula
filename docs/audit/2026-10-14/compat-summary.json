@@ -1,0 +1,138 @@
+{
+  "total": 126,
+  "storedBoth": 0,
+  "converted": 100,
+  "compiled": 100,
+  "failed": [
+    {
+      "group": "algebra",
+      "id": "algebra_8",
+      "error": "Unknown token: \\over"
+    },
+    {
+      "group": "algebra",
+      "id": "algebra_12",
+      "error": "Unknown token: \\nolimits"
+    },
+    {
+      "group": "algebra",
+      "id": "algebra_13",
+      "error": "Unknown token: \\nolimits"
+    },
+    {
+      "group": "inequality",
+      "id": "inequality_4",
+      "error": "Unknown token: \\gt"
+    },
+    {
+      "group": "inequality",
+      "id": "inequality_9",
+      "error": "Unknown token: \\gt"
+    },
+    {
+      "group": "inequality",
+      "id": "inequality_12",
+      "error": "Unknown token: \\gt"
+    },
+    {
+      "group": "inequality",
+      "id": "inequality_13",
+      "error": "Unknown token: \\limits"
+    },
+    {
+      "group": "calculous",
+      "id": "calculous_10",
+      "error": "Unknown token: \\arcsin"
+    },
+    {
+      "group": "calculous",
+      "id": "calculous_11",
+      "error": "Unknown token: \\arctan"
+    },
+    {
+      "group": "array",
+      "id": "array_7",
+      "error": "Unknown token: \\limits"
+    },
+    {
+      "group": "statistics",
+      "id": "statistics_9",
+      "error": "Unknown token: \\choose"
+    },
+    {
+      "group": "statistics",
+      "id": "statistics_10",
+      "error": "Unknown token: \\limits"
+    },
+    {
+      "group": "statistics",
+      "id": "statistics_11",
+      "error": "Unknown token: \\limits"
+    },
+    {
+      "group": "statistics",
+      "id": "statistics_14",
+      "error": "Unknown token: \\limits"
+    },
+    {
+      "group": "physics",
+      "id": "physics_9",
+      "error": "Unknown token: \\over"
+    },
+    {
+      "group": "physics",
+      "id": "physics_10",
+      "error": "Unknown token: \\nolimits"
+    },
+    {
+      "group": "physics",
+      "id": "physics_11",
+      "error": "Unknown token: \\over"
+    },
+    {
+      "group": "physics",
+      "id": "physics_14",
+      "error": "Unknown token: \\over"
+    },
+    {
+      "group": "physics",
+      "id": "physics_21",
+      "error": "Unknown token: \\cfrac"
+    },
+    {
+      "group": "physics",
+      "id": "physics_22",
+      "error": "Unknown token: \\huge"
+    },
+    {
+      "group": "physics",
+      "id": "physics_23",
+      "error": "Unknown token: \\cfrac"
+    },
+    {
+      "group": "physics",
+      "id": "physics_24",
+      "error": "Unknown token: \\huge"
+    },
+    {
+      "group": "chemistry",
+      "id": "chemistry_1",
+      "error": "Unknown token: \\ce"
+    },
+    {
+      "group": "chemistry",
+      "id": "chemistry_2",
+      "error": "Unknown token: \\ce"
+    },
+    {
+      "group": "chemistry",
+      "id": "chemistry_3",
+      "error": "Unknown token type"
+    },
+    {
+      "group": "chemistry",
+      "id": "chemistry_4",
+      "error": "Unknown token type"
+    }
+  ]
+}

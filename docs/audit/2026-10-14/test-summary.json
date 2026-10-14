@@ -1,0 +1,176 @@
+{
+  "passed": 29,
+  "failed": 1,
+  "tests": [
+    {
+      "name": "revision-history",
+      "exit": 0,
+      "seconds": 0.1,
+      "output": "PASS bounded history, undo/redo restoration and redo branch truncation\n"
+    },
+    {
+      "name": "commands",
+      "exit": 0,
+      "seconds": 1.2,
+      "output": "PASS registry conflicts, shared commands, structural undo/redo, palette/history and contextual copy\n"
+    },
+    {
+      "name": "command-shortcuts",
+      "exit": 0,
+      "seconds": 0.9,
+      "output": "PASS file/save/export, workspace/copy, find next/previous, native edit routing and settings/palette shortcuts\n"
+    },
+    {
+      "name": "selection-transforms",
+      "exit": 0,
+      "seconds": 6.2,
+      "output": "PASS actual accent/script menu clicks retain operand, undo/redo, expression wrappers and empty placeholders\n"
+    },
+    {
+      "name": "generated-source",
+      "exit": 0,
+      "seconds": 0.1,
+      "output": "PASS generated source compact/complex, semantics tokens, idempotence and protected text\n"
+    },
+    {
+      "name": "template-generated-source",
+      "exit": 0,
+      "seconds": 0.7,
+      "output": "PASS 126 built-in templates: stable generated format and actual MathJax rendering\n"
+    },
+    {
+      "name": "visual-format",
+      "exit": 0,
+      "seconds": 0.6,
+      "output": "PASS visual matrix source formatted, selection/focus retained, source-pane switch preserves formatting\n"
+    },
+    {
+      "name": "source-assist",
+      "exit": 0,
+      "seconds": 0.6,
+      "output": "PASS source command completion, virtual bracket, Tab acceptance, undo and closing skip\n"
+    },
+    {
+      "name": "source-candidates",
+      "exit": 0,
+      "seconds": 0.7,
+      "output": "PASS multiple candidates, keyboard acceptance, fuzzy replacement/undo, virtual ghost, Escape and IME protection\n"
+    },
+    {
+      "name": "source-mode",
+      "exit": 0,
+      "seconds": 1.1,
+      "output": "PASS source mode: exact LaTeX round trips, edited Typst conversion, saved language/source and reload\n"
+    },
+    {
+      "name": "preview-overflow",
+      "exit": 0,
+      "seconds": 0.6,
+      "output": "PASS tall formula top and bottom reachable, preview frame unchanged\n"
+    },
+    {
+      "name": "last-valid-preview",
+      "exit": 0,
+      "seconds": 0.9,
+      "output": "PASS last-valid preview, no stale export, recovery and stable tab geometry\n"
+    },
+    {
+      "name": "clipboard-ocr",
+      "exit": 0,
+      "seconds": 0.4,
+      "output": "PASS text paste preserved, clipboard image routed, candidate requires confirmation\n"
+    },
+    {
+      "name": "ocr-behavior",
+      "exit": 0,
+      "seconds": 2.0,
+      "output": "OCR progress, tiered model selection, live checkbox page extraction, cancellation, import and reply routing OK\n"
+    },
+    {
+      "name": "document-behavior",
+      "exit": 0,
+      "seconds": 0.7,
+      "output": "Document UI: engine/page request, source labels, warnings, live selection, cancellation and range validation passed\n"
+    },
+    {
+      "name": "custom-toolbar",
+      "exit": 0,
+      "output": "PASS: toolbar add/remove, actual drag, persistence, selection action, reset\n"
+    },
+    {
+      "name": "output-actions",
+      "exit": 0,
+      "seconds": 1.8,
+      "output": "PASS unified format selector, exact copy payload and export filename for eight embedded formats; native-only options disabled\n"
+    },
+    {
+      "name": "native-preview-size",
+      "exit": 0,
+      "seconds": 0.9,
+      "output": "PASS native LaTeX/Typst A+/A− preview size follows logical point size instead of fixed fitting\n"
+    },
+    {
+      "name": "editor-zoom",
+      "exit": 0,
+      "seconds": 0.8,
+      "output": "PASS independent source/visual zoom across mode switches and reload; export size unchanged\n"
+    },
+    {
+      "name": "chemistry",
+      "exit": 0,
+      "seconds": 0.6,
+      "output": "PASS all 4 chemical catalog templates, precipitation equation, mhchem rendering and visual source synchronization\n"
+    },
+    {
+      "name": "font-controls",
+      "exit": 0,
+      "seconds": 1.2,
+      "output": "PASS font menu across tabs, whole/selected source formatting, A+/A− synchronization and bounds\n"
+    },
+    {
+      "name": "compact-layout",
+      "exit": 0,
+      "output": "compact layout passed\n"
+    },
+    {
+      "name": "reference-layout",
+      "exit": 1,
+      "output": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#input-color')\u001b[22m\n\n    at /Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/reference-layout.cjs:6:33 {\n  log: [ \"  - waiting for locator('#input-color')\" ],\n  name: 'TimeoutError'\n}\n"
+    },
+    {
+      "name": "ocr-format",
+      "exit": 0,
+      "output": "PASS OCR source formatting: row breaks, indentation, content preservation, comments and idempotence\n"
+    },
+    {
+      "name": "ocr-static",
+      "exit": 0,
+      "output": "OCR static contract OK\n"
+    },
+    {
+      "name": "ocr-preview",
+      "exit": 0,
+      "output": "Bundled MathJax OCR preview preserves every inline SVG fragment (+, = and final number)\n"
+    },
+    {
+      "name": "png-dpi",
+      "exit": 0,
+      "output": "PASS six DPI choices, export scale, PNG density metadata, CRC and decoding\n"
+    },
+    {
+      "name": "math-fonts",
+      "exit": 0,
+      "output": "PASS offline font newcm\nPASS offline font asana\nPASS offline font bonum\nPASS offline font dejavu\nPASS offline font fira\nPASS offline font modern\nPASS offline font pagella\nPASS offline font schola\nPASS offline font stix2\nPASS offline font termes\nPASS offline font tex\n"
+    },
+    {
+      "name": "font-native-reload",
+      "exit": 0,
+      "output": "PASS font changes preserve edited formulas despite stale native launch snapshot\n"
+    },
+    {
+      "name": "shortcut-previews",
+      "exit": 0,
+      "output": "PASS all ten shortcut panels render after delayed MathJax startup; no placeholder previews or dash labels\n"
+    }
+  ]
+}

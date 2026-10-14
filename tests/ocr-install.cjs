@@ -5,7 +5,8 @@ const ocr=fs.readFileSync('macos/FormulaOCR.swift','utf8');
 const extract=(s,a,b)=>s.slice(s.indexOf(a),s.indexOf(b,s.indexOf(a)));
 const processMethods=extract(native,'    func run(','    func discover(');
 const selection=extract(ocr,'    private func discoverPython3(','    // Build replacements');
-const rootProperty=ocr.split('\n').find(x=>x.includes('private var ocrRoot:'));
+// Harness-only root: production's shared path must not be touched.
+const rootProperty='private var ocrRoot: URL { support.appendingPathComponent("OCR") }';
 const activation=extract(ocr,'    private func activateOCREnvironment(','    private func reportOCRPhase(');
 const dir=fs.mkdtempSync(path.join(os.tmpdir(),'formula-install-test-'));
 try{

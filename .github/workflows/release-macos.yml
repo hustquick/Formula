@@ -67,6 +67,7 @@ jobs:
           node tests/ocr-image.cjs
           npm install --no-save --package-lock=false playwright
           npx playwright install chromium
+          node tests/clipboard-ocr.cjs
           node tests/ocr-behavior.cjs
           node tests/document-behavior.cjs
           node tests/ocr-preview.cjs
@@ -80,6 +81,8 @@ jobs:
           node tests/output-actions.cjs
           node tests/native-preview-size.cjs
           node tests/shortcut-previews.cjs
+          npm run test:editor
+          node tests/typst-document-body.cjs
           python -m venv "$RUNNER_TEMP/document-venv"
           "$RUNNER_TEMP/document-venv/bin/python" -m pip install -r macos/document-requirements.txt
           "$RUNNER_TEMP/document-venv/bin/python" macos/formula-document-runner.py --check

@@ -1,0 +1,43 @@
+{
+  "application": "/Applications/Formula.app",
+  "bundleIdentifier": "org.mathforge.desktop",
+  "observations": [
+    {
+      "case": "visual select x / superscript / type 2",
+      "source": "{x}^2",
+      "result": "pass"
+    },
+    {
+      "case": "select expression / hat",
+      "source": "\\hat{{x}^2}",
+      "result": "pass"
+    },
+    {
+      "case": "Cmd+Z / Shift+Cmd+Z",
+      "result": "pass",
+      "detail": "original script restored and accent reapplied; History records both commands and typing"
+    },
+    {
+      "case": "command palette Cmd+A / Cmd+C",
+      "result": "pass",
+      "clipboardText": "audit-text-copy",
+      "pasteboardTypes": [
+        "public.utf8-plain-text",
+        "NSStringPboardType"
+      ]
+    },
+    {
+      "case": "source syntax paint",
+      "result": "pass",
+      "detail": "actual screenshot shows Typst command/numeric/bracket paint aligned with textarea and rendered result"
+    },
+    {
+      "case": "WPS Writer graph paste",
+      "result": "unverified",
+      "detail": "temporary blank RTF opened, but native automation returns stale menu tree and no screenshot; no successful paste claimed"
+    }
+  ],
+  "latestBundleInstalled": false,
+  "pending": "Mac locked during restoration/install of latest indentation build",
+  "remotePushed": false
+}

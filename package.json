@@ -2,7 +2,8 @@
   "scripts": {
     "sync:latexlive": "node scripts/sync-latexlive-catalog.mjs",
     "validate:v1.1": "node scripts/validate-v1.1.mjs",
-    "build:vendor": "node build-vendor.mjs"
+    "build:vendor": "node build-vendor.mjs",
+    "test:editor": "node scripts/test-editor.cjs"
   },
   "dependencies": {
     "@mathjax/mathjax-asana-font": "4.1.3",

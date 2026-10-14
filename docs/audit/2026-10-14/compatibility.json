@@ -1,0 +1,1084 @@
+[
+  {
+    "group": "algebra",
+    "id": "algebra_1",
+    "storedTypst": false,
+    "latex": "\\left(x-1\\right)\\left(x+3\\right)",
+    "typst": "(x - 1)(x + 3)",
+    "back": "(x - 1)(x + 3)",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_2",
+    "storedTypst": false,
+    "latex": "\\sqrt{\n  a^2+b^2\n}",
+    "typst": "sqrt(\n  a^2 + b^2\n)",
+    "back": "\\sqrt{\n  a^2 + b^2\n}",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_3",
+    "storedTypst": false,
+    "latex": "\\left ( \\frac{a}{b}\\right )^{n}= \\frac{a^{n}}{b^{n}}",
+    "typst": "(a/b)^n = (a^n)/(b^n)",
+    "back": "\\left(\\frac{a}{b} \\right)^n = \\frac{a^n}{b^n}",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_4",
+    "storedTypst": false,
+    "latex": "\\frac{a}{b}\\pm \\frac{c}{d}= \\frac{ad \\pm bc}{bd}",
+    "typst": "a/b plus.minus c/d = (a d plus.minus b c)/(b d)",
+    "back": "\\frac{a}{b} \\pm \\frac{c}{d} = \\frac{a d \\pm b c}{b d}",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_5",
+    "storedTypst": false,
+    "latex": "\\frac{x^{2}}{a^{2}}-\\frac{y^{2}}{b^{2}}=1",
+    "typst": "(x^2)/(a^2) - (y^2)/(b^2) = 1",
+    "back": "\\frac{x^2}{a^2} - \\frac{y^2}{b^2} = 1",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_6",
+    "storedTypst": false,
+    "latex": "\\frac{\n  1\n}{\n  \\sqrt{a}\n}=\\frac{\n  \\sqrt{a}\n}{\n  a\n},a\\ge 0\\frac{\n  1\n}{\n  \\sqrt{a}\n}=\\frac{\n  \\sqrt{a}\n}{\n  a\n},a\\ge 0",
+    "typst": "(\n1\n)/(\nsqrt(a)\n) = (\nsqrt(a)\n)/(\na\n) , a >= 0 (\n1\n)/(\nsqrt(a)\n) = (\nsqrt(a)\n)/(\na\n) , a >= 0",
+    "back": "\\frac{\n1\n}{\n\\sqrt{a}\n} = \\frac{\n\\sqrt{a}\n}{\na\n} , a \\ge 0 \\frac{\n1\n}{\n\\sqrt{a}\n} = \\frac{\n\\sqrt{a}\n}{\na\n} , a \\ge 0",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_7",
+    "storedTypst": false,
+    "latex": "\\sqrt[n]{a^{n}}=\\left ( \\sqrt[n]{a}\\right )^{n}",
+    "typst": "root(n, a^n) = (root(n, a))^n",
+    "back": "\\sqrt[n]{a^n} = (\\sqrt[n]{a})^n",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_8",
+    "storedTypst": false,
+    "latex": "x ={-b \\pm \\sqrt{b^2-4ac}\\over 2a}",
+    "convertError": "Unknown token: \\over"
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_9",
+    "storedTypst": false,
+    "latex": "y-y_{1}=k \\left( x-x_{1}\\right)",
+    "typst": "y - y_1 = k(x - x_1)",
+    "back": "y - y_1 = k(x - x_1)",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_10",
+    "storedTypst": false,
+    "latex": "\\left\\{\\begin{matrix}\n  x=a + r\\text{cos}\\theta \\\\\n  y=b + r\\text{sin}\\theta \n\\end{matrix}\\right.",
+    "typst": "lr(\\{mat(delim: #none, x = a + r \"cos\" theta;\ny = b + r \"sin\" theta))",
+    "reverseError": "Unmatched brackets or parentheses",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_11",
+    "storedTypst": false,
+    "latex": "\\begin{array}{l}\n  \\text{对于方程形如：}x^{3}-1=0 \\\\\n  \\text{设}\\text{:}\\omega =\\frac{\n  -1+\\sqrt{3}i\n}{\n  2\n} \\\\\n  x_{1}=1,x_{2}= \\omega =\\frac{\n  -1+\\sqrt{3}i\n}{\n  2\n} \\\\\n  x_{3}= \\omega ^{2}=\\frac{\n  -1-\\sqrt{3}i\n}{\n  2\n} \n\\end{array}",
+    "typst": "mat(delim: #none, align: #left, \"对于方程形如：\" x^3 - 1 = 0;\n\"设\" \":\" omega = (\n- 1 + sqrt(3) i\n)/(\n2\n);\nx_1 = 1 comma x_2 = omega = (\n- 1 + sqrt(3) i\n)/(\n2\n);\nx_3 = omega^2 = (\n- 1 - sqrt(3) i\n)/(\n2\n))",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_12",
+    "storedTypst": false,
+    "latex": "\\begin{array}{l}\n  a\\mathop{{x}}\\nolimits^{{2}}+bx+c=0 \\\\\n  \\Delta =\\mathop{{b}}\\nolimits^{{2}}-4ac \\\\\n  \\left\\{\\begin{matrix}\n    \\Delta \\gt 0\\text{方程有两个不相等的实根} \\\\\n    \\Delta = 0\\text{方程有两个不相等的实根} \\\\\n    \\Delta \\lt 0\\text{方程有两个不相等的实根} \n  \\end{matrix}\\right.    \n\\end{array}",
+    "convertError": "Unknown token: \\nolimits"
+  },
+  {
+    "group": "algebra",
+    "id": "algebra_13",
+    "storedTypst": false,
+    "latex": "\\begin{array}{l}\n  a\\mathop{{x}}\\nolimits^{{2}}+bx+c=0 \\\\\n  \\Delta =\\mathop{{b}}\\nolimits^{{2}}-4ac \\\\\n  \\mathop{{x}}\\nolimits_{{1,2}}=\\frac{\n  {-b \\pm  \n  \\sqrt{\n  {\\mathop{{b}}\\nolimits^{{2}}-4ac}\n  }}\n}{\n  {2a}\n} \\\\\n  \\mathop{{x}}\\nolimits_{{1}}+\\mathop{{x}}\\nolimits_{{2}}=-\\frac{{b}}{{a}} \\\\\n  \\mathop{{x}}\\nolimits_{{1}}\\mathop{{x}}\\nolimits_{{2}}=\\frac{{c}}{{a}} \n\\end{array}",
+    "convertError": "Unknown token: \\nolimits"
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_1",
+    "storedTypst": false,
+    "latex": "\\Delta A B C",
+    "typst": "Delta A B C",
+    "back": "\\Delta A B C",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_2",
+    "storedTypst": false,
+    "latex": "a \\parallel c,b \\parallel c \\Rightarrow a \\parallel b",
+    "typst": "a parallel c, b parallel c => a parallel b",
+    "back": "a \\parallel c, b \\parallel c \\Rightarrow a \\parallel b",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_3",
+    "storedTypst": false,
+    "latex": "l \\perp \\beta ,l \\subset \\alpha \\Rightarrow \\alpha \\perp \\beta",
+    "typst": "l perp beta, l subset alpha => alpha perp beta",
+    "back": "l \\perp \\beta, l \\subset \\alpha \\Rightarrow \\alpha \\perp \\beta",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_4",
+    "storedTypst": false,
+    "latex": "\\left.\\begin{matrix}\n  a \\perp \\alpha \\\\\n  b \\perp \\alpha \n\\end{matrix}\\right\\}\\Rightarrow a \\parallel b",
+    "typst": "lr(mat(delim: #none, a perp alpha;\nb perp alpha)}) => a parallel b",
+    "reverseError": "Unmatched brackets or parentheses",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_5",
+    "storedTypst": false,
+    "latex": "P \\in \\alpha ,P \\in \\beta , \\alpha \\cap \\beta =l \\Rightarrow P \\in l",
+    "typst": "P in alpha, P in beta, alpha inter beta = l => P in l",
+    "back": "P \\in \\alpha, P \\in \\beta, \\alpha \\cap \\beta = l \\Rightarrow P \\in l",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_6",
+    "storedTypst": false,
+    "latex": "\\alpha \\perp \\beta , \\alpha \\cap \\beta =l,a \\subset \\alpha ,a \\perp l  \n  \\Rightarrow a \\perp \\beta",
+    "typst": "alpha perp beta, alpha inter beta = l, a subset alpha, a perp l\n=> a perp beta",
+    "back": "\\alpha \\perp \\beta, \\alpha \\cap \\beta = l, a \\subset \\alpha, a \\perp l\n\\Rightarrow a \\perp \\beta",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_7",
+    "storedTypst": false,
+    "latex": "\\left.\\begin{matrix}\n  a \\subset \\beta ,b \\subset \\beta ,a \\cap b=P \\\\\n  a \\parallel \\partial ,b \\parallel \\partial  \n\\end{matrix}\\right\\}\\Rightarrow \\beta \\parallel \\alpha",
+    "typst": "lr(mat(delim: #none, a subset beta comma b subset beta comma a inter b = P;\na parallel partial comma b parallel partial)}) => beta parallel alpha",
+    "reverseError": "Unmatched brackets or parentheses",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_8",
+    "storedTypst": false,
+    "latex": "\\alpha \\parallel \\beta , \\gamma \\cap \\alpha =a, \\gamma \\cap \\beta =b \\Rightarrow a \\parallel b",
+    "typst": "alpha parallel beta, gamma inter alpha = a, gamma inter beta = b => a parallel b",
+    "back": "\\alpha \\parallel \\beta, \\gamma \\cap \\alpha = a, \\gamma \\cap \\beta = b \\Rightarrow a \\parallel b",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_9",
+    "storedTypst": false,
+    "latex": "A \\in l,B \\in l,A \\in \\alpha ,B \\in \\alpha \\Rightarrow l \\subset \\alpha",
+    "typst": "A in l, B in l, A in alpha, B in alpha => l subset alpha",
+    "back": "A \\in l, B \\in l, A \\in \\alpha, B \\in \\alpha \\Rightarrow l \\subset \\alpha",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_10",
+    "storedTypst": false,
+    "latex": "\\left.\\begin{matrix}\n  m \\subset \\alpha ,n \\subset \\alpha ,m \\cap n=P \\\\\n  a \\perp m,a \\perp n \n\\end{matrix}\\right\\}\\Rightarrow a \\perp \\alpha",
+    "typst": "lr(mat(delim: #none, m subset alpha comma n subset alpha comma m inter n = P;\na perp m comma a perp n)}) => a perp alpha",
+    "reverseError": "Unmatched brackets or parentheses",
+    "compile": true
+  },
+  {
+    "group": "geometry",
+    "id": "geometry_11",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  \\text{直角三角形中,直角边长a,b,斜边边长c} \\\\\n  a^{2}+b^{2}=c^{2} \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, \"直角三角形中,直角边长a,b,斜边边长c\";\na^2 + b^2 = c^2)",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_1",
+    "storedTypst": false,
+    "latex": "a > b,b > c \\Rightarrow a > c",
+    "typst": "a > b, b > c => a > c",
+    "back": "a > b, b > c \\Rightarrow a > c",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_2",
+    "storedTypst": false,
+    "latex": "a > b,c > d \\Rightarrow a+c > b+d",
+    "typst": "a > b, c > d => a + c > b + d",
+    "back": "a > b, c > d \\Rightarrow a + c > b + d",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_3",
+    "storedTypst": false,
+    "latex": "a > b > 0,c > d > 0 \\Rightarrow ac bd",
+    "typst": "a > b > 0, c > d > 0 => a c b d",
+    "back": "a > b > 0, c > d > 0 \\Rightarrow a c b d",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_4",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  a \\gt b,c \\gt 0 \\Rightarrow ac \\gt bc \\\\\n  a \\gt b,c \\lt 0 \\Rightarrow ac \\lt bc \n\\end{array}",
+    "convertError": "Unknown token: \\gt"
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_5",
+    "storedTypst": false,
+    "latex": "\\left | a-b \\right | \\geqslant \\left | a \\right | -\\left | b \\right |",
+    "typst": "lr(|a - b|) gt.eq.slant lr(|a|) - lr(|b|)",
+    "back": "|a - b | \\geqslant |a | - |b |",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_6",
+    "storedTypst": false,
+    "latex": "-\\left | a \\right |\\leq a\\leqslant \\left | a \\right |",
+    "typst": "-lr(|a|) <= a lt.eq.slant lr(|a|)",
+    "back": "-|a | \\le a \\leqslant |a |",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_7",
+    "storedTypst": false,
+    "latex": "\\left | a \\right |\\leqslant b \\Rightarrow -b \\leqslant a \\leqslant \\left | b \\right |",
+    "typst": "lr(|a|) lt.eq.slant b => - b lt.eq.slant a lt.eq.slant lr(|b|)",
+    "back": "|a | \\leqslant b \\Rightarrow - b \\leqslant a \\leqslant |b |",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_8",
+    "storedTypst": false,
+    "latex": "\\left | a+b \\right | \\leqslant \\left | a \\right | + \\left | b \\right |",
+    "typst": "lr(|a + b|) lt.eq.slant lr(|a|) + lr(|b|)",
+    "back": "|a + b | \\leqslant |a | + |b |",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_9",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  a \\gt b \\gt 0,n \\in N^{\\ast},n \\gt 1 \\\\\n  \\Rightarrow a^{n}\\gt b^{n}, \\sqrt[n]{a}\\gt \\sqrt[n]{b} \n\\end{array}",
+    "convertError": "Unknown token: \\gt"
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_10",
+    "storedTypst": false,
+    "latex": "\\left( \\sum_{k=1}^n a_k b_k \\right)^{\\!\\!2}\\leq   \n\\left( \\sum_{k=1}^n a_k^2 \\right) \\left( \\sum_{k=1}^n b_k^2 \\right)",
+    "typst": "(sum_(k = 1)^n a_k b_k)^(#h(-math.thin.amount) #h(-math.thin.amount) 2) <=\n(sum_(k = 1)^n a_k^2)(sum_(k = 1)^n b_k^2)",
+    "back": "(\\sum_{k = 1}^n a_k b_k)^{\\hspace{-math.thin.amount} \\hspace{-math.thin.amount} 2} \\le\n(\\sum_{k = 1}^n a_k^2)(\\sum_{k = 1}^n b_k^2)",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_11",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  a,b \\in R^{+} \\\\\n  \\Rightarrow \\frac{\n  a+b\n}{\n  {2}\n}\\ge \\sqrt{ab} \\\\\n  \\left( \\text{当且仅当}a=b\\text{时取“}=\\text{”号}\\right) \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, a comma b in R^+;\n=> (\na + b\n)/(\n2\n) >= sqrt(a b);\n(\"当且仅当\" a = b \"时取“\" = \"”号\"))",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_12",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  a,b \\in R \\\\\n  \\Rightarrow a^{2}+b^{2}\\gt 2ab \\\\\n  \\left( \\text{当且仅当}a=b\\text{时取“}=\\text{”号}\\right) \n\\end{array}",
+    "convertError": "Unknown token: \\gt"
+  },
+  {
+    "group": "inequality",
+    "id": "inequality_13",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  H_{n}=\\frac{\n  n\n}{\n  \\sum \\limits_{i=1}^{n}\\frac{1}{x_{i}}\n}= \\frac{\n  n\n}{\n  \\frac{1}{x_{1}}+ \\frac{1}{x_{2}}+ \\cdots + \\frac{1}{x_{n}}\n} \\\\\n  G_{n}=\\sqrt[n]{\n  \\prod \\limits_{i=1}^{n}x_{i}\n}= \\sqrt[n]{x_{1}x_{2}\\cdots x_{n}} \\\\\n  A_{n}=\\frac{1}{n}\\sum \\limits_{i=1}^{n}x_{i}=\\frac{\n  x_{1}+ x_{2}+ \\cdots + x_{n}\n}{\n  n\n} \\\\\n  Q_{n}=\\sqrt{\n  \\sum \\limits_{i=1}^{n}x_{i}^{2}\n}= \\sqrt{\n  \\frac{\n  x_{1}^{2}+ x_{2}^{2}+ \\cdots + x_{n}^{2}\n  }{\n  n\n  }\n} \\\\\n  H_{n}\\leq G_{n}\\leq A_{n}\\leq Q_{n} \n\\end{array}",
+    "convertError": "Unknown token: \\limits"
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_1",
+    "storedTypst": false,
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}x^n=nx^{n-1}",
+    "typst": "dif/(dif x) x^n = n x^(n - 1)",
+    "back": "\\frac{\\mathrm{d}}{\\mathrm{d} x} x^n = n x^{n - 1}",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_2",
+    "storedTypst": false,
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}e^{ax}=a\\,e^{ax}",
+    "typst": "dif/(dif x) e^(a x) = a thin e^(a x)",
+    "back": "\\frac{\\mathrm{d}}{\\mathrm{d} x} e^{a x} = a \\, e^{a x}",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_3",
+    "storedTypst": false,
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\ln(x)=\\frac{1}{x}",
+    "typst": "dif/(dif x) ln(x) = 1/x",
+    "back": "\\frac{\\mathrm{d}}{\\mathrm{d} x} \\ln(x) = \\frac{1}{x}",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_4",
+    "storedTypst": false,
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\sin x=\\cos x",
+    "typst": "dif/(dif x) sin x = cos x",
+    "back": "\\frac{\\mathrm{d}}{\\mathrm{d} x} \\sin x = \\cos x",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_5",
+    "storedTypst": false,
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\cos x=-\\sin x",
+    "typst": "dif/(dif x) cos x = - sin x",
+    "back": "\\frac{\\mathrm{d}}{\\mathrm{d} x} \\cos x = - \\sin x",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_6",
+    "storedTypst": false,
+    "latex": "\\int k\\mathrm{d}x = kx+C",
+    "typst": "integral k dif x = k x + C",
+    "back": "\\int k \\mathrm{d} x = k x + C",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_7",
+    "storedTypst": false,
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\tan x=\\sec^2 x",
+    "typst": "dif/(dif x) tan x = sec^2 x",
+    "back": "\\frac{\\mathrm{d}}{\\mathrm{d} x} \\tan x = \\sec^2 x",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_8",
+    "storedTypst": false,
+    "latex": "\\frac{\\mathrm{d}}{\\mathrm{d}x}\\cot x=-\\csc^2 x",
+    "typst": "dif/(dif x) cot x = - csc^2 x",
+    "back": "\\frac{\\mathrm{d}}{\\mathrm{d} x} \\cot x = - \\csc^2 x",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_9",
+    "storedTypst": false,
+    "latex": "\\int \\frac{1}{x}\\mathrm{d}x= \\ln \\left| x \\right| +C",
+    "typst": "integral 1/x dif x = ln lr(|x|) + C",
+    "back": "\\int \\frac{1}{x} \\mathrm{d} x = \\ln |x | + C",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_10",
+    "storedTypst": false,
+    "latex": "\\int \\frac{\n  1\n}{\n  \\sqrt{1-x^{2}}\n}\\mathrm{d}x= \\arcsin x +C",
+    "convertError": "Unknown token: \\arcsin"
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_11",
+    "storedTypst": false,
+    "latex": "\\int \\frac{\n  1\n}{\n  1+x^{2}\n}\\mathrm{d}x= \\arctan x +C",
+    "convertError": "Unknown token: \\arctan"
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_12",
+    "storedTypst": false,
+    "latex": "\\int u \\frac{\\mathrm{d}v}{\\mathrm{d}x}\\,\\mathrm{d}x=uv-\\int \\frac{\\mathrm{d}u}{\\mathrm{d}x}v\\,\\mathrm{d}x",
+    "typst": "integral u (dif v)/(dif x) thin dif x = u v - integral (dif u)/(dif x) v thin dif x",
+    "back": "\\int u \\frac{\\mathrm{d} v}{\\mathrm{d} x} \\, \\mathrm{d} x = u v - \\int \\frac{\\mathrm{d} u}{\\mathrm{d} x} v \\, \\mathrm{d} x",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_13",
+    "storedTypst": false,
+    "latex": "f(x) = \\int_{-\\infty}^\\infty  \\hat f(x)\\xi\\,e^{2 \\pi i \\xi x}  \\,\\mathrm{d}\\xi",
+    "typst": "f(x) = integral_(-infinity)^infinity hat(f) (x) xi thin e^(2 pi i xi x) thin dif xi",
+    "back": "f(x) = \\int_{-\\infty}^\\infty \\hat{f} (x) \\xi \\, e^{2 \\pi i \\xi x} \\, \\mathrm{d} \\xi",
+    "compile": true
+  },
+  {
+    "group": "calculous",
+    "id": "calculous_14",
+    "storedTypst": false,
+    "latex": "\\int x^{\\mu}\\mathrm{d}x=\\frac{\n  x^{\\mu +1}\n}{\n  \\mu +1\n}+C, \\left({\\mu \\neq -1}\\right)",
+    "typst": "integral x^mu dif x = (\nx^(mu + 1)\n)/(\nmu + 1\n) + C, (mu != - 1)",
+    "back": "\\int x^\\mu \\mathrm{d} x = \\frac{\nx^{\\mu + 1}\n}{\n\\mu + 1\n} + C, (\\mu \\not = - 1)",
+    "compile": true
+  },
+  {
+    "group": "array",
+    "id": "array_1",
+    "storedTypst": false,
+    "latex": "\\begin{pmatrix}\n  1 & 0 \\\\\n  0 & 1  \n\\end{pmatrix}",
+    "typst": "mat(\n  1,\n  0;\n  0,\n  1\n)",
+    "back": "\\begin{pmatrix}\n\n  1 &\n  0 \\\\\n  0 &\n  1\n\n\\end{pmatrix}",
+    "compile": true
+  },
+  {
+    "group": "array",
+    "id": "array_2",
+    "storedTypst": false,
+    "latex": "\\begin{pmatrix}\n  a_{11} & a_{12} & a_{13} \\\\\n  a_{21} & a_{22} & a_{23} \\\\\n  a_{31} & a_{32} & a_{33}  \n\\end{pmatrix}",
+    "typst": "mat(\n  a_11,\n  a_12,\n  a_13;\n  a_21,\n  a_22,\n  a_23;\n  a_31,\n  a_32,\n  a_33\n)",
+    "back": "\\begin{pmatrix}\n\n  a_{11} &\n  a_{12} &\n  a_{13} \\\\\n  a_{21} &\n  a_{22} &\n  a_{23} \\\\\n  a_{31} &\n  a_{32} &\n  a_{33}\n\n\\end{pmatrix}",
+    "compile": true
+  },
+  {
+    "group": "array",
+    "id": "array_3",
+    "storedTypst": false,
+    "latex": "\\begin{pmatrix}\n  a_{11} & \\cdots & a_{1n} \\\\\n  \\vdots & \\ddots & \\vdots \\\\\n  a_{m1} & \\cdots & a_{mn}  \n\\end{pmatrix}",
+    "typst": "mat(\n  a_11,\n  dots.c,\n  a_(1 n);\n  dots.v,\n  dots.down,\n  dots.v;\n  a_(m 1),\n  dots.c,\n  a_(m n)\n)",
+    "back": "\\begin{pmatrix}\n\n  a_{11} &\n  \\cdots &\n  a_{1 n} \\\\\n  \\vdots &\n  \\ddots &\n  \\vdots \\\\\n  a_{m 1} &\n  \\cdots &\n  a_{m n}\n\n\\end{pmatrix}",
+    "compile": true
+  },
+  {
+    "group": "array",
+    "id": "array_4",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  A=A^{T}  \\\\\n  A=-A^{T} \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, A = A^T;\nA = - A^T)",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "array",
+    "id": "array_5",
+    "storedTypst": false,
+    "latex": "O = \\begin{bmatrix}\n  0 & 0 & \\cdots & 0 \\\\\n  0 & 0 & \\cdots & 0 \\\\\n  \\vdots & \\vdots & \\ddots & \\vdots \\\\\n  0 & 0 & \\cdots & 0  \n\\end{bmatrix}",
+    "typst": "O = mat(\n  delim: \"[\",\n  0,\n  0,\n  dots.c,\n  0;\n  0,\n  0,\n  dots.c,\n  0;\n  dots.v,\n  dots.v,\n  dots.down,\n  dots.v;\n  0,\n  0,\n  dots.c,\n  0\n)",
+    "reverseError": "Invalid number of arguments for delim",
+    "compile": true
+  },
+  {
+    "group": "array",
+    "id": "array_6",
+    "storedTypst": false,
+    "latex": "A_{m\\times n}=  \n\\begin{bmatrix}\n  a_{11}& a_{12}& \\cdots  & a_{1n} \\\\\n  a_{21}& a_{22}& \\cdots  & a_{2n} \\\\\n  \\vdots & \\vdots & \\ddots & \\vdots \\\\\n  a_{m1}& a_{m2}& \\cdots  & a_{mn}  \n\\end{bmatrix}  \n=\\left [ a_{ij}\\right ]",
+    "typst": "A_(m times n) =\nmat(\n  delim: \"[\",\n  a_11,\n  a_12,\n  dots.c,\n  a_(1 n);\n  a_21,\n  a_22,\n  dots.c,\n  a_(2 n);\n  dots.v,\n  dots.v,\n  dots.down,\n  dots.v;\n  a_(m 1),\n  a_(m 2),\n  dots.c,\n  a_(m n)\n)\n= [a_(i j)]",
+    "reverseError": "Invalid number of arguments for delim",
+    "compile": true
+  },
+  {
+    "group": "array",
+    "id": "array_7",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  A={\\left[ a_{ij}\\right]_{m \\times n}},B={\\left[ b_{ij}\\right]_{n \\times s}} \\\\\n  c_{ij}= \\sum \\limits_{k=1}^{{n}}a_{ik}b_{kj} \\\\\n  C=AB=\\left[ c_{ij}\\right]_{m \\times s}  \n  = \\left[ \\sum \\limits_{k=1}^{n}a_{ik}b_{kj}\\right]_{m \\times s} \n\\end{array}",
+    "convertError": "Unknown token: \\limits"
+  },
+  {
+    "group": "array",
+    "id": "array_8",
+    "storedTypst": false,
+    "latex": "\\mathbf{V}_1 \\times \\mathbf{V}_2 =  \n\\begin{vmatrix}\n  \\mathbf{i}& \\mathbf{j}& \\mathbf{k} \\\\\n  \\frac{\\partial X}{\\partial u}& \\frac{\\partial Y}{\\partial u}& 0 \\\\\n  \\frac{\\partial X}{\\partial v}& \\frac{\\partial Y}{\\partial v}& 0 \\\\\n\\end{vmatrix}",
+    "typst": "upright(bold(V))_1 times upright(bold(V))_2 =\nmat(\n  delim: \"|\",\n  upright(bold(i)),\n  upright(bold(j)),\n  upright(bold(k));\n  (partial X)/(partial u),\n  (partial Y)/(partial u),\n  0;\n  (partial X)/(partial v),\n  (partial Y)/(partial v),\n  0;\n  \n)",
+    "reverseError": "Invalid number of arguments for delim",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_1",
+    "storedTypst": false,
+    "latex": "e^{i \\theta}",
+    "typst": "e^(i theta)",
+    "back": "e^{i \\theta}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_2",
+    "storedTypst": false,
+    "latex": "\\left(\\frac{\\pi}{2}-\\theta \\right )",
+    "typst": "(pi/2 - theta)",
+    "back": "\\left(\\frac{\\pi}{2} - \\theta \\right)",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_3",
+    "storedTypst": false,
+    "latex": "\\text{sin}^{2}\\frac{\\alpha}{2}=\\frac{1- \\text{cos}\\alpha}{2}",
+    "typst": "\"sin\"^2 alpha/2 = (1 - \"cos\" alpha)/2",
+    "back": "\\text{sin}^2 \\frac{\\alpha}{2} = \\frac{1 - \\text{cos} \\alpha}{2}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_4",
+    "storedTypst": false,
+    "latex": "\\text{cos}^{2}\\frac{\\alpha}{2}=\\frac{\n  1+ \\text{cos}\\alpha\n}{\n  2\n}",
+    "typst": "\"cos\"^2 alpha/2 = (\n1 + \"cos\" alpha\n)/(\n2\n)",
+    "back": "\\text{cos}^2 \\frac{\\alpha}{2} = \\frac{\n1 + \\text{cos} \\alpha\n}{\n2\n}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_5",
+    "storedTypst": false,
+    "latex": "\\text{tan}\\frac{\\alpha}{2}=\\frac{\n  \\text{sin}\\alpha\n}{\n  1+ \\text{cos}\\alpha\n}",
+    "typst": "\"tan\" alpha/2 = (\n\"sin\" alpha\n)/(\n1 + \"cos\" alpha\n)",
+    "back": "\\text{tan} \\frac{\\alpha}{2} = \\frac{\n\\text{sin} \\alpha\n}{\n1 + \\text{cos} \\alpha\n}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_6",
+    "storedTypst": false,
+    "latex": "\\sin \\alpha + \\sin \\beta =2 \\sin \\frac{\n  \\alpha + \\beta\n}{\n  2\n}\\cos \\frac{\\alpha - \\beta}{2}",
+    "typst": "sin alpha + sin beta = 2 sin (\nalpha + beta\n)/(\n2\n) cos (alpha - beta)/2",
+    "back": "\\sin \\alpha + \\sin \\beta = 2 \\sin \\frac{\n\\alpha + \\beta\n}{\n2\n} \\cos \\frac{\\alpha - \\beta}{2}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_7",
+    "storedTypst": false,
+    "latex": "\\sin \\alpha - \\sin \\beta =2 \\cos \\frac{\n  \\alpha + \\beta\n}{\n  2\n}\\sin \\frac{\\alpha - \\beta}{2}",
+    "typst": "sin alpha - sin beta = 2 cos (\nalpha + beta\n)/(\n2\n) sin (alpha - beta)/2",
+    "back": "\\sin \\alpha - \\sin \\beta = 2 \\cos \\frac{\n\\alpha + \\beta\n}{\n2\n} \\sin \\frac{\\alpha - \\beta}{2}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_8",
+    "storedTypst": false,
+    "latex": "\\cos \\alpha + \\cos \\beta =2 \\cos \\frac{\n  \\alpha + \\beta\n}{\n  2\n}\\cos \\frac{\\alpha - \\beta}{2}",
+    "typst": "cos alpha + cos beta = 2 cos (\nalpha + beta\n)/(\n2\n) cos (alpha - beta)/2",
+    "back": "\\cos \\alpha + \\cos \\beta = 2 \\cos \\frac{\n\\alpha + \\beta\n}{\n2\n} \\cos \\frac{\\alpha - \\beta}{2}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_9",
+    "storedTypst": false,
+    "latex": "\\cos \\alpha - \\cos \\beta =-2\\sin \\frac{\n  \\alpha + \\beta\n}{\n  2\n}\\sin \\frac{\\alpha - \\beta}{2}",
+    "typst": "cos alpha - cos beta = - 2 sin (\nalpha + beta\n)/(\n2\n) sin (alpha - beta)/2",
+    "back": "\\cos \\alpha - \\cos \\beta = - 2 \\sin \\frac{\n\\alpha + \\beta\n}{\n2\n} \\sin \\frac{\\alpha - \\beta}{2}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_10",
+    "storedTypst": false,
+    "latex": "a^{2}=b^{2}+c^{2}-2bc\\cos A",
+    "typst": "a^2 = b^2 + c^2 - 2 b c cos A",
+    "back": "a^2 = b^2 + c^2 - 2 b c \\cos A",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_11",
+    "storedTypst": false,
+    "latex": "\\frac{\\sin A}{a}=\\frac{\\sin B}{b}=\\frac{\\sin C}{c}=\\frac{1}{2R}",
+    "typst": "(sin A)/a = (sin B)/b = (sin C)/c = 1/(2 R)",
+    "back": "\\frac{\\sin A}{a} = \\frac{\\sin B}{b} = \\frac{\\sin C}{c} = \\frac{1}{2 R}",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_12",
+    "storedTypst": false,
+    "latex": "\\sin \\left ( \\frac{\\pi}{2}-\\alpha \\right ) = \\cos \\alpha",
+    "typst": "sin(pi/2 - alpha) = cos alpha",
+    "back": "\\sin(\\frac{\\pi}{2} - \\alpha) = \\cos \\alpha",
+    "compile": true
+  },
+  {
+    "group": "trigonometry",
+    "id": "trigonometry_13",
+    "storedTypst": false,
+    "latex": "\\sin \\left ( \\frac{\\pi}{2}+\\alpha \\right ) = \\cos \\alpha",
+    "typst": "sin(pi/2 + alpha) = cos alpha",
+    "back": "\\sin(\\frac{\\pi}{2} + \\alpha) = \\cos \\alpha",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_1",
+    "storedTypst": false,
+    "latex": "C_{r}^{n}",
+    "typst": "C_r^n",
+    "back": "C_r^n",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_2",
+    "storedTypst": false,
+    "latex": "\\frac{n!}{r!(n-r)!}",
+    "typst": "(n!)/(r!(n - r)!)",
+    "back": "\\frac{n!}{r!(n - r)!}",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_3",
+    "storedTypst": false,
+    "latex": "\\sum_{i=1}^{n}{X_i}",
+    "typst": "sum_(i = 1)^n X_i",
+    "back": "\\sum_{i = 1}^n X_i",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_4",
+    "storedTypst": false,
+    "latex": "\\sum_{i=1}^{n}{X_i^2}",
+    "typst": "sum_(i = 1)^n X_i^2",
+    "back": "\\sum_{i = 1}^n X_i^2",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_5",
+    "storedTypst": false,
+    "latex": "X_1, \\cdots,X_n",
+    "typst": "X_1 , dots.c, X_n",
+    "back": "X_1 , \\cdots, X_n",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_6",
+    "storedTypst": false,
+    "latex": "\\frac{x-\\mu}{\\sigma}",
+    "typst": "(x - mu)/sigma",
+    "back": "\\frac{x - \\mu}{\\sigma}",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_7",
+    "storedTypst": false,
+    "latex": "\\sum_{i=1}^{n}{(X_i - \\overline{X})^2}",
+    "typst": "sum_(i = 1)^n (X_i - overline(X))^2",
+    "back": "\\sum_{i = 1}^n (X_i - \\overline{X})^2",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_8",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  \\text{若}P \\left( AB \\right) =P \\left( A \\right) P \\left( B \\right) \\\\\n  \\text{则}P \\left( A \\left| B\\right. \\right) =P \\left({B}\\right) \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, \"若\" P(A B) = P(A) P(B);\n\"则\" P(A lr(|B)) = P(B))",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_9",
+    "storedTypst": false,
+    "latex": "P(E) ={n \\choose k}p^k (1-p)^{n-k}",
+    "convertError": "Unknown token: \\choose"
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_10",
+    "storedTypst": false,
+    "latex": "P \\left( A \\right) = \\lim \\limits_{n \\to \\infty}f_{n}\\left ( A \\right )",
+    "convertError": "Unknown token: \\limits"
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_11",
+    "storedTypst": false,
+    "latex": "P \\left( \\bigcup \\limits_{i=1}^{+ \\infty}A_{i}\\right) = \\prod \\limits_{i=1}^{+ \\infty}P{\\left( A_{i}\\right)}",
+    "convertError": "Unknown token: \\limits"
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_12",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  P \\left( \\emptyset \\right) =0 \\\\\n  P \\left( S \\right) =1 \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, P(nothing) = 0;\nP(S) = 1)",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_13",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  \\forall A \\in S \\\\\n  P \\left( A \\right) \\ge 0 \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, forall A in S;\nP(A) >= 0)",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_14",
+    "storedTypst": false,
+    "latex": "P \\left( \\bigcup \\limits_{i=1}^{n}A_{i}\\right) = \\prod \\limits_{i=1}^{n}P \\left( A_{i}\\right)",
+    "convertError": "Unknown token: \\limits"
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_15",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  S= \\binom{N}{n},A_{k}=\\binom{M}{k}\\cdot \\binom{N-M}{n-k} \\\\\n  P\\left ( A_{k}\\right ) = \\frac{\n  \\binom{M}{k}\\cdot \\binom{N-M}{n-k}\n}{\n  \\binom{N}{n}\n} \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, S = binom(N, n) comma A_k = binom(M, k) dot.op binom(N - M, n - k);\nP(A_k) = (\nbinom(M, k) dot.op binom(N - M, n - k)\n)/(\nbinom(N, n)\n))",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "statistics",
+    "id": "statistics_16",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  P_{n}=n! \\\\\n  A_{n}^{k}=\\frac{\n  n!\n}{\n  \\left( n-k \\left) !\\right. \\right.\n} \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, P_n = n!;\nA_n^k = (\nn!\n)/(\nlr(\\(n - k lr(\\)!))\n))",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_1",
+    "storedTypst": false,
+    "latex": "a_{n}=a_{1}q^{n-1}",
+    "typst": "a_n = a_1 q^(n - 1)",
+    "back": "a_n = a_1 q^{n - 1}",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_2",
+    "storedTypst": false,
+    "latex": "a_{n}=a_{1}+ \\left( n-1 \\left) d\\right. \\right.",
+    "typst": "a_n = a_1 + lr(\\(n - 1 lr(\\)d))",
+    "reverseError": "Unmatched brackets or parentheses",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_3",
+    "storedTypst": false,
+    "latex": "S_{n}=na_{1}+\\frac{n \\left( n-1 \\right)}{{2}}d",
+    "typst": "S_n = n a_1 + (n(n - 1))/2 d",
+    "back": "S_n = n a_1 + \\frac{n(n - 1)}{2} d",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_4",
+    "storedTypst": false,
+    "latex": "S_{n}=\\frac{\n  n \\left( a_{1}+a_{n}\\right)\n}{\n  2\n}",
+    "typst": "S_n = (\nn(a_1 + a_n)\n)/(\n2\n)",
+    "back": "S_n = \\frac{\nn(a_1 + a_n)\n}{\n2\n}",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_5",
+    "storedTypst": false,
+    "latex": "\\frac{\n  1\n}{\n  n \\left( n+k \\right)\n}= \\frac{1}{k}\\left( \\frac{1}{n}-\\frac{\n  1\n}{\n  n+k\n}\\right)",
+    "typst": "(\n1\n)/(\nn(n + k)\n) = 1/k (1/n - (\n1\n)/(\nn + k\n))",
+    "back": "\\frac{\n1\n}{\nn(n + k)\n} = \\frac{1}{k} \\left(\\frac{1}{n} - \\frac{\n1\n}{\nn + k\n} \\right)",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_6",
+    "storedTypst": false,
+    "latex": "\\frac{1}{n^{2}-1}= \\frac{1}{2}\\left( \\frac{1}{n-1}-\\frac{\n  1\n}{\n  n+1\n}\\right)",
+    "typst": "1/(n^2 - 1) = 1/2 (1/(n - 1) - (\n1\n)/(\nn + 1\n))",
+    "back": "\\frac{1}{n^2 - 1} = \\frac{1}{2} \\left(\\frac{1}{n - 1} - \\frac{\n1\n}{\nn + 1\n} \\right)",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_7",
+    "storedTypst": false,
+    "latex": "\\frac{1}{4n^{2}-1}=\\frac{1}{2}\\left( \\frac{1}{2n-1}-\\frac{\n  1\n}{\n  2n+1\n}\\right)",
+    "typst": "1/(4 n^2 - 1) = 1/2 (1/(2 n - 1) - (\n1\n)/(\n2 n + 1\n))",
+    "back": "\\frac{1}{4 n^2 - 1} = \\frac{1}{2} \\left(\\frac{1}{2 n - 1} - \\frac{\n1\n}{\n2 n + 1\n} \\right)",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_8",
+    "storedTypst": false,
+    "latex": "\\frac{\n  n+1\n}{\n  n \\left( n-1 \\left) \\cdot 2^{n}\\right. \\right.\n}= \\frac{\n  1\n}{\n  \\left( n-1 \\left) \\cdot 2^{n-1}\\right. \\right.\n}-\\frac{1}{n \\cdot 2^{n}}",
+    "typst": "(\nn + 1\n)/(\nn lr(\\(n - 1 lr(\\)dot.op 2^n))\n) = (\n1\n)/(\nlr(\\(n - 1 lr(\\)dot.op 2^(n - 1)))\n) - 1/(n dot.op 2^n)",
+    "reverseError": "Unmatched brackets or parentheses",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_9",
+    "storedTypst": false,
+    "latex": "\\begin{array}{c}\n  \\text{若}\\left \\{a_{n}\\right \\}、\\left \\{b_{n}\\right \\}\\text{为等差数列}, \\\\\n  \\text{则}\\left \\{a_{n}+ b_{n}\\right \\}\\text{为等差数列} \n\\end{array}",
+    "typst": "mat(delim: #none, align: #center, \"若\" {a_n} 、 {b_n} \"为等差数列\" comma;\n\"则\" {a_n + b_n} \"为等差数列\")",
+    "reverseError": "Not implemented for other named parameters",
+    "compile": true
+  },
+  {
+    "group": "sequence",
+    "id": "sequence_10",
+    "storedTypst": false,
+    "latex": "(1+x)^{n} =1 + \\frac{nx}{1!} + \\frac{n(n-1)x^{2}}{2!} + \\cdots",
+    "typst": "(1 + x)^n = 1 + (n x)/(1!) + (n(n - 1) x^2)/(2!) + dots.c",
+    "back": "(1 + x)^n = 1 + \\frac{n x}{1!} + \\frac{n(n - 1) x^2}{2!} + \\cdots",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_1",
+    "storedTypst": false,
+    "latex": "\\sum {{{ \\vec{F} }_i}} = \\frac{{d \\vec{v} }}{{dt}} = 0",
+    "typst": "sum arrow(F)_i = (d arrow(v))/(d t) = 0",
+    "back": "\\sum \\vec{F}_i = \\frac{d \\vec{v}}{d t} = 0",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_2",
+    "storedTypst": false,
+    "latex": "\\vec{F}  = m \\vec{a}  = m \\frac{{{d^2} \\vec{r} }}{{d{t^2}}}",
+    "typst": "arrow(F) = m arrow(a) = m (d^2 arrow(r))/(d t^2)",
+    "back": "\\vec{F} = m \\vec{a} = m \\frac{d^2 \\vec{r}}{d t^2}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_3",
+    "storedTypst": false,
+    "latex": "{{ \\vec{F} }_{12}} =  - {{ \\vec{F} }_{21}}",
+    "typst": "arrow(F)_12 = - arrow(F)_21",
+    "back": "\\vec{F}_{12} = - \\vec{F}_{21}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_4",
+    "storedTypst": false,
+    "latex": "{E_p} = -\\frac{{GMm}}{r}",
+    "typst": "E_p = - (G M m)/r",
+    "back": "E_p = - \\frac{G M m}{r}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_5",
+    "storedTypst": false,
+    "latex": "\\vec{F}  = k \\frac{{Qq}}{{{r^2}}} \\hat{r}",
+    "typst": "arrow(F) = k (Q q)/(r^2) hat(r)",
+    "back": "\\vec{F} = k \\frac{Q q}{r^2} \\hat{r}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_6",
+    "storedTypst": false,
+    "latex": "\\oint_L { \\vec{E} } \\cdot { \\rm{d}} \\vec{l}  = 0",
+    "typst": "integral.cont_L arrow(E) dot.op upright(d) arrow(l) = 0",
+    "back": "\\oint_L \\vec{E} \\cdot \\mathrm{d} \\vec{l} = 0",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_7",
+    "storedTypst": false,
+    "latex": "d \\vec{B} = \\frac{{{ \\mu _0}}}{{4 \\pi }} \\frac{{Idl \\times \\vec{r} }}{{{r^3}}} =  \\frac{{{ \\mu _0}}}{{4 \\pi }} \\frac{{Idl \\sin \\theta }}{{{r^2}}}",
+    "typst": "d arrow(B) = (mu_0)/(4 pi) (I d l times arrow(r))/(r^3) = (mu_0)/(4 pi) (I d l sin theta)/(r^2)",
+    "back": "d \\vec{B} = \\frac{\\mu_0}{4 \\pi} \\frac{I d l \\times \\vec{r}}{r^3} = \\frac{\\mu_0}{4 \\pi} \\frac{I d l \\sin \\theta}{r^2}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_8",
+    "storedTypst": false,
+    "latex": "d \\vec{F}= Id \\vec{l} \\times \\vec{B}",
+    "typst": "d arrow(F) = I d arrow(l) times arrow(B)",
+    "back": "d \\vec{F} = I d \\vec{l} \\times \\vec{B}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_9",
+    "storedTypst": false,
+    "latex": "E = n{{ \\Delta \\Phi } \\over {\\Delta {t} }}",
+    "convertError": "Unknown token: \\over"
+  },
+  {
+    "group": "physics",
+    "id": "physics_10",
+    "storedTypst": false,
+    "latex": "\\mathop \\Phi \\nolimits_e = \\oint { \\vec{E} \\cdot {d \\vec{S}}  = {1 \\over {{\\varepsilon _0}}}\\sum {q} }",
+    "convertError": "Unknown token: \\nolimits"
+  },
+  {
+    "group": "physics",
+    "id": "physics_11",
+    "storedTypst": false,
+    "latex": "\\oint { \\vec{E} \\cdot {d\\vec{l}}  =  - {{d{\\varphi _B}} \\over {dt}}}",
+    "convertError": "Unknown token: \\over"
+  },
+  {
+    "group": "physics",
+    "id": "physics_12",
+    "storedTypst": false,
+    "latex": "\\oint { \\vec{B} \\cdot {d \\vec{l}}  = { \\mu _0}} I + { \\mu _0}{I_d}",
+    "typst": "integral.cont arrow(B) dot.op d arrow(l) = mu_0 I + mu_0 I_d",
+    "back": "\\oint \\vec{B} \\cdot d \\vec{l} = \\mu_0 I + \\mu_0 I_d",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_13",
+    "storedTypst": false,
+    "latex": "Q = I ^ { 2 } R \\mathrm { t }",
+    "typst": "Q = I^2 R upright(t)",
+    "back": "Q = I^2 R \\mathrm{t}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_14",
+    "storedTypst": false,
+    "latex": "F = G{{Mm} \\over {{r^2}}}",
+    "convertError": "Unknown token: \\over"
+  },
+  {
+    "group": "physics",
+    "id": "physics_15",
+    "storedTypst": false,
+    "latex": "{E_k} = hv - {W_0}",
+    "typst": "E_k = h v - W_0",
+    "back": "E_k = h v - W_0",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_16",
+    "storedTypst": false,
+    "latex": "\\lambda = \\frac{\n  { \\frac{{{c^2}}}{v}}\n}{\n  { \\frac{{m{c^2}}}{h}}\n} = \\frac{h}{{mv}} = \\frac{h}{p}",
+    "typst": "lambda = (\n(c^2)/v\n)/(\n(m c^2)/h\n) = h/(m v) = h/p",
+    "back": "\\lambda = \\frac{\n\\frac{c^2}{v}\n}{\n\\frac{m c^2}{h}\n} = \\frac{h}{m v} = \\frac{h}{p}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_17",
+    "storedTypst": false,
+    "latex": "\\Delta {x} \\Delta {p} \\ge \\frac{h}{{4 \\pi }}",
+    "typst": "Delta x Delta p >= h/(4 pi)",
+    "back": "\\Delta x \\Delta p \\ge \\frac{h}{4 \\pi}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_18",
+    "storedTypst": false,
+    "latex": "l = {l_0} \\sqrt{\n  1 - {{( \\frac{v}{c})}^2}\n}",
+    "typst": "l = l_0 sqrt(\n1 - (v/c)^2\n)",
+    "back": "l = l_0 \\sqrt{\n1 - \\left(\\frac{v}{c} \\right)^2\n}",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_19",
+    "storedTypst": false,
+    "latex": "{y_0} = A \\cos ( \\omega {t} + { \\varphi _0})",
+    "typst": "y_0 = A cos(omega t + phi_0)",
+    "back": "y_0 = A \\cos(\\omega t + \\varphi_0)",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_20",
+    "storedTypst": false,
+    "latex": "y(t) = A \\cos ( \\frac{{2 \\pi {x}}}{ \\lambda } +  \\varphi )",
+    "typst": "y(t) = A cos((2 pi x)/lambda + phi)",
+    "back": "y(t) = A \\cos(\\frac{2 \\pi x}{\\lambda} + \\varphi)",
+    "compile": true
+  },
+  {
+    "group": "physics",
+    "id": "physics_21",
+    "storedTypst": false,
+    "latex": "\\begin{array}{l}\n  \\nabla \\cdot \\mathbf{E} =\\cfrac{\\rho}{\\varepsilon _0}  \\\\\n  \\nabla \\cdot \\mathbf{B} = 0 \\\\\n  \\nabla \\times  \\mathbf{E} = -\\cfrac{\\partial \\mathbf{B}}{\\partial t }  \\\\\n  \\nabla \\times  \\mathbf{B} = \\mu _0\\mathbf{J} + \\mu _0\\varepsilon_0 \\cfrac{\\partial \\mathbf{E}}{\\partial t }   \n\\end{array}",
+    "convertError": "Unknown token: \\cfrac"
+  },
+  {
+    "group": "physics",
+    "id": "physics_22",
+    "storedTypst": false,
+    "latex": "%此公式需要在设置中开启unicode扩展支持 \n\\begin{array}{l}  \n  {\\huge \\unicode{8751}}_\\mathbb{S}  \\mathbf{E} \\cdot\\mathrm{d}s= \\cfrac{Q}{\\varepsilon_0}  \\\\  \n  {\\huge \\unicode{8751}}_\\mathbb{S}  \\mathbf{B} \\cdot\\mathrm{d}s= 0 \\\\  \n  {\\huge \\oint}_{\\mathbb{L}}^{} \\mathbf{E} \\cdot \\mathrm{d}l=-\\cfrac{\\mathrm{d}\\Phi _{\\mathbf{B}}}{\\mathrm{d}t }  \\\\  \n  {\\huge \\oint}_{\\mathbb{L}}^{} \\mathbf{B} \\cdot \\mathrm{d}l=\\mu_0I+ \\mu_0 \\varepsilon_0\\cfrac{\\mathrm{d}\\Phi _{\\mathbf{E}}}{\\mathrm{d}t }   \n\\end{array}",
+    "convertError": "Unknown token: \\huge"
+  },
+  {
+    "group": "physics",
+    "id": "physics_23",
+    "storedTypst": false,
+    "latex": "\\begin{array}{l}\n  \\nabla \\cdot \\mathbf{D} =\\rho _f \\\\\n  \\nabla \\cdot \\mathbf{B} = 0 \\\\\n  \\nabla \\times  \\mathbf{E} = -\\cfrac{\\partial \\mathbf{B}}{\\partial t }  \\\\\n  \\nabla \\times  \\mathbf{H} = \\mathbf{J}_f +  \\cfrac{\\partial \\mathbf{D}}{\\partial t }   \n\\end{array}",
+    "convertError": "Unknown token: \\cfrac"
+  },
+  {
+    "group": "physics",
+    "id": "physics_24",
+    "storedTypst": false,
+    "latex": "%此公式需要在设置中开启unicode扩展支持 \n\\begin{array}{l}  \n  {\\huge \\unicode{8751}}_\\mathbb{S}  \\mathbf{D} \\cdot\\mathrm{d}s= Q_f \\\\  \n  {\\huge \\unicode{8751}}_\\mathbb{S}  \\mathbf{B} \\cdot\\mathrm{d}s= 0 \\\\  \n  {\\huge \\oint}_{\\mathbb{L}}^{} \\mathbf{E} \\cdot \\mathrm{d}l=-\\cfrac{\\mathrm{d}\\Phi _{\\mathbf{B}}}{\\mathrm{d}t }  \\\\  \n  {\\huge \\oint}_{\\mathbb{L}}^{} \\mathbf{H} \\cdot \\mathrm{d}l=I_f+\\cfrac{\\mathrm{d}\\Phi _{\\mathbf{D}}}{\\mathrm{d}t }   \n\\end{array}",
+    "convertError": "Unknown token: \\huge"
+  },
+  {
+    "group": "chemistry",
+    "id": "chemistry_1",
+    "storedTypst": false,
+    "latex": "%此公式需要在【设置】中开启mhchem扩展支持 具体用法请参考【帮助】2.11.2 \n\\ce{SO4^2- + Ba^2+ -> BaSO4 v}",
+    "convertError": "Unknown token: \\ce"
+  },
+  {
+    "group": "chemistry",
+    "id": "chemistry_2",
+    "storedTypst": false,
+    "latex": "%此公式需要在【设置】中开启mhchem扩展支持 具体用法请参考【帮助】2.11.2 \n\\ce{A v B (v) -> B ^ B (^)}",
+    "convertError": "Unknown token: \\ce"
+  },
+  {
+    "group": "chemistry",
+    "id": "chemistry_3",
+    "storedTypst": false,
+    "latex": "%此公式需要在【设置】中开启mhchem扩展支持 具体用法请参考【帮助】2.11.2 \n\\ce{Hg^2+ ->[I-]  $\\underset{\\mathrm{red}}{\\ce{HgI2}}$  ->[I-]  $\\underset{\\mathrm{red}}{\\ce{[Hg^{II}I4]^2-}}$}",
+    "convertError": "Unknown token type"
+  },
+  {
+    "group": "chemistry",
+    "id": "chemistry_4",
+    "storedTypst": false,
+    "latex": "%此公式需要在【设置】中开启mhchem扩展支持 具体用法请参考【帮助】2.11.2 \n\\ce{Zn^2+  <=>[+ 2OH-][+ 2H+]  $\\underset{\\text{amphoteres Hydroxid}}{\\ce{Zn(OH)2 v}}$  <=>[+ 2OH-][+ 2H+]  $\\underset{\\text{Hydroxozikat}}{\\ce{[Zn(OH)4]^2-}}$}",
+    "convertError": "Unknown token type"
+  }
+]

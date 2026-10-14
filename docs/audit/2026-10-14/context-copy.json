@@ -1,0 +1,9 @@
+[
+  {
+    "action": "copyImage",
+    "keys": [
+      "action",
+      "svg"
+    ]
+  }
+]
