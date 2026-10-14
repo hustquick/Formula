@@ -4,7 +4,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
 (async()=>{
  const browser=await chromium.launch({headless:true});
  const page=await browser.newPage();
- await page.setContent('<button>图片识别</button><textarea id="source"></textarea>');
+ await page.setContent('<button>图片识别</button><textarea id="source"></textarea><div id="ocr-module-controls"></div><pre id="ocr-diagnostic-log"></pre>');
  await page.evaluate(()=>{
   window.calls=[];window.imports=[];
   window.statusResponse={installed:true,busy:false,environmentExists:true,pythonAvailable:true,detectorInstalled:true,bytes:1234,engines:{pix2text:{installed:true},unimernet:{installed:true}}};
@@ -27,9 +27,9 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.evaluate(()=>FormulaOCRProgress(calls.at(-1).id,{message:'正在识别 JPG'}));
  assert.equal(await page.locator('[data-status]').textContent(),'正在识别 JPG');
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{error:'模型初始化失败',log:'ModuleNotFoundError: pix2text'}));
- await page.waitForFunction(()=>document.querySelector('[data-status]').textContent==='模型初始化失败');
+ await page.waitForFunction(()=>document.querySelector('[data-status]').textContent.includes('操作失败'));
  assert.equal(await page.locator('[data-log]').textContent(),'ModuleNotFoundError: pix2text');
- assert.equal(await page.locator('.ocr-advanced').getAttribute('open'),'');
+ assert.equal(await page.locator('#formula-ocr-dialog .ocr-advanced').count(),0);
  await page.locator('[data-recognize]').click();
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{cancelled:true}));
  await page.waitForFunction(()=>document.querySelector('[data-status]').textContent==='已取消');
@@ -41,7 +41,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  // Re-open and verify enhanced engine plus full-page multi-select extraction.
  await page.waitForTimeout(550);
  await page.getByText('图片识别',{exact:true}).click();
- await page.locator('[data-engine]').selectOption('unimernet');
+ await page.locator('[data-engine]').evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('change'));},'unimernet');
  await page.locator('[data-mode="page"]').click();
  await page.locator('[data-recognize]').click();
  assert.equal(await page.evaluate(()=>calls.at(-1).engine),'unimernet');
@@ -73,7 +73,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  assert.match(await page.locator('[data-status]').textContent(),/当前未选择公式/);
 
  // Pro installation must keep Basic recognition available and show live logs.
- await page.locator('[data-engine]').selectOption('pix2text');
+ await page.locator('[data-engine]').evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('change'));},'pix2text');
  await page.locator('[data-mode="single"]').click();
  await page.locator('[data-pro-install]').check();
  assert.equal(await page.locator('[data-basic-install]').isChecked(),true);
@@ -107,8 +107,8 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  assert.equal(await page.locator('[data-log]').textContent(),'download cancelled; staging removed');
  assert.equal(await page.locator('[data-recognize]').isDisabled(),false);
  // Pro remains unavailable after a cancelled first installation.
- await page.locator('[data-engine]').selectOption('unimernet');
- assert.equal(await page.locator('[data-recognize]').isDisabled(),true);
+ await page.locator('[data-engine]').evaluate((n,v)=>{n.value=v;n.dispatchEvent(new Event('change'));},'unimernet');
+ await page.waitForFunction(()=>document.querySelector('[data-recognize]').disabled);
 
  await page.evaluate(()=>FormulaNativeReply('unrelated',{ok:true}));
  await browser.close();console.log('OCR progress, tiered model selection, live checkbox page extraction, cancellation, import and reply routing OK');

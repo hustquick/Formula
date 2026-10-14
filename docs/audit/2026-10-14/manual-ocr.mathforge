@@ -1,0 +1,23 @@
+{
+  "format": "mathforge-equation",
+  "version": 1,
+  "state": {
+    "latex": "\\mathrm{x} + \\mathrm{y} = 2",
+    "rawSource": "upright(x) + upright(y) = 2",
+    "mode": "typst",
+    "engine": "embedded",
+    "history": [],
+    "size": 16,
+    "padding": 8,
+    "color": "#000000",
+    "transparent": true,
+    "scale": 3.125,
+    "preamble": "\\usepackage{amsmath,amssymb}\n\\usepackage{xcolor}",
+    "typstPreamble": "",
+    "displayMode": "display",
+    "sourceZoom": 0.9,
+    "visualZoom": 1.4,
+    "editorZoom": 1.1,
+    "mathFont": "newcm"
+  }
+}

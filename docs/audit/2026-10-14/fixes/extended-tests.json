@@ -1,0 +1,112 @@
+[
+  {
+    "suite": "clipboard-ocr",
+    "exit": 0,
+    "output": "PASS text paste preserved, clipboard image routed, candidate requires confirmation\n"
+  },
+  {
+    "suite": "ocr-behavior",
+    "exit": 0,
+    "output": "OCR progress, tiered model selection, live checkbox page extraction, cancellation, import and reply routing OK\n"
+  },
+  {
+    "suite": "document-behavior",
+    "exit": 0,
+    "output": "Document UI: engine/page request, source labels, warnings, live selection, cancellation and range validation passed\n"
+  },
+  {
+    "suite": "ocr-preview",
+    "exit": 0,
+    "output": "Bundled MathJax OCR preview preserves every inline SVG fragment (+, = and final number)\n"
+  },
+  {
+    "suite": "font-controls",
+    "exit": 0,
+    "output": "PASS font menu across tabs, whole/selected source formatting, A+/A− synchronization and bounds\n"
+  },
+  {
+    "suite": "chemistry",
+    "exit": 0,
+    "output": "PASS all 4 chemical catalog templates, precipitation equation, mhchem rendering and visual source synchronization\n"
+  },
+  {
+    "suite": "png-dpi",
+    "exit": 0,
+    "output": "PASS six DPI choices, export scale, PNG density metadata, CRC and decoding\n"
+  },
+  {
+    "suite": "math-fonts",
+    "exit": 0,
+    "output": "PASS offline font newcm\nPASS offline font asana\nPASS offline font bonum\nPASS offline font dejavu\nPASS offline font fira\nPASS offline font modern\nPASS offline font pagella\nPASS offline font schola\nPASS offline font stix2\nPASS offline font termes\nPASS offline font tex\n"
+  },
+  {
+    "suite": "font-native-reload",
+    "exit": 0,
+    "output": "PASS font changes preserve edited formulas despite stale native launch snapshot\n"
+  },
+  {
+    "suite": "editor-zoom",
+    "exit": 0,
+    "output": "PASS independent source/visual zoom across mode switches and reload; export size unchanged\n"
+  },
+  {
+    "suite": "native-preview-size",
+    "exit": 0,
+    "output": "PASS native LaTeX/Typst A+/A− preview size follows logical point size instead of fixed fitting\n"
+  },
+  {
+    "suite": "output-actions",
+    "exit": 0,
+    "output": "PASS unified format selector, exact copy payload and export filename for eight embedded formats; native-only options disabled\n"
+  },
+  {
+    "suite": "compact-layout",
+    "exit": 1,
+    "output": "page.goto: net::ERR_CONNECTION_REFUSED at http://127.0.0.1:8765/\nCall log:\n\u001b[2m  - navigating to \"http://127.0.0.1:8765/\", waiting until \"load\"\u001b[22m\n\n    at /Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/compact-layout.cjs:8:14 {\n  log: [\n    '  - navigating to \"http://127.0.0.1:8765/\", waiting until \"load\"'\n  ],\n  name: 'Error'\n}\n"
+  },
+  {
+    "suite": "custom-toolbar",
+    "exit": 1,
+    "output": "node:internal/modules/cjs/loader:1595\n  throw err;\n  ^\n\nError: Cannot find module 'undefined/playwright'\nRequire stack:\n- /Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/custom-toolbar.cjs\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1591:15)\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1145:27)\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1169:10)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1196:12)\n    at Module._load (node:internal/modules/cjs/loader:1368:5)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.require (node:internal/modules/cjs/loader:1701:12)\n    at require (node:internal/modules/helpers:318:16)\n    at Object.<anonymous> (/Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/custom-toolbar.cjs:1:61)\n    at Module._compile (node:internal/modules/cjs/loader:1956:14) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [\n    '/Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/custom-toolbar.cjs'\n  ]\n}\n\nNode.js v26.10.0\n"
+  },
+  {
+    "suite": "shortcut-previews",
+    "exit": 0,
+    "output": "PASS all ten shortcut panels render after delayed MathJax startup; no placeholder previews or dash labels\n"
+  },
+  {
+    "suite": "visual-tools",
+    "exit": 1,
+    "output": "node:internal/modules/cjs/loader:1595\n  throw err;\n  ^\n\nError: Cannot find module 'undefined/playwright'\nRequire stack:\n- /Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/visual-tools.cjs\n    at Module._resolveFilename (node:internal/modules/cjs/loader:1591:15)\n    at wrapResolveFilename (node:internal/modules/cjs/loader:1145:27)\n    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1169:10)\n    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1196:12)\n    at Module._load (node:internal/modules/cjs/loader:1368:5)\n    at wrapModuleLoad (node:internal/modules/cjs/loader:261:19)\n    at Module.require (node:internal/modules/cjs/loader:1701:12)\n    at require (node:internal/modules/helpers:318:16)\n    at Object.<anonymous> (/Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/visual-tools.cjs:1:18)\n    at Module._compile (node:internal/modules/cjs/loader:1956:14) {\n  code: 'MODULE_NOT_FOUND',\n  requireStack: [\n    '/Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/visual-tools.cjs'\n  ]\n}\n\nNode.js v26.10.0\n"
+  },
+  {
+    "suite": "ocr-static",
+    "exit": 0,
+    "output": "OCR static contract OK\n"
+  },
+  {
+    "suite": "ocr-process",
+    "exit": 0,
+    "output": "Native process exit, timeout logs and temporary log cleanup OK\n"
+  },
+  {
+    "suite": "ocr-status",
+    "exit": 0,
+    "output": "Native status checks run off the UI thread; main-queue heartbeat and cached size reporting passed\n"
+  },
+  {
+    "suite": "ocr-install",
+    "exit": 0,
+    "output": "Native Python selection, stable venv activation, rollback, immediate cancellation and log cleanup OK\n"
+  },
+  {
+    "suite": "ocr-transaction",
+    "exit": 0,
+    "output": "Native install transactions: committed environments retained, failed/cancelled staging removed, baseline preserved, partial model cleaned\n"
+  },
+  {
+    "suite": "ocr-image",
+    "exit": 0,
+    "output": "Native JPEG/HEIC to PNG normalization and corrupt-image reporting OK\n"
+  }
+]

@@ -5,18 +5,25 @@ import Darwin
 
 struct ToolFailure: Error { let message: String }
 
+// Document directives are markup; never put them inside a math delimiter.
+func typstSourceBody(_ source:String,display:Bool) -> String {
+    let markup=source.range(of:"(?m)^\\s*#(?:set|show|let|import|include|context)\\b",options:.regularExpression) != nil
+    return markup ? source : (display ? "$ ":"$")+source+(display ? " $":"$")
+}
+
 final class MathWebView: WKWebView {
     var lastMouseEvent: NSEvent?
     override func mouseDown(with event: NSEvent) { lastMouseEvent = event; super.mouseDown(with: event) }
 }
 
-final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavigationDelegate, NSDraggingSource {
+final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler, WKNavigationDelegate, NSDraggingSource, NSMenuItemValidation {
     var window: NSWindow!
     var web: MathWebView!
     var toolPaths: [String:String] = UserDefaults.standard.dictionary(forKey: "toolPaths") as? [String:String] ?? [:]
     let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("MathForge")
     let worker = DispatchQueue(label: "Formula.compiler")
     var queuedImports: [URL] = []
+    var commandStates: [String:Bool] = [:]
     var ready = false
     let ocrWorker = DispatchQueue(label: "Formula.ocr")
     var ocrBusy = false
@@ -82,14 +89,53 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         let settings=NSMenuItem(title:"系统排版工具…",action:#selector(showTools),keyEquivalent:",");settings.target=self;appMenu.insertItem(settings,at:1)
         NSApp.mainMenu=bar
     }
-    @objc func about() { let alert=NSAlert();alert.messageText="Formula 1.0.11";alert.informativeText="本地公式工坊\nMathLive 可视化编辑 · LaTeX / Typst\n内置与系统排版引擎 · 矢量导出\n\n第三方许可见应用资源 THIRD-PARTY-NOTICES.txt。";alert.runModal() }
-    @objc func showTools() {js("document.getElementById('system-tools').click();")}
+    func registerCommandMenus(_ commands:[[String:Any]]) {
+        guard let bar=NSApp.mainMenu else{return}
+        while bar.items.count>1{bar.removeItem(at:1)}
+        let categories=[("文件","文件"),("编辑","编辑"),("视图","视图"),("公式","公式")]
+        for (title,category) in categories {
+            let parent=NSMenuItem();parent.submenu=NSMenu(title:title);bar.addItem(parent)
+            for command in commands where command["category"] as? String == category {
+                guard let id=command["id"] as? String,let label=command["title"] as? String else{continue}
+                if ["insertStructure","matrixEdit"].contains(id){continue}
+                let shortcut=(command["shortcut"] as? String ?? "").split(separator:"+").map(String.init)
+                let item=NSMenuItem(title:label,action:#selector(registeredCommand(_:)),keyEquivalent:shortcut.last ?? "")
+                item.target=self;item.representedObject=id;var modifiers:NSEvent.ModifierFlags=[]
+                if shortcut.contains("meta"){modifiers.insert(.command)}
+                if shortcut.contains("shift"){modifiers.insert(.shift)}
+                if shortcut.contains("alt"){modifiers.insert(.option)}
+                item.keyEquivalentModifierMask=modifiers;parent.submenu?.addItem(item)
+            }
+            if category=="公式" {
+                let insert=NSMenuItem();insert.submenu=NSMenu(title:"插入结构");parent.submenu?.addItem(insert)
+                for command in commands where command["category"] as? String == "结构" {
+                    guard let id=command["id"] as? String,let title=command["title"] as? String else{continue}
+                    let item=NSMenuItem(title:title,action:#selector(registeredCommand(_:)),keyEquivalent:"");item.target=self;item.representedObject=id;insert.submenu?.addItem(item)
+                }
+            }
+            if category=="文件"{let close=NSMenuItem(title:"关闭窗口",action:#selector(NSWindow.performClose(_:)),keyEquivalent:"w");parent.submenu?.addItem(close)}
+        }
+        let windowItem=NSMenuItem();let windowMenu=NSMenu(title:"窗口");windowItem.submenu=windowMenu;bar.addItem(windowItem)
+        windowMenu.addItem(withTitle:"最小化",action:#selector(NSWindow.performMiniaturize(_:)),keyEquivalent:"m");NSApp.windowsMenu=windowMenu
+        let help=NSMenuItem();help.submenu=NSMenu(title:"帮助");bar.addItem(help)
+        let palette=NSMenuItem(title:"命令面板",action:#selector(registeredCommand(_:)),keyEquivalent:"");palette.target=self;palette.representedObject="commandPalette";help.submenu?.addItem(palette)
+        if let appMenu=bar.items.first?.submenu,appMenu.items.count>1 {let settings=appMenu.items[1];settings.action=#selector(registeredCommand(_:));settings.target=self;settings.representedObject="settings"}
+    }
+    @objc func registeredCommand(_ item:NSMenuItem){guard let id=item.representedObject as? String else{return};js("window.FormulaCommands?.execute(\(json(id)));")}
+    func validateMenuItem(_ item:NSMenuItem)->Bool{guard let id=item.representedObject as? String else{return true};return commandStates[id] ?? true}
+    @objc func about() { let alert=NSAlert();alert.messageText="Formula "+(Bundle.main.object(forInfoDictionaryKey:"CFBundleShortVersionString") as? String ?? "");alert.informativeText="本地公式工坊\nMathLive 可视化编辑 · LaTeX / Typst\n内置与系统排版引擎 · 矢量导出\n\n第三方许可见应用资源 THIRD-PARTY-NOTICES.txt。";alert.runModal() }
+    @objc func showTools() {js("window.FormulaCommands?.execute('settings');")}
     @objc func copySource() {js("window.FormulaAction('copy');")}
     @objc func menuAction(_ item:NSMenuItem) {let actions=["import","svg","pdf","png","project"];js("window.FormulaAction('\(actions[item.tag])');")}
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard message.frameInfo.isMainFrame,let data=message.body as? [String:Any],let action=data["action"] as? String else{return}
         switch action {
+        case "registerCommands":registerCommandMenus(data["commands"] as? [[String:Any]] ?? [])
+        case "commandStates":commandStates=data["states"] as? [String:Bool] ?? [:]
+        case "nativeEdit":
+            let allowed=["cut":"cut:","copy":"copy:","paste":"paste:","selectAll":"selectAll:","undo":"undo:","redo":"redo:"]
+            if let name=data["edit"] as? String,let selector=allowed[name]{NSApp.sendAction(Selector(selector),to:nil,from:self)}
         case "state":
             if let state=data["state"],let bytes=try? JSONSerialization.data(withJSONObject:state) {try? bytes.write(to:support.appendingPathComponent("state.json"),options:.atomic)}
         case "copy":
@@ -98,6 +144,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         case "copyImage":
             let p=NSPasteboard.general;p.clearContents()
             for (key,type) in [("png",NSPasteboard.PasteboardType.png),("pdf",.pdf),("svg",NSPasteboard.PasteboardType("public.svg-image")),("jpeg",NSPasteboard.PasteboardType("public.jpeg")),("tiff",.tiff),("eps",NSPasteboard.PasteboardType("com.adobe.encapsulated-postscript"))] {if let encoded=data[key] as? String,let bytes=Data(base64Encoded:encoded){p.setData(bytes,forType:type)}}
+        if let equation=data["equation"] as? String,let bytes=equation.data(using:.utf8){p.setData(bytes,forType:NSPasteboard.PasteboardType("org.mathforge.equation"))}
         case "save":saveFile(data)
         case "import":
             let panel=NSOpenPanel();panel.allowedFileTypes=["tex","typ","txt","svg","pdf","mathforge","json"];panel.canChooseDirectories=false
@@ -266,7 +313,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 #set page(width: auto, height: auto, margin: \(padding)pt, fill: \(fill))
                 #set text(size: \(size)pt, fill: rgb("\(color)"))
                 \(preamble)
-                \(display ? "$ ":"$")\(source)\(display ? " $":"$")
+                \(typstSourceBody(source,display:display))
                 """
                 try document.write(to:dir.appendingPathComponent("equation.typ"),atomically:true,encoding:.utf8)
                 for format in ["pdf","svg"] {
@@ -324,7 +371,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let whiteContext=NSGraphicsContext(bitmapImageRep:white)!
             NSGraphicsContext.saveGraphicsState();NSGraphicsContext.current=whiteContext;let wc=whiteContext.cgContext;wc.setFillColor(NSColor.white.cgColor);wc.fill(CGRect(x:0,y:0,width:CGFloat(width),height:CGFloat(height)));wc.scaleBy(x:pixels,y:pixels);page.draw(with:.mediaBox,to:wc);NSGraphicsContext.restoreGraphicsState()
             let jpeg=white.representation(using:.jpeg,properties:[.compressionFactor:0.96])!
-            let saved:[String:Any]=["format":"mathforge-equation","version":1,"state":["rawSource":source,"mode":engine=="typst" ? "typst":"latex","engine":engine,"size":size,"padding":padding/0.75,"color":color,"transparent":transparent,"scale":scale,"preamble":o["preamble"] ?? "","typstPreamble":o["typstPreamble"] ?? "","displayMode":o["displayMode"] ?? "display"]]
+            let saved:[String:Any]=["format":"mathforge-equation","version":1,"state":["rawSource":source,"editorMode":engine=="typst" ? "typst":"latex","size":size,"padding":padding/0.75,"color":color,"transparent":transparent,"scale":scale,"preamble":o["preamble"] ?? "","typstPreamble":o["typstPreamble"] ?? "","displayMode":o["displayMode"] ?? "display"]]
             var attrs=doc.documentAttributes ?? [:];attrs[PDFDocumentAttribute.subjectAttribute]="MathForge:"+json(saved);attrs[PDFDocumentAttribute.titleAttribute]="Formula equation";doc.documentAttributes=attrs
             let pdf=doc.dataRepresentation()!
             var result:[String:Any]=["engine":URL(fileURLWithPath:path).lastPathComponent,"pdf":pdf.base64EncodedString(),"png":png.base64EncodedString(),"tiff":tiff.base64EncodedString(),"jpeg":jpeg.base64EncodedString(),"width":width,"height":height]

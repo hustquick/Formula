@@ -1,0 +1,28 @@
+{
+  "application": "/Applications/Formula.app",
+  "bundleIdentifier": "org.mathforge.desktop",
+  "bundleSHA256": "577b844b47f6731cf61669b9085d1e9fba599ad3ca1e6166fb52bfe0bd67deb3",
+  "installed": true,
+  "launched": true,
+  "backup": "~/Library/Application Support/Formula-Backups/20261014-231645/Formula.app",
+  "observations": [
+    {
+      "case": "control",
+      "result": "AX exposes radiogroup with mutually exclusive builtin/local radio buttons; screenshot checked"
+    },
+    {
+      "case": "local LaTeX",
+      "result": "xelatex successful, 777x210 preview"
+    },
+    {
+      "case": "switch source to Typst",
+      "result": "local remains selected, typst successful, 798x173 preview"
+    },
+    {
+      "case": "switch back to LaTeX",
+      "result": "local remains selected, xelatex successful, 777x210 preview"
+    }
+  ],
+  "remainingNativeUISteps": "Built-in combinations covered by real Chromium rendering integration; further live clicks/restart stopped after user began editing to preserve current input.",
+  "remotePushed": false
+}

@@ -2,7 +2,8 @@ const fs=require('node:fs'),os=require('node:os'),path=require('node:path');
 const {execFileSync}=require('node:child_process');
 const source=fs.readFileSync('macos/FormulaOCR.swift','utf8');
 const take=(a,b)=>source.slice(source.indexOf(a),source.indexOf(b,source.indexOf(a)));
-const properties=take('    private var ocrRoot:','    func loadOCRUI(');
+// Harness-only root: never mutate the user's shared models.
+const properties=take('    private var ocrRoot:','    func loadOCRUI(').replace(/private var ocrRoot: URL \{[^\n]+/, 'private var ocrRoot: URL { support.appendingPathComponent("OCR") }');
 const readiness=take('    private func ocrReadyURL(','    func handleOCRStatus(');
 const errorMethod=take('    private func ocrFailure(', '    private func decodeOCRPayload(');
 const installer=take('    private func discoverPython3(','    func ocrImageData(');

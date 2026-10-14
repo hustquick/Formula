@@ -5,7 +5,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? proces
  const page=await browser.newPage();
  for(const viewport of [{width:1440,height:900},{width:1366,height:768}]){
   await page.setViewportSize(viewport);
-  await page.goto(process.env.MATHFORGE_URL||'http://127.0.0.1:8765');
+  await page.goto(process.env.MATHFORGE_URL||'file://'+process.cwd()+'/web/index.html');
   await page.waitForFunction(()=>window.FormulaCatalogInfo&&document.querySelector('#preview svg'));
   await page.locator('#remember').click();
   await page.waitForFunction(()=>document.querySelector('#history .history-item'));

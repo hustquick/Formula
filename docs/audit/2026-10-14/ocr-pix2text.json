@@ -1,0 +1,7 @@
+{
+  "engine": "pix2text",
+  "image": "ocr-single.jpg",
+  "exit": 0,
+  "stdout": "[OCR] Loading Pix2Text dependencies\nwarning: The `fitz` API is deprecated and will be removed in future. Use `import pymupdf` instead.\nFORMULA_OCR_RESULT=XG1hdGhybXt4fStcbWF0aHJte3l9PTI=\n",
+  "stderr": "Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.\nCould not find any ONNX files with standard file name decoder_model_merged.onnx, files found: [PosixPath('decoder_model.onnx'), PosixPath('encoder_model.onnx')]. Please make sure to pass a `file_name` and/or `subfolder` argument to `from_pretrained` when loading an ONNX file with non-standard file names.\n\n  0%|          | 0/1 [00:00<?, ?it/s]\n100%|██████████| 1/1 [00:00<00:00,  4.70it/s]\n100%|██████████| 1/1 [00:00<00:00,  4.70it/s]\n"
+}

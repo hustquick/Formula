@@ -1,0 +1,15 @@
+{
+  "before": {
+    "index": 2,
+    "raw": "\\hat{x}"
+  },
+  "native": {
+    "index": 2,
+    "raw": "x",
+    "redo": false
+  },
+  "afterRegistryRedo": {
+    "index": 2,
+    "raw": "x"
+  }
+}

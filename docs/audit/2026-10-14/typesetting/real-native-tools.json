@@ -1,0 +1,1 @@
+[{"png":true,"language":"latex","engine":"xelatex","error":"","pdf":true,"width":210},{"pdf":true,"engine":"typst","png":true,"language":"typst","width":217,"error":""},{"error":"未检测到 typst。请打开系统工具安装或指定路径。","case":"missing-tool"}]

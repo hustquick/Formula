@@ -49,13 +49,16 @@
     return {toolbar,template};
   }
 
-  function insertLatex(latex){
+  function insertLatex(latex,transform=true){
     const mf=q('#editor-mount math-field');if(!mf||mf.readOnly)return;
-    mf.focus();mf.insert(latex,{mode:'math',format:'latex',insertionMode:'replaceSelection',selectionMode:'placeholder',focus:true});
-    mf.dispatchEvent(new Event('input',{bubbles:true}));q('#input-visual')?.click();
+    latex=window.FormulaFormatLatex?.(latex)||latex;
+
+    window.FormulaApplyVisualStructure(mf,latex,{transform});
+    mf.dispatchEvent(new Event('input',{bubbles:true}));
   }
   function executeMatrixCommand(command){
     const mf=q('#editor-mount math-field');if(!mf||mf.readOnly)return;
+    if(window.FormulaExecuteMatrixCommand){window.FormulaExecuteMatrixCommand(command);return;}
     mf.focus();const ok=mf.executeCommand(command);mf.dispatchEvent(new Event('input',{bubbles:true}));
     if(ok===false&&q('#status'))q('#status').textContent='请先点击矩阵或多行公式中的单元格';
   }
@@ -125,7 +128,8 @@
   }
 
   function bindGlobalEvents(){
-    document.addEventListener('click',e=>{const latex=e.target.closest('[data-exact-latex]');if(latex){e.preventDefault();e.stopPropagation();insertLatex(latex.dataset.exactLatex);closeAllFloating();return;}const cmd=e.target.closest('[data-exact-command]');if(cmd){e.preventDefault();e.stopPropagation();executeMatrixCommand(cmd.dataset.exactCommand);closeAllFloating();return;}if(!e.target.closest('.tool-group,.ll-template-browser'))closeAllFloating();},true);
+    document.addEventListener('pointerdown',e=>{if(e.target.closest('[data-exact-latex],[data-exact-command]'))e.preventDefault();},true);
+    document.addEventListener('click',e=>{const latex=e.target.closest('[data-exact-latex]');if(latex){e.preventDefault();e.stopPropagation();insertLatex(latex.dataset.exactLatex,!latex.classList.contains('ll-template-item'));closeAllFloating();return;}const cmd=e.target.closest('[data-exact-command]');if(cmd){e.preventDefault();e.stopPropagation();executeMatrixCommand(cmd.dataset.exactCommand);closeAllFloating();return;}if(!e.target.closest('.tool-group,.ll-template-browser'))closeAllFloating();},true);
     document.addEventListener('keydown',e=>{const panel=q('.ll-template-panel');if(e.key==='Escape'&&(qa('#tools>.tool-group').some(x=>x.open)||(panel&&!panel.hidden))){e.preventDefault();closeAllFloating({focusEditor:true});}});
     window.addEventListener('resize',()=>closeAllFloating());window.addEventListener('blur',()=>closeAllFloating());document.addEventListener('scroll',e=>{if(!e.target.closest?.('.ll-popup-grid,.ll-template-panel'))closeAllFloating();},true);
   }

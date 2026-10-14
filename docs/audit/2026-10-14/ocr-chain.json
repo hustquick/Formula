@@ -1,0 +1,20 @@
+[
+  {
+    "name": "pix2text",
+    "raw": "\\mathrm{x}+\\mathrm{y}=2",
+    "latex": "\\mathrm{x}+\\mathrm{y}=2",
+    "typst": "upright(x) + upright(y) = 2",
+    "mode": "typst",
+    "svg": true,
+    "error": "Typst 已转换并同步；请核对预览"
+  },
+  {
+    "name": "unimernet",
+    "raw": "\\mathrm { ~ x ~ } + \\mathrm { \\mathbf { y } } = 2",
+    "latex": "\\mathrm { ~ x ~ } + \\mathrm { \\mathbf { y } } = 2",
+    "typst": "upright(space.nobreak x space.nobreak) + upright(upright(bold(y))) = 2",
+    "mode": "typst",
+    "svg": true,
+    "error": "Typst 已转换并同步；请核对预览"
+  }
+]

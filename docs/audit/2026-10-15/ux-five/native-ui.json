@@ -1,0 +1,19 @@
+{
+  "date": "2026-10-15",
+  "application": "/Applications/Formula.app",
+  "bundleIdentifier": "org.mathforge.desktop",
+  "bundleSHA256": "5fd0c2bf81e6e5a71f8acb3e7522476a3311254aaca0093ae93c05b7e857a621",
+  "backup": "~/Library/Application Support/Formula-Backups/20261015-073454/Formula.app",
+  "installed": true,
+  "launched": true,
+  "observations": [
+    "Main OCR area has choose-image button and progress only before a file is chosen; no module/status/install/log text",
+    "Native panel selected tests/fixtures/ocr-single.jpg; thumbnail appeared immediately; existing Pix2Text inferred x+y=2 without model installation",
+    "Result preview displayed, checkbox selected, source and output synchronized, progress reset; thumbnail retained below progress line",
+    "Source, latex, editorMode, size, padding, scale, color and transparency restored to pre-test snapshot and verified against persisted state",
+    "Settings Advanced exposes OCR Module with current module, recognition method, PDF range, install actions and progress; diagnostics/log disclosure is separate",
+    "Further live document verification stopped when user began interacting with Word component installation; did not cancel or alter that operation"
+  ],
+  "documentConfirmation": "Integration verified middle ellipsis, full extension, basename-only tooltip, fixed dimensions, vertical order; native callback compiled; not claiming a completed native document OCR run in this round",
+  "remotePushed": false
+}

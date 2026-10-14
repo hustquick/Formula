@@ -1,0 +1,37 @@
+[
+  {
+    "name": "ocr-format",
+    "exit": 0,
+    "output": "PASS OCR source formatting: row breaks, indentation, content preservation, comments and idempotence\n"
+  },
+  {
+    "name": "ocr-static",
+    "exit": 0,
+    "output": "OCR static contract OK\n"
+  },
+  {
+    "name": "ocr-preview",
+    "exit": 0,
+    "output": "Bundled MathJax OCR preview preserves every inline SVG fragment (+, = and final number)\n"
+  },
+  {
+    "name": "png-dpi",
+    "exit": 0,
+    "output": "PASS six DPI choices, export scale, PNG density metadata, CRC and decoding\n"
+  },
+  {
+    "name": "math-fonts",
+    "exit": 0,
+    "output": "PASS offline font newcm\nPASS offline font asana\nPASS offline font bonum\nPASS offline font dejavu\nPASS offline font fira\nPASS offline font modern\nPASS offline font pagella\nPASS offline font schola\nPASS offline font stix2\nPASS offline font termes\nPASS offline font tex\n"
+  },
+  {
+    "name": "font-native-reload",
+    "exit": 0,
+    "output": "PASS font changes preserve edited formulas despite stale native launch snapshot\n"
+  },
+  {
+    "name": "shortcut-previews",
+    "exit": 0,
+    "output": "PASS all ten shortcut panels render after delayed MathJax startup; no placeholder previews or dash labels\n"
+  }
+]

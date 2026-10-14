@@ -1,0 +1,17 @@
+[
+  {
+    "name": "custom-toolbar",
+    "exit": 0,
+    "output": "PASS: toolbar add/remove, actual drag, persistence, selection action, reset\n"
+  },
+  {
+    "name": "compact-layout",
+    "exit": 0,
+    "output": "compact layout passed\n"
+  },
+  {
+    "name": "reference-layout",
+    "exit": 1,
+    "output": "locator.fill: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('#input-color')\u001b[22m\n\n    at /Users/hustquick/Documents/Codex/2026-10-12/referenced-chatgpt-conversation-this-is-an-2/work/Formula/tests/reference-layout.cjs:6:33 {\n  log: [ \"  - waiting for locator('#input-color')\" ],\n  name: 'TimeoutError'\n}\n"
+  }
+]
