@@ -292,6 +292,39 @@
     recognize.textContent=isDocument?'选择文档并识别':'选择图片并识别';
     results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();showPanel(isDocument);refresh();
   }
+  // Intercept image-only paste; ordinary text keeps the editor's native paste behavior.
+  document.addEventListener('paste',e=>{
+    if(e.clipboardData?.getData('text/plain'))return;
+    const image=[...(e.clipboardData?.items||[])].find(item=>item.kind==='file'&&item.type.startsWith('image/'))?.getAsFile();
+    if(!image)return;
+    e.preventDefault();recognizePastedImage(image);
+  },true);
+  const editorCard=document.querySelector('.editor-card');
+  editorCard?.addEventListener('dragover',e=>{if([...e.dataTransfer.items].some(item=>item.kind==='file'&&item.type.startsWith('image/'))){e.preventDefault();e.dataTransfer.dropEffect='copy';}});
+  editorCard?.addEventListener('drop',e=>{
+    const files=[...(e.dataTransfer?.files||[])];
+    if(!files.length||!files.every(file=>file.type.startsWith('image/')))return;
+    e.preventDefault();
+    if(files.length!==1){openOCR(false);status.textContent='请一次拖入一张图片。';return;}
+    recognizePastedImage(files[0]);
+  });
+  async function recognizePastedImage(image){
+    if(recognizing){status.textContent='已有识别任务正在运行。';return;}
+    openOCR(false);recognizing=true;recognize.disabled=true;
+    status.textContent='正在识别剪贴板图片…';
+    try{
+      if(image.size>100*1024*1024)throw new Error('剪贴板图片超过 100 MB。');
+      const encoded=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(new Error('无法读取剪贴板图片'));reader.readAsDataURL(image)});
+      const r=await request('ocrRecognize',{engine:engine.value,mode,imageBase64:encoded});
+      if(r.cancelled){status.textContent='已取消';return;}
+      const candidates=mode==='page'?r.formulas:[{latex:r.latex,source:'剪贴板图片'}];
+      if(!candidates?.length||!candidates[0]?.latex)throw new Error('没有识别到公式');
+      // No automatic insertion: checking a candidate is the user's confirmation.
+      renderPageResults(candidates,r.engine||engine.value);
+      status.textContent='识别完成，请勾选要写入编辑器的公式。';
+    }catch(e){status.textContent=e.message;log.textContent=e.log||e.message;advanced.open=true;log.parentElement.open=true;}
+    finally{recognizing=false;const outcome=status.textContent;updateState();status.textContent=outcome;}
+  }
   const imageTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='图片识别');
   if(imageTab){imageTab.dataset.tab='image';imageTab.disabled=false;imageTab.title='本地图片公式识别';imageTab.onclick=()=>openOCR(false);}
   const documentTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='文档识别');

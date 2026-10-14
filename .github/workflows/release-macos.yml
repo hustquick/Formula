@@ -67,6 +67,7 @@ jobs:
           node tests/ocr-image.cjs
           npm install --no-save --package-lock=false playwright
           npx playwright install chromium
+          node tests/clipboard-ocr.cjs
           node tests/ocr-behavior.cjs
           node tests/document-behavior.cjs
           node tests/ocr-preview.cjs

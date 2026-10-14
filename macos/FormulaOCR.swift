@@ -113,6 +113,18 @@ extension AppDelegate {
         guard !page || FileManager.default.fileExists(atPath:ocrMFDReady.path) else {
             reply(id,["error":"整页公式检测模型尚未安装。请对当前识别能力执行一次“安装/验证”。"]);return
         }
+        if let encoded=data["imageBase64"] as? String {
+            guard encoded.count <= 140_000_000,let bytes=Data(base64Encoded:encoded),!bytes.isEmpty else {reply(id,["error":"剪贴板图片无效或过大。"]);return}
+            let temporary=FileManager.default.temporaryDirectory.appendingPathComponent("formula-paste-"+UUID().uuidString+".png")
+            do {try bytes.write(to:temporary,options:.atomic)} catch {reply(id,["error":error.localizedDescription]);return}
+            ocrBusy=true
+            ocrWorker.async {
+                let result=self.recognizeFormula(temporary,engine:engine,page:page)
+                try? FileManager.default.removeItem(at:temporary)
+                DispatchQueue.main.async {self.ocrBusy=false;self.reply(id,result)}
+            }
+            return
+        }
         ocrBusy=true
         let panel=NSOpenPanel();panel.title=page ? "选择包含公式的整页图片" : "选择公式图片";panel.canChooseDirectories=false;panel.canChooseFiles=true;panel.allowsMultipleSelection=false
         panel.allowedContentTypes=[.image]
