@@ -37,7 +37,7 @@
     .ocr-note{opacity:.72;font-size:13px;line-height:1.55}.ocr-log{max-height:150px;overflow:auto;font-size:11px;white-space:pre-wrap;background:#111;color:#ddd;padding:10px;border-radius:10px}
     .ocr-results{display:grid;gap:8px;margin-top:12px;max-height:310px;overflow:auto}.ocr-result{display:grid;grid-template-columns:30px minmax(0,1fr);gap:10px;align-items:center;padding:10px 12px;border-radius:10px;background:color-mix(in srgb,currentColor 5%,transparent);cursor:pointer}
     .ocr-result input[type=checkbox]{width:18px;height:18px;margin:0}.ocr-result .ocr-formula-preview{min-height:34px;display:flex;align-items:center;overflow:auto}.ocr-result .ocr-formula-preview svg{max-width:100%;height:auto}.ocr-result small{opacity:.62;display:block;margin-top:4px}.ocr-result.selected{outline:2px solid color-mix(in srgb,currentColor 22%,transparent)}
-    .tool-deck.show-recognition{display:block!important;height:100px;overflow:auto}
+    .tool-deck.show-recognition{display:block!important;height:var(--formula-tool-height,132px);overflow:auto}
     .tool-deck.show-recognition>*:not(#formula-ocr-dialog){display:none!important}
     #formula-ocr-dialog{width:auto;margin:0;border:0;border-radius:0;padding:0;box-shadow:none;background:transparent}
     #formula-ocr-dialog[hidden]{display:none!important}
@@ -106,12 +106,17 @@
     .ocr-settings-controls [hidden]{display:none!important}
 
     #formula-ocr-dialog .ocr-box{display:grid;grid-template-columns:minmax(0,1fr) 148px;grid-template-rows:minmax(0,1fr);flex-wrap:nowrap;height:100%;min-height:92px;padding:4px 8px;gap:8px;align-items:stretch}
-    #formula-ocr-dialog .ocr-actions{grid-column:2;grid-row:1;width:148px;height:88px;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;align-self:start;gap:5px;margin:0;background:transparent;border:0;padding:0}
+    #formula-ocr-dialog .ocr-actions{grid-column:2;grid-row:1;width:148px;min-height:110px;height:auto;display:flex;flex-direction:column;align-items:flex-end;justify-content:flex-start;align-self:start;gap:5px;margin:0;background:transparent;border:0;padding:0}
     #formula-ocr-dialog .ocr-actions [data-recognize]{height:24px;min-height:24px;padding:2px 6px;max-width:100%;white-space:nowrap}
-    #formula-ocr-dialog .ocr-recognition-progress{display:block;flex:none;width:88px;height:2px;margin:0;opacity:.3}
-    #formula-ocr-dialog .ocr-recognition-progress.busy{opacity:1}
-    #formula-ocr-dialog .ocr-input-confirmation{width:148px;height:42px;display:flex;align-items:flex-start;justify-content:flex-end;overflow:hidden;font-size:11px;color:#64748b;text-align:right}
-    #formula-ocr-dialog .ocr-input-confirmation img{display:block;max-width:64px;max-height:40px;width:auto;height:auto;object-fit:contain;border-radius:3px}
+    #formula-ocr-dialog .ocr-recognition-progress{display:block;flex:none;width:120px;height:4px;margin:0;opacity:0;visibility:hidden;border:0;border-radius:2px;background:transparent}
+    #formula-ocr-dialog .ocr-recognition-progress.busy{opacity:1;visibility:visible;background:linear-gradient(90deg,transparent,#3976ec,transparent) -60px 0/48px 100% no-repeat #eaf0f8;animation:ocr-recognition-scan 1.2s linear infinite}
+    #formula-ocr-dialog .ocr-recognition-progress::-webkit-progress-bar{background:transparent}
+    #formula-ocr-dialog .ocr-recognition-progress::-webkit-progress-value{background:transparent}
+    #formula-ocr-dialog .ocr-recognition-progress::-moz-progress-bar{background:transparent}
+    @keyframes ocr-recognition-scan{from{background-position:-48px 0}to{background-position:120px 0}}
+    @media(prefers-reduced-motion:reduce){#formula-ocr-dialog .ocr-recognition-progress.busy{animation:none;background-position:center}}
+    #formula-ocr-dialog .ocr-input-confirmation{width:148px;height:72px;display:flex;align-items:flex-start;justify-content:flex-end;overflow:hidden;font-size:11px;color:#64748b;text-align:right}
+    #formula-ocr-dialog .ocr-input-confirmation img{display:block;max-width:148px;max-height:72px;width:100%;height:100%;object-fit:contain;object-position:right top;border-radius:3px}
     #formula-ocr-dialog .ocr-input-confirmation span{max-width:148px;white-space:nowrap;line-height:20px}
     #formula-ocr-dialog .ocr-results{grid-column:1;grid-row:1;width:100%;height:100%;min-height:0;max-height:none;overflow:auto;margin:0;align-content:start}
     #formula-ocr-dialog .ocr-actions [data-cancel-document]{height:18px;min-height:18px;padding:0 4px;font-size:10px}
@@ -122,9 +127,9 @@
     <div class="ocr-head" hidden><h2 data-title>图片公式识别</h2></div>
     <div class="ocr-grid">
       <div class="ocr-field"><label>识别能力</label><select data-engine><option value="pix2text">基础识别（Pix2Text）</option><option value="unimernet">专业识别（UniMERNet Tiny）</option></select></div>
-      <div class="ocr-field"><label>图片类型</label><div class="ocr-mode segmented" role="radiogroup" aria-label="图片识别模式"><button data-mode="single" role="radio" aria-checked="true" class="active">单个公式</button><button data-mode="page" role="radio" aria-checked="false">整页提取公式</button></div></div>
+
     </div>
-    <div data-document-options hidden><label>PDF 起始页 <input data-first type="number" min="1" value="1" style="width:70px"></label> <label>结束页 <input data-last type="number" min="0" value="0" style="width:70px"></label><p class="ocr-note">结束页填 0：从起始页处理最多 20 页。Word 按文档顺序提取原生公式及图片中的公式，页码不适用。仅提取公式，不转换正文。</p><button data-word-install>安装 Word 解析组件</button></div>
+    <div data-document-options hidden><label>PDF 起始页 <input data-first type="number" min="1" value="1" style="width:70px"></label> <label>结束页 <input data-last type="number" min="0" value="0" style="width:70px"></label><p class="ocr-note">结束页填 0：从起始页处理最多 20 页，不足 20 页时处理实际页数。Word 按文档顺序提取原生公式及图片中的公式，页码不适用。仅提取公式，不转换正文。</p><button data-word-install>安装 Word 解析组件</button></div>
     <div class="ocr-install-choices" role="group" aria-label="安装版本层级"><label><input type="checkbox" data-basic-install>基础版（Pix2Text）</label><span class="ocr-install-arrow" aria-hidden="true">→</span><label><input type="checkbox" data-pro-install>专业版（UniMERNet Tiny）</label></div>
     <p class="ocr-status" data-status>正在检查本地识别模型…</p>
     <div class="ocr-actions"><button class="primary" data-recognize disabled>选择图片</button><button data-install>安装基础版</button><button data-cancel-install hidden>取消安装</button><button data-refresh>刷新状态</button><button data-cancel-document hidden>取消识别</button></div>
@@ -188,14 +193,15 @@
   basicChoice.checked=true;
   let preferences={};try{preferences=JSON.parse(localStorage.getItem('formula-ocr-preferences')||'{}');}catch{}
   engine.value=['pix2text','unimernet'].includes(preferences.engine)?preferences.engine:'pix2text';
-  let mode=preferences.mode==='page'?'page':'single';
-  const savePreferences=()=>{try{localStorage.setItem('formula-ocr-preferences',JSON.stringify({engine:engine.value,mode,first:find('[data-first]').value,last:find('[data-last]').value}));}catch{}};
-  if(preferences.first)find('[data-first]').value=preferences.first;if(preferences.last)find('[data-last]').value=preferences.last;
+  const mode='page';
+  const persistPreferences=()=>{try{localStorage.setItem('formula-ocr-preferences',JSON.stringify({engine:engine.value,first:find('[data-first]').value,last:find('[data-last]').value}));}catch{}};
+  const savePreferences=()=>window.FormulaCommands?window.FormulaCommands.execute('ocr.savePreferences'):persistPreferences();
+  if(Number(preferences.first)>0)find('[data-first]').value=preferences.first;if(preferences.last)find('[data-last]').value=preferences.last;
   for(const input of [find('[data-first]'),find('[data-last]')])input.addEventListener('change',savePreferences);
   if(settingsHost){
     engine.hidden=true;const group=document.createElement('div');group.className='segmented ocr-module-mode';group.setAttribute('role','radiogroup');group.setAttribute('aria-label','当前识别模块');
     for(const [value,label] of [['pix2text','基础识别'],['unimernet','专业识别']]){const button=document.createElement('button');button.type='button';button.dataset.ocrModule=value;button.textContent=label;button.setAttribute('role','radio');button.onclick=()=>{engine.value=value;engine.dispatchEvent(new Event('change'));};group.append(button);}engine.after(group);
-    const label=document.createElement('label');label.textContent='当前识别模块';group.before(label);const method=document.createElement('label');method.textContent='识别方式';find('.ocr-mode').before(method);
+    const label=document.createElement('label');label.textContent='当前识别模块';group.before(label);
   }
 
   let documentMode=false;
@@ -206,12 +212,6 @@
   let recognizing=false;
   const selected=new Set();
 
-  (settingsHost||dialog).querySelectorAll('[data-mode]').forEach(btn=>btn.onclick=()=>{
-    mode=btn.dataset.mode;savePreferences();
-    (settingsHost||dialog).querySelectorAll('[data-mode]').forEach(x=>{x.classList.toggle('active',x===btn);x.setAttribute('aria-checked',String(x===btn));});
-    pageFormulas=[];selected.clear();results.hidden=true;results.innerHTML='';
-    updateState();
-  });
 
   function engineInfo(){return lastStatus?.engines?.[engine.value]||{};}
   function updateState(preserveStatus=false){
@@ -352,23 +352,24 @@
   }
   function renderPageResults(formulas,engineLabel){
     results.innerHTML='';pageFormulas=formulas;selected.clear();
-    if(!formulas.length){results.hidden=true;status.textContent='整页检测完成，但没有检测到数学公式。';return;}
+    if(!formulas.length){results.hidden=false;results.textContent='未检测到公式';return;}
     formulas.forEach((item,index)=>{
       const row=document.createElement('label');row.className='ocr-result';
       const checkbox=document.createElement('input');checkbox.type='checkbox';checkbox.dataset.formulaIndex=String(index);
       const body=document.createElement('div');
       const preview=document.createElement('div');preview.className='ocr-formula-preview';
-      const meta=document.createElement('small');meta.textContent=`公式 ${index+1}${item.source?' · '+item.source:item.type?' · '+item.type:''}`;
+      const meta=document.createElement('small');meta.textContent=`公式 ${index+1}${item.source?' · '+item.source:''}`;
       body.append(preview,meta);row.append(checkbox,body);results.append(row);
       renderFormulaPreview(preview,item.latex||'');
       checkbox.onchange=()=>{
-        if(checkbox.checked)selected.add(index);else selected.delete(index);
-        row.classList.toggle('selected',checkbox.checked);
+        const checked=checkbox.checked;selected.clear();
+        for(const input of results.querySelectorAll('input')){input.checked=input===checkbox&&checked;input.closest('.ocr-result').classList.toggle('selected',input.checked);}
+        if(checked)selected.add(index);
         syncSelection(engineLabel);
       };
     });
     results.hidden=false;
-    status.textContent=`检测到 ${formulas.length} 个公式 · 请直接勾选需要的公式；勾选即同步，取消即移除`;
+    selected.add(0);const first=results.querySelector('input');first.checked=true;first.closest('.ocr-result').classList.add('selected');syncSelection(engineLabel);
   }
 
   recognize.onclick=async()=>{
@@ -377,19 +378,13 @@
     status.textContent=requestDocument?'请选择 PDF 或 Word 文档…':mode==='page'?'请选择整页教材/论文照片…':'请选择单个公式图片…';
     try{
       const first=Number(find('[data-first]').value),last=Number(find('[data-last]').value);
-      if(requestDocument&&(!Number.isInteger(first)||first<1||!Number.isInteger(last)||last<0||(last>0&&(last<first||last-first>=20))))throw new Error('PDF 页码无效，每次最多识别 20 页。');
+      if(requestDocument&&(!Number.isInteger(first)||first<0||!Number.isInteger(last)||last<0||(last>0&&(last<Math.max(1,first)||last-Math.max(1,first)>=20))))throw new Error('PDF 页码无效，每次最多识别 20 页。');
       const r=await request(requestDocument?'ocrDocument':'ocrRecognize',{engine:requestEngine,mode:requestMode,first,last});
       if(r.cancelled){status.textContent='已取消';return;}
       if(r.log)log.textContent=r.log;
-      if(requestMode==='page'){
-        renderPageResults(Array.isArray(r.formulas)?r.formulas:[],r.engine||engine.value);
-        if(requestDocument){status.textContent=(r.sourceName?r.sourceName+' · ':'')+status.textContent;if(r.warnings?.length){status.textContent+=' · '+r.warnings.join(' ');log.textContent=r.warnings.join('\n')+'\n'+(r.log||'');}}
-      }else{
-        if(!r.latex)throw new Error('没有识别到公式');
-        renderPageResults([{latex:r.latex}],r.engine||engine.value);insertLatex(r.latex);const first=results.querySelector('input');if(first){first.checked=true;selected.add(0);}
-        status.textContent=`识别完成 · ${r.engine||engine.value} · 已送入编辑器`;
+      renderPageResults(Array.isArray(r.formulas)?r.formulas:[],r.engine||engine.value);
+      if(requestDocument&&r.warnings?.length)log.textContent=r.warnings.join('\n')+'\n'+(r.log||'');
 
-      }
     }catch(e){status.textContent=/页码无效|用户已取消/.test(e.message)?e.message:'操作失败，请重试或查看详情';status.title=e.message;log.textContent=e.log||e.message;log.parentElement.open=false;advanced.open=false;if(recognizing)showRecognitionFailure();}
     finally{cancelDocument.hidden=true;recognizing=false;setRecognitionProgress(false);engine.disabled=false;(settingsHost||dialog).querySelectorAll('[data-mode]').forEach(x=>x.disabled=false);const outcome=status.textContent;updateState();status.textContent=outcome;}
   };
@@ -414,7 +409,6 @@
     if(recognizing){showPanel(isDocument);return;}
     documentMode=isDocument;dialog.querySelector('[data-title]').textContent=isDocument?'文档公式识别':'图片公式识别';
     find('[data-document-options]').hidden=settingsHost?false:!isDocument;
-    find('.ocr-mode').parentElement.hidden=settingsHost?false:isDocument;
     recognize.textContent=isDocument?'选择文档':'选择图片';recognize.title=recognize.textContent;const currentInput=confirmedInputs[isDocument?'document':'image'];confirmation.replaceChildren();confirmation.title='';if(currentInput)window.FormulaOCRInput(null,currentInput);
     results.hidden=true;results.innerHTML='';pageFormulas=[];selected.clear();showPanel(isDocument);refresh();
   }
@@ -423,7 +417,7 @@
     if(e.clipboardData?.getData('text/plain'))return;
     const image=[...(e.clipboardData?.items||[])].find(item=>item.kind==='file'&&item.type.startsWith('image/'))?.getAsFile();
     if(!image)return;
-    e.preventDefault();recognizePastedImage(image);
+    e.preventDefault();runClipboardRecognition(image);
   },true);
   const editorCard=document.querySelector('.editor-card');
   editorCard?.addEventListener('dragover',e=>{if([...e.dataTransfer.items].some(item=>item.kind==='file'&&item.type.startsWith('image/'))){e.preventDefault();e.dataTransfer.dropEffect='copy';}});
@@ -432,7 +426,7 @@
     if(!files.length||!files.every(file=>file.type.startsWith('image/')))return;
     e.preventDefault();
     if(files.length!==1){openOCR(false);status.textContent='请一次拖入一张图片。';return;}
-    recognizePastedImage(files[0]);
+    runClipboardRecognition(files[0]);
   });
   async function recognizePastedImage(image){
     if(recognizing){status.textContent='已有识别任务正在运行。';return;}
@@ -443,13 +437,24 @@
       const encoded=await new Promise((resolve,reject)=>{const reader=new FileReader();reader.onload=()=>resolve(String(reader.result).split(',')[1]);reader.onerror=()=>reject(new Error('无法读取剪贴板图片'));reader.readAsDataURL(image)});
       const r=await request('ocrRecognize',{engine:engine.value,mode,imageBase64:encoded});
       if(r.cancelled){status.textContent='已取消';return;}
-      const candidates=mode==='page'?r.formulas:[{latex:r.latex,source:'剪贴板图片'}];
-      if(!candidates?.length||!candidates[0]?.latex)throw new Error('没有识别到公式');
-      // No automatic insertion: checking a candidate is the user's confirmation.
+      const candidates=Array.isArray(r.formulas)?r.formulas:[];
+
+      // Detection runs once; active-result changes reuse this result set.
       renderPageResults(candidates,r.engine||engine.value);
-      status.textContent='识别完成，请勾选要写入编辑器的公式。';
+
     }catch(e){status.textContent=/页码无效|用户已取消/.test(e.message)?e.message:'操作失败，请重试或查看详情';status.title=e.message;log.textContent=e.log||e.message;advanced.open=false;log.parentElement.open=false;if(recognizing)showRecognitionFailure();}
     finally{recognizing=false;setRecognitionProgress(false);const outcome=status.textContent;updateState();status.textContent=outcome;}
+  }
+  const commands=window.FormulaCommands;
+  const runClipboardRecognition=image=>commands?commands.execute('ocr.clipboardImage',{image}).catch(commands.onError):recognizePastedImage(image);
+  if(commands){
+    commands.register({id:'ocr.savePreferences',title:'保存OCR偏好',mutation:'preference',execute:persistPreferences});
+    commands.register({id:'ocr.clipboardImage',title:'识别剪贴板图片',mutation:'runtime',context:args=>!!args?.image,execute:args=>recognizePastedImage(args.image)});
+    for(const [button,id,title] of [[recognize,'recognize','选择识别文件'],[install,'install','安装OCR模块'],[cancelInstall,'cancelInstall','取消安装'],[cancelDocument,'cancelDocument','取消文档识别'],[wordInstall,'installWord','安装文档组件'],[find('[data-refresh]'),'refresh','刷新OCR环境']]){
+      const execute=button.onclick;if(!execute)continue;
+      commands.register({id:'ocr.'+id,title,mutation:'runtime',enabled:()=>!button.disabled,execute:()=>execute.call(button)});
+      button.onclick=()=>commands.execute('ocr.'+id).catch(commands.onError);
+    }
   }
   const imageTab=[...document.querySelectorAll('button')].find(b=>b.textContent.trim()==='图片识别');
   if(imageTab){imageTab.dataset.tab='image';imageTab.disabled=false;imageTab.title='本地图片公式识别';imageTab.onclick=()=>openOCR(false);}

@@ -1,0 +1,20 @@
+{
+  "date": "2026-10-15",
+  "baselineTag": "v1.6.0",
+  "baselineCommit": "e6aca97fe635f41e662af397e5f0e9fc64181628",
+  "workingTreeContainsUnreleasedUXFixes": true,
+  "newProductionChange": "Hide internal OCR result type in visible metadata",
+  "testsRun": [
+    "commercial-audit probe",
+    "typesetting",
+    "revision-history",
+    "source-conversion",
+    "output-actions",
+    "finish-ux (internal type absence)"
+  ],
+  "officeRealPasteRun": false,
+  "ocrBenchmarkRun": false,
+  "batch100Run": false,
+  "windowsRuntimeTest": false,
+  "remotePushed": false
+}

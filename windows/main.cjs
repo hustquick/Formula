@@ -44,18 +44,18 @@ function scanTools(){const result={};for(const key of ['latex','typst','dvisvgm'
 function run(exe,args,cwd,timeout=45000){const r=spawnSync(exe,args,{cwd,encoding:'utf8',windowsHide:true,timeout,maxBuffer:20*1024*1024});const text=((r.stdout||'')+'\n'+(r.stderr||'')).trim();if(r.error)throw new Error(r.error.message);return {code:r.status??1,text};}
 function svgSize(svg){const vb=svg.match(/viewBox=["']\s*[-\d.]+\s+[-\d.]+\s+([\d.]+)\s+([\d.]+)["']/i);if(vb)return {width:Math.ceil(Number(vb[1])),height:Math.ceil(Number(vb[2]))};const w=svg.match(/width=["']([\d.]+)/i),h=svg.match(/height=["']([\d.]+)/i);return {width:Math.ceil(Number(w?.[1]||800)),height:Math.ceil(Number(h?.[1]||300))};}
 async function renderNative(data){
-  const engine=data.engine||'latex',source=String(data.source||''),o=data.options||{};scanTools();const exe=toolPaths[engine];if(!exe)throw new Error(`未检测到 ${engine}。请在“系统工具”中指定路径。`);
+  const engine=data.engine||'latex',source=String(data.source||''),o=data.options||{};const bg=o.backgroundColor??(o.transparent===false?'#ffffff':'transparent');if(bg!=='transparent'&&!/^#[0-9a-f]{6}$/i.test(bg))throw new Error('背景颜色无效');o.transparent=bg==='transparent';scanTools();const exe=toolPaths[engine];if(!exe)throw new Error(`未检测到 ${engine}。请在“系统工具”中指定路径。`);
   const dir=await fsp.mkdtemp(path.join(os.tmpdir(),'Formula-render-'));let log='';try{
     const pdf=path.join(dir,'equation.pdf'),svg=path.join(dir,'equation.svg');
     if(engine==='typst'){
       const size=Math.max(10,Math.min(160,Number(o.size||32))),padding=Math.max(0,Math.min(80,Number(o.padding||12)))*0.75,color=/^#[0-9a-f]{6}$/i.test(o.color||'')?o.color:'#18232f';
-      const fill=o.transparent===false?'white':'none',preamble=String(o.typstPreamble||'');
+      const fill=o.transparent===false?`rgb("${bg}")`:'none',preamble=String(o.typstPreamble||'');
       const doc=`#set page(width: auto, height: auto, margin: ${padding}pt, fill: ${fill})\n#set text(size: ${size}pt, fill: rgb(\"${color}\"))\n${preamble}\n$ ${source} $\n`;
       await fsp.writeFile(path.join(dir,'equation.typ'),doc,'utf8');
       for(const format of ['pdf','svg']){const r=run(exe,['compile','--root',dir,'--format',format,'equation.typ',`equation.${format}`],dir);log+=r.text+'\n';if(r.code!==0)throw new Error('Typst 编译失败，请查看编译日志。');}
     }else{
       const size=Math.max(10,Math.min(160,Number(o.size||32))),padding=Math.max(0,Math.min(80,Number(o.padding||12)))*0.75,color=/^#[0-9a-f]{6}$/i.test(o.color||'')?o.color:'#18232f';const preamble=String(o.preamble||'\\usepackage{amsmath,amssymb}\n\\usepackage{xcolor}');
-      const tex=`\\documentclass[border=${padding}pt]{standalone}\n\\usepackage{amsmath,amssymb,xcolor}\n${preamble}\n\\begin{document}\n\\definecolor{formula}{HTML}{${color.slice(1)}}\n\\color{formula}\\fontsize{${size}}{${size*1.2}}\\selectfont\n$\\displaystyle ${source}$\n\\end{document}\n`;
+      const tex=`\\documentclass[border=${padding}pt]{standalone}\n\\usepackage{amsmath,amssymb,xcolor}\n${preamble}\n\\begin{document}\n${bg!=='transparent'?'\\definecolor{formulabg}{HTML}{'+bg.slice(1)+'}\\pagecolor{formulabg}':''}\n\\definecolor{formula}{HTML}{${color.slice(1)}}\n\\color{formula}\\fontsize{${size}}{${size*1.2}}\\selectfont\n$\\displaystyle ${source}$\n\\end{document}\n`;
       await fsp.writeFile(path.join(dir,'equation.tex'),tex,'utf8');
       const r=run(exe,['-no-shell-escape','-interaction=nonstopmode','-halt-on-error','-file-line-error','-output-directory',dir,'equation.tex'],dir);log+=r.text+'\n';if(r.code!==0)throw new Error('LaTeX 编译失败，请查看编译日志。');
       const dvi=toolPaths.dvisvgm;if(!dvi)throw new Error('Windows 本机 LaTeX 预览需要 dvisvgm；也可切换到“内置排版”。');
@@ -63,9 +63,9 @@ async function renderNative(data){
     }
     const pdfBytes=await fsp.readFile(pdf),svgText=await fsp.readFile(svg,'utf8'),size=svgSize(svgText);const svgBytes=Buffer.from(svgText);const scale=Math.max(1,Math.min(4,Number(o.scale||3)));
     const raster=sharp(svgBytes).resize({width:Math.max(1,Math.ceil(size.width*scale))});
-    const png=await (o.transparent===false?raster.clone().flatten({background:'#ffffff'}):raster.clone()).png().toBuffer();
-    const jpeg=await raster.clone().flatten({background:'#ffffff'}).jpeg({quality:96}).toBuffer();
-    const tiff=await (o.transparent===false?raster.clone().flatten({background:'#ffffff'}):raster.clone()).tiff().toBuffer();
+    const png=await (o.transparent===false?raster.clone().flatten({background:bg==='transparent'?'#ffffff':bg}):raster.clone()).png().toBuffer();
+    const jpeg=await raster.clone().flatten({background:bg==='transparent'?'#ffffff':bg}).jpeg({quality:96}).toBuffer();
+    const tiff=await (o.transparent===false?raster.clone().flatten({background:bg==='transparent'?'#ffffff':bg}):raster.clone()).tiff().toBuffer();
     const result={engine:path.basename(exe),pdf:pdfBytes.toString('base64'),svg:svgBytes.toString('base64'),png:png.toString('base64'),jpeg:jpeg.toString('base64'),tiff:tiff.toString('base64'),width:Math.ceil(size.width*scale),height:Math.ceil(size.height*scale),log};
     if(toolPaths.pdftops){try{const eps=path.join(dir,'equation.eps'),e=run(toolPaths.pdftops,['-eps',pdf,eps],dir);log+=e.text+'\n';if(e.code===0)result.eps=(await fsp.readFile(eps)).toString('base64');}catch{}}
     result.log=log;return result;

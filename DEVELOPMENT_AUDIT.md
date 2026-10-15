@@ -1,3 +1,5 @@
+> 当前执行规则（2026-10-15）：B表 A01–A40 是唯一主任务清单，按 Execution Order 执行；一次只验收一项。其余章节为有日期的历史证据，不能覆盖 B 表当前状态。未经重新验证的条目保留原审计状态。
+
 # DEVELOPMENT_AUDIT — Formula 阶段性产品审计
 
 日期：2026-10-14（Asia/Shanghai）。对象：`feature/clipboard-ocr` 工作区，Git HEAD `ec3776ac3c9bed44fb8ea2aa1266843fd156ce3f` **加未提交改动**。正式发布基线 1.5.1。
@@ -20,7 +22,7 @@
 - **真实引擎运行**：126模板MathJax渲染成功；100模板转换后本机Typst实际编译成功；现有Pix2Text单式/整页、UniMERNet单式离线推理成功。不是准确率/语义等价证明。
 - **原生交付**：本轮未安装，运行中的是已有版；解锁后OCR、双源、两种本机排版和保存再开实测通过，编辑操作失配；完整19步Mac工作流未通过，见H及L节。Word/WPS/Pages未实测。
 
-### 状态计数
+### 初始审计状态计数（2026-10-14，非当前进度）
 
 | 主状态 | 数量 |
 |---|---:|
@@ -33,48 +35,50 @@
 
 ## B. Feature Audit Table
 
-| ID | Feature | Status | Evidence | Problems | Severity | Recommended Action |
-|---|---|---|---|---|---|---|
-| A01 | 任务驱动工作流 | PARTIAL | `web/index.html；web/app.js:539–606`；commands、output-actions、ocr-behavior 通过 | 低频工具仍有重叠入口；不能以入口齐全代表任务闭环 | P1 | 先修上下文和编辑连续性，再做任务效率对比 |
-| A02 | 焦点感知与标准复制 | BROKEN | `web/app.js:556；web/commands.mjs:7`；context-copy.json：命令搜索框选中 hat 后 ⌘C 发出 copyImage/svg | 全局捕获快捷键可覆盖用户复制意图，写错剪贴板 | P0 | 普通文本输入交回原生编辑链；补全部焦点矩阵测试 |
-| A03 | 布局与编辑上下文稳定 | PARTIAL | `web/v1.1.css:232–250；web/app.js:413、591`；panels.json：760/1180 宽全部六标签+History+Palette frame 不变；probes.json 另测820/1440 | 标签点击后焦点在按钮，未恢复编辑器；滚动探针内容不够长，不能证明滚动保留 | P1 | 补长源码、设置和原生 UI 的 frame/焦点/滚动断言 |
-| A04 | 多公式及长公式完整可见 | COMPLETE | `web/v1.1.css:244–245`；probes.json：1/10/50 行；50行 scrollHeight5214、首端top1、末端bottom−0.75；长公式横向6863px两端可达 | 不代表所有 renderer 或遮罩组合已验证 | P2 | 把本次1/10/50与横向边界探针转为正式CI断言 |
-| A05 | 基础源码编辑与导航 | PARTIAL | `web/index.html #source；web/source-assist.mjs`；source-mode、source-assist、source-candidates 通过 | textarea与全局命令层可能争夺快捷键 | P1 | 保留原生基础语义并增加真实键盘导航测试 |
-| A06 | 语法高亮与括号匹配标记 | MISSING | `web/index.html #source 为 textarea；web/source-assist.mjs`；实际源码组件无高亮层/匹配括号标记；测试也未提供该能力 | 不能称为已对标专业源码编辑器 | P2 | 先明确轻量高亮方案和不影响选区的验收条件 |
-| A07 | LaTeX / Typst 补全 | PARTIAL | `web/source-assist.mjs:41–90；web/completion-data`；source-assist、source-candidates 通过 | Typst词表有限；LaTeX借用词库不等于插件完整功能 | P1 | 按上下文补参数结构，保持ghost不写原文 |
-| A08 | 自动闭合与跳出括号 | PARTIAL | `web/source-assist.mjs:45–49、86–88`；source-assist 通过：ghost接受和已有闭合符跳出 | 与成熟编辑器的自动闭合仍有差距 | P2 | 补成对编辑语义与撤销测试 |
-| A09 | 手写缩进与自动格式策略 | PARTIAL | `web/source-assist.mjs:71–79；web/app.js:269`；source-mode、visual-format、generated-source 通过 | 用户手写复杂结构仍需手动整理 | P2 | 增加显式缩进命令，避免实时重排 |
-| A10 | 查找与替换 | PARTIAL | `web/app.js:598–604`；command-shortcuts 通过 CmdF/G/ShiftG | 查找输入框受全局复制/撤销上下文缺陷影响 | P1 | 修焦点后补最小替换流程 |
-| A11 | 自动生成源码格式规范 | COMPLETE | `web/format-latex.mjs；scripts/sync-latexlive-catalog.mjs；docs/GENERATED_SOURCE_STANDARD.md`；generated-source、visual-format、template-generated-source、ocr-format 通过；126模板MathJax实际渲染+幂等 | 复杂自定义宏仍保守处理；不可把幂等当作数学语义证明 | P2 | 加入更多宏/注释/Typst文档保真样本 |
-| A12 | 选区感知结构变换 | COMPLETE | `web/editor-transforms.mjs；web/app.js:563–574；web/latexlive-exact.js:56`；selection-transforms：33种实际菜单点击、operand/source/preview、MathLive undo/redo、无选区placeholder通过 | 私有MathLive undo边界API风险归A25；本项仅确认结构语义回归已通过浏览器运行 | P1 | 将同类source/Typst/无选区光标行为加入矩阵 |
-| A13 | Visual / Source 双向同步 | PARTIAL | `web/app.js:124–147、269–288、526–532`；source-mode、visual-format、commands、selection-transforms通过 | readSource调用mf.setValue；两套历史可分歧 | P0 | 先统一历史所有权，补跨模式连续操作测试 |
-| A14 | 双语言复杂公式支持 | PARTIAL | `web/app.js:65、133、140–147；tex2typst0.6.2`；compatibility.json：126模板，100正向转换并本机编译，81反向解析成功 | 不支持的宏与转换器边界使双语言体验不一致 | P1 | 优先覆盖现有模板的可等价语法 |
-| A15 | 源码语言与renderer解耦 | BROKEN | `web/app.js:140–141、514`；代码明确禁止本机LaTeX+Typst源码/本机Typst+LaTeX源码；引擎切换改state.mode | 切引擎会改变源码语言；误导用户并触发有损转换 | P1 | 保留原始sourceLanguage，通过独立转换适配renderer |
-| A16 | 统一内容与双源码模型 | ARCHITECTURE RISK | `web/app.js:22、65、133、147、232`；兼容探针证明100种可编译但其中19反向失败；数据只存rawSource+latex+mode | 并非简单字符串替换库，但应用层仍依赖字符串双转，不能承诺无损 | P1 | 先明确representation与转换结果契约，不直接重写整个AST |
-| A17 | 模板库双语言完整性 | PARTIAL | `web/vendor/latexlive/catalog.js（生成产物）；scripts/sync-latexlive-catalog.mjs`；compatibility.json遍历十类126模板：原生双源0、仅LaTeX126 | UI能力被renderer规则额外限制；详见I节 | P1 | 补原生Typst与转换能力标记，先解决高频模板 |
-| A18 | 离线OCR识别链路 | PARTIAL | `macos/formula-ocr-runner.py；FormulaOCR.swift；web/ocr.js`；复用现有模型离线Pix2Text单式/整页2式、UniMERNet单式成功；ocr-chain.json双引擎结果导入→格式→Typst→内置渲染通过 | 成功运行不等于识别数学正确；UniMERNet样例额外生成样式/空格 | P1 | 建立含复杂结构的标注语料，测正确率与失败恢复 |
-| A19 | 剪贴板图片 / 图片导入 | PARTIAL | `web/ocr.js:320–341；macos/FormulaOCR.swift handleOCRRecognize`；clipboard-ocr、ocr-behavior通过（桥接模拟）；本机runner真实推理通过 | 桥接模拟不能证明原生剪贴板稳定 | P1 | 解锁后实测图片/文本混合粘贴及撤销 |
-| A20 | PDF / DOCX 提取 | PARTIAL | `macos/FormulaDocument.swift；formula-document-runner.py；web/ocr.js`；document-behavior通过；本轮未重跑真实PDF/DOCX集成 | 不可将既有功能当尚未实现，也不能宣称本轮验证通过 | P2 | 复用已安装环境重跑document-integration，禁止重新下载模型 |
-| A21 | 快捷工具 / 模板 / 二级面板 | PARTIAL | `web/latexlive-exact.js；latexlive-menus.js`；126模板渲染、selection-transforms33项、shortcut-previews通过 | 渲染通过不等于插入和转换都正确 | P1 | 自动生成完整按钮能力矩阵 |
-| A22 | 自定义工具栏 | COMPLETE | `web/app.js:296–410；web/v1.1.css工具区`；custom-toolbar重测通过：真实drag增删排序、持久化、模式、恢复默认；panels frame稳定 | 全局菜单/快捷键风险不由此项保证 | P2 | 保留当前回归并补最小宽度溢出断言 |
-| A23 | Copy / Export 格式及分工 | PARTIAL | `web/app.js:165–228；macos/Formula.swift:136–140`；output-actions通过8种内置格式：复制payload/导出文件名；native-preview-size通过 | 不保证Word/WPS/Pages效果；单representation缺fallback | P1 | 区分复制图形与复制源码能力；增加多representation |
-| A24 | Word / WPS / Pages 实际兼容 | TEST COVERAGE MISSING | `macos/Formula.swift:138–140`；本轮未逐应用粘贴；仅有桥接payload验证 | 不能宣称原生可编辑公式粘贴兼容；无OMML专用写入证据 | P1 | 逐应用实测并记录版本/粘贴类型/清晰度/编辑性 |
-| A25 | Undo / Redo 统一所有权 | ARCHITECTURE RISK | `web/commands.mjs RevisionHistory；web/editor-transforms.mjs；MathLive内部executeCommand`；undo-divergence.json：registry hat后MathLive undo到x，revision.index仍2且canRedo=false，registry redo无效 | 当前可复现历史分歧；不能称统一撤销已完成 | P0 | 统一所有入口与事务边界，补混合入口跨模式回归 |
-| A26 | 可查看的自动编辑History | PARTIAL | `web/commands.mjs RevisionHistory；web/app.js:591–617`；revision-history、commands通过：恢复、分支、100条/4MB限制 | schedule.flush丢具体标题；本机安装版尚无新History UI | P1 | 先与Undo统一，再完善持久化与清理 |
-| A27 | History快照覆盖排版设置 | BROKEN | `web/commands.mjs signature；web/app.js captureRevision`；probes.json signature=true：透明true/false判作同一revision | 透明/分辨率/字体等更改不可靠地进入可撤销历史 | P1 | 集中声明文档状态字段并测试每项变化的Undo |
-| A28 | 键盘快捷键体系 | PARTIAL | `web/app.js:537–620；web/commands.mjs:7`；command-shortcuts、commands通过：无重复键、N/O/S/1/2/3/F/G/K/L/E等 | 已安装应用仍旧⌘E导出/⇧⌘C源码，不是当前源码新键位 | P1 | 修上下文后统一原生菜单及网页事件优先级 |
-| A29 | macOS 菜单栏 Commands | TEST COVERAGE MISSING | `macos/Formula.swift:86–129`；Swift真实编译成功；本机AX只见旧文件/编辑菜单，新菜单尚未安装 | 代码存在不能当COMPLETE；已安装版本与源码不同 | P1 | 通过审计后安装当前候选，完整原生菜单工作流验证 |
-| A30 | Command Palette / 上下文菜单 | PARTIAL | `web/app.js:587–606`；commands、command-shortcuts通过；panels浮层frame不变 | 搜索框标准复制存在已复现回归 | P1 | 先修编辑上下文，再收敛上下文相关命令 |
-| A31 | Command Registry 统一程度 | ARCHITECTURE RISK | `web/commands.mjs；web/app.js:539–621、514、remember/restore`；commands测试核心统一入口通过；静态仍见直接engine/settings/favorites修改 | 动态命令与独立事件并存，错误enabled和历史遗漏易反复 | P1 | 列所有mutation入口，统一状态/事务约定，避免大重写 |
-| A32 | 自动测试体系与CI | PARTIAL | `.github/workflows；tests/*.cjs；docs/audit/2026-10-14/test-summary.json`；本轮30个JS脚本29通过1失败；Python OCR单元2项通过 | 绿色旧CI不能证明本轮新架构；旧测试等待已删除#input-color超时 | P1 | 整理统一测试入口，新增高风险测试接CI并修旧断言 |
-| A33 | 真实Mac完整工作流 | TEST COVERAGE MISSING | `/Applications/Formula.app；本轮CUA记录`；连接运行中应用成功、读到公式与旧菜单；后续操作无响应且截图不可用，已请求解锁 | 不得把headless或已有进程当新版本真实验收通过 | P1 | 解锁后按19步清单实测，保留用户原公式/设置 |
-| A34 | 用户资产与共享模型 | PARTIAL | `macos/Formula.swift:16–17、134；FormulaOCR.swift:9；runner:25、50`；现有OCR环境离线推理成功，无安装/下载；本轮未删除任何用户资产 | 不能称所有模型都在统一Models目录；marker/依赖检查不是权重完整性校验 | P1 | 明确共享资源清单与只读完整性检查，避免移动venv |
-| A35 | 本机安装与构建可重复性 | ARCHITECTURE RISK | `scripts/install-local.sh`；npm build:vendor成功；当前Swift真实编译成功；应用bundle hash与工作区不同 | 不能称干净通用构建；资源更新可能漏复制，安装不能等同代码构建 | P1 | 先补产物清单/回滚，再安装经验证候选 |
-| A36 | 错误输入与Last Valid Preview | COMPLETE | `web/app.js:68–75、85–123`；last-valid-preview通过：保留上一有效图像，禁止导出陈旧结果 | 本项结论限已测失效/恢复场景 | P2 | 维持陈旧结果不可导出的回归约束 |
-| A37 | 输出字体与无闪烁切换 | COMPLETE | `web/app.js MathJax字体加载/渲染；web/v1.1.css`；math-fonts、font-controls、font-native-reload通过 | 浏览器测试不代替用户对所有Mac显示器的闪烁感受 | P3 | 补原生视觉冒烟，不扩大字体UI |
-| A38 | 独立编辑缩放与输出字号 | COMPLETE | `web/app.js editor-size/output-size；Formula.swift render`；editor-zoom、native-preview-size通过 | 保留各自状态，不重新合并缩放 | P3 | 保持回归测试 |
-| A39 | 收藏公式图形展示 | COMPLETE | `web/app.js:206–210；web/v1.1.css:223–224`；compact-layout与custom-toolbar/现有渲染路径通过；代码渲染SVG到收藏card | 本项只确认图形展示基础路径，不将其当自动History | P2 | 补复杂宏fallback与收藏搜索 |
-| A40 | 保存、重新打开与文档生命周期 | PARTIAL | `web/app.js:234–240、541–542、originalImport；Formula.swift save/importFile`；output-actions验证MathForge导出名与payload；commands open/save桥接通过 | 缺持续文档身份与异常恢复证据 | P1 | 定义最小文档生命周期，验证保存→关闭→重开一致性 |
+执行依赖：A02为独立P0；A16内容契约→A31事务入口→A25撤销→A27快照→A13同步→A40生命周期→A26历史。之后转换与模板→UI命令→输出/Office→OCR/文档→其余能力→构建/CI/原生整体验收。A32自动测试贯穿每一项，末尾代表整体CI验收；A35基础构建每次执行，末尾代表独立可重复性验收。原表P3保留原始评级，执行时归低优先级P2批次。排序不删除任务，不代表已提前完成依赖项。
+
+| Execution Order | ID | Feature | Status | Evidence | Problems | Severity | Recommended Action | Commit / Files | Test | Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | A02 | 焦点感知与标准复制 | COMPLETE | 2026-10-15：760/1120/1440 焦点矩阵；真实 Mac NSPasteboard 文本、空选区、菜单、图形验证；见 docs/audit/2026-10-15/a02/ | 已修复辅助输入复制路由；空源码选区不清空剪贴板；只读文本与 MathLive 隐藏选区分离 | P0 | 保留自动回归；Office互操作单独在A24验收 | web/app.js；tests/focus-copy-matrix.cjs；tests/native-clipboard-probe.swift；未单独提交 | 定向矩阵 + test:editor；原生构建安装/剪贴板记录见A02证据 | 本轮仅A02；不改变文档模型/用户数据；不需要迁移；当前批次1/5 |
+| 2 | A16 | 统一内容与双源码模型 | COMPLETE | 2026-10-15 FormulaContent原文/双表示/revision/来源/转换状态契约；真实Mac Typst重启往返保留cfrac；docs/audit/2026-10-15/a16/ | 已解决原文/缓存混用；派生保真明确unverified，不声称统一数学AST | P1 | 保持契约，A31事务→A25历史；复杂转换能力留A14/A17 | web/formula-content.mjs；web/app.js；web/commands.mjs；tests/formula-content*.cjs；scripts/test-editor.cjs；docs/FORMULA_CONTENT_CONTRACT.md；未单独提交 | PASS 33组回归；760/1120/1440；原生构建安装/重启 | 增量schemaVersion1；保留旧字段兼容；无文件迁移/数据删除；本批次2/5；等待用户体验，未推送 |
+| 3 | A31 | Command Registry 统一程度 | COMPLETE | 2026-10-15 A31.1/.2/.3入口契约；批量scope/asset/preference/OCR桥接统一；38组回归+原生取消恢复；docs/audit/2026-10-15/a31/runtime/ | 已列明内部适配例外；通用并发/嵌套Undo所有权继续归A25，未宣称完整资产Undo | P1 | 下一项A25统一Undo所有权；完成后第五项阶段回归 | web/app.js；web/commands.mjs；web/ocr.js；tests/runtime-mutation-scope.cjs；scripts/test-editor.cjs；docs/COMMAND_MUTATION_CONTRACT.md及前两子项 | PASS 38组+3项OCR专项、原生批量取消、完整持久化数据恢复、构建安装 | 累计4/5完整A项；已安装启动；无schema变化/模型下载；未推送 |
+| 4 | A25 | Undo / Redo 统一所有权 | COMPLETE | 2026-10-15 A25.1/.2：编辑/撤销/导航共用队列；失败回滚、显式子事务、字体与焦点；docs/audit/2026-10-15/a25/transactions/ | 预览绘制不持有输入锁；资产Undo、A27字段清单、A40生命周期仍独立 | P0 | 建议下一项A27，先验证现有字段覆盖；本轮停止 | web/commands.mjs；web/app.js；tests/edit-transactions.cjs；tests/undo-ownership.cjs；scripts/test-editor.cjs；docs/COMMAND_MUTATION_CONTRACT.md；未单独提交 | PASS 40组、阶段回归、离线真实OCR、原生即时Undo/Redo/模式焦点、构建安装启动 | 累计5/5，阶段回归通过；无schema迁移/模型下载；已安装等待体验，未推送 |
+| 5 | A27 | History快照覆盖排版设置 | COMPLETE | 2026-10-15统一documentSnapshotSettingKeys；三模式完整设置矩阵、project/favorite/version真实字体及重启；docs/audit/2026-10-15/a27/ | 原漏字段已由前轮修复；本轮补实际字体与state不同步；inline多片段预览丢失另记A13 | P1 | A13继续检查端到端同步与多片段预览 | web/document-settings.mjs；web/commands.mjs；web/app.js；tests/history-settings.cjs；scripts/test-editor.cjs；未单独提交 | PASS 42组、构建签名安装启动、真实Mac快照打开/Undo、源码缩放 | 无schema迁移/模型下载；新批次1/5；另按用户要求修复A+/A−高亮字号；未推送 |
+| 6 | A13 | Visual / Source 双向同步 | COMPLETE | 2026-10-15 inline单SVG输出、未变数学内容保留visual树；source-preview-sync；docs/audit/2026-10-15/a13/ | 复杂双语言转换保真继续归A14/A17，不声称无损AST | P0 | 下一项A40文档生命周期，依赖模型/撤销/同步已齐 | web/index.html；web/app.js；tests/source-preview-sync.cjs；scripts/test-editor.cjs；未单独提交 | PASS 43组回归、构建安装启动、真实Mac行内x+y+z+w完整预览并恢复用户公式 | 新批次2/5；无schema迁移/模型下载；备份20261015-192646；未推送 |
+| 7 | A40 | 保存、重新打开与文档生命周期 | PARTIAL | A40.1即时草稿；A40.2会话文件身份、dirty、原位保存/另存为与原生实测；docs/audit/2026-10-15/a40/ | 重启文件身份、外部变更保护及完整重开验收仍待完成 | P1 | 继续A40，不进入A26 | web/document-lifecycle.mjs；web/app.js；macos/Formula.swift；tests/document-lifecycle.cjs；tests/command-shortcuts.cjs；scripts/test-editor.cjs | PASS 45组、原生首次保存/原位保存/另存为取消、构建安装启动 | 备份20261015-193549；无资产迁移/模型操作；未推送 |
+| 8 | A26 | 可查看的自动编辑History | PARTIAL | `web/commands.mjs RevisionHistory；web/app.js:591–617`；revision-history、commands通过：恢复、分支、100条/4MB限制 | schedule.flush丢具体标题；本机安装版尚无新History UI | P1 | 先与Undo统一，再完善持久化与清理 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 9 | A15 | 源码语言与renderer解耦 | BROKEN | `web/app.js:140–141、514`；代码明确禁止本机LaTeX+Typst源码/本机Typst+LaTeX源码；引擎切换改state.mode | 切引擎会改变源码语言；误导用户并触发有损转换 | P1 | 保留原始sourceLanguage，通过独立转换适配renderer | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 10 | A14 | 双语言复杂公式支持 | PARTIAL | `web/app.js:65、133、140–147；tex2typst0.6.2`；compatibility.json：126模板，100正向转换并本机编译，81反向解析成功 | 不支持的宏与转换器边界使双语言体验不一致 | P1 | 优先覆盖现有模板的可等价语法 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 11 | A17 | 模板库双语言完整性 | PARTIAL | `web/vendor/latexlive/catalog.js（生成产物）；scripts/sync-latexlive-catalog.mjs`；compatibility.json遍历十类126模板：原生双源0、仅LaTeX126 | UI能力被renderer规则额外限制；详见I节 | P1 | 补原生Typst与转换能力标记，先解决高频模板 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 12 | A12 | 选区感知结构变换 | COMPLETE | `web/editor-transforms.mjs；web/app.js:563–574；web/latexlive-exact.js:56`；selection-transforms：33种实际菜单点击、operand/source/preview、MathLive undo/redo、无选区placeholder通过 | 私有MathLive undo边界API风险归A25；本项仅确认结构语义回归已通过浏览器运行 | P1 | 将同类source/Typst/无选区光标行为加入矩阵 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 13 | A21 | 快捷工具 / 模板 / 二级面板 | PARTIAL | `web/latexlive-exact.js；latexlive-menus.js`；126模板渲染、selection-transforms33项、shortcut-previews通过 | 渲染通过不等于插入和转换都正确 | P1 | 自动生成完整按钮能力矩阵 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 14 | A03 | 布局与编辑上下文稳定 | COMPLETE | 2026-10-15补齐真实Mac设置Done/Escape、源码/可视化选区、60行末尾滚动、Undo/Redo恢复；760/1120/1440三模式矩阵通过；docs/audit/2026-10-15/a03-context/verification-20261015.md | 既有上下文修复已验证；本轮没有发现新缺陷，未重复实现 | P1 | 保持现有回归；下一项A31事务入口，未开始 | 本轮仅DEVELOPMENT_AUDIT.md与A03证据；产品代码沿用已安装版本 | PASS editor-context/settings-context/workspace-height/commands/audit-regressions/completion-placement；真实Mac补测 | 本批次3/5；原公式/模式/外观/收藏已恢复；无schema变更或迁移；已安装运行；未推送 |
+| 15 | A05 | 基础源码编辑与导航 | PARTIAL | `web/index.html #source；web/source-assist.mjs`；source-mode、source-assist、source-candidates 通过 | textarea与全局命令层可能争夺快捷键 | P1 | 保留原生基础语义并增加真实键盘导航测试 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 16 | A28 | 键盘快捷键体系 | PARTIAL | `web/app.js:537–620；web/commands.mjs:7`；command-shortcuts、commands通过：无重复键、N/O/S/1/2/3/F/G/K/L/E等 | 已安装应用仍旧⌘E导出/⇧⌘C源码，不是当前源码新键位 | P1 | 修上下文后统一原生菜单及网页事件优先级 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 17 | A29 | macOS 菜单栏 Commands | TEST COVERAGE MISSING | `macos/Formula.swift:86–129`；Swift真实编译成功；本机AX只见旧文件/编辑菜单，新菜单尚未安装 | 代码存在不能当COMPLETE；已安装版本与源码不同 | P1 | 通过审计后安装当前候选，完整原生菜单工作流验证 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 18 | A30 | Command Palette / 上下文菜单 | PARTIAL | `web/app.js:587–606`；commands、command-shortcuts通过；panels浮层frame不变 | 搜索框标准复制存在已复现回归 | P1 | 先修编辑上下文，再收敛上下文相关命令 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 19 | A10 | 查找与替换 | PARTIAL | `web/app.js:598–604`；command-shortcuts 通过 CmdF/G/ShiftG | 查找输入框受全局复制/撤销上下文缺陷影响 | P1 | 修焦点后补最小替换流程 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 20 | A07 | LaTeX / Typst 补全 | PARTIAL | `web/source-assist.mjs:41–90；web/completion-data`；source-assist、source-candidates 通过 | Typst词表有限；LaTeX借用词库不等于插件完整功能 | P1 | 按上下文补参数结构，保持ghost不写原文 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 21 | A23 | Copy / Export 格式及分工 | PARTIAL | `web/app.js:165–228；macos/Formula.swift:136–140`；output-actions通过8种内置格式：复制payload/导出文件名；native-preview-size通过 | 不保证Word/WPS/Pages效果；单representation缺fallback | P1 | 区分复制图形与复制源码能力；增加多representation | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 22 | A24 | Word / WPS / Pages 实际兼容 | TEST COVERAGE MISSING | `macos/Formula.swift:138–140`；本轮未逐应用粘贴；仅有桥接payload验证 | 不能宣称原生可编辑公式粘贴兼容；无OMML专用写入证据 | P1 | 逐应用实测并记录版本/粘贴类型/清晰度/编辑性 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 23 | A34 | 用户资产与共享模型 | PARTIAL | `macos/Formula.swift:16–17、134；FormulaOCR.swift:9；runner:25、50`；现有OCR环境离线推理成功，无安装/下载；本轮未删除任何用户资产 | 不能称所有模型都在统一Models目录；marker/依赖检查不是权重完整性校验 | P1 | 明确共享资源清单与只读完整性检查，避免移动venv | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 24 | A18 | 离线OCR识别链路 | PARTIAL | `macos/formula-ocr-runner.py；FormulaOCR.swift；web/ocr.js`；复用现有模型离线Pix2Text单式/整页2式、UniMERNet单式成功；ocr-chain.json双引擎结果导入→格式→Typst→内置渲染通过 | 成功运行不等于识别数学正确；UniMERNet样例额外生成样式/空格 | P1 | 建立含复杂结构的标注语料，测正确率与失败恢复 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 25 | A19 | 剪贴板图片 / 图片导入 | PARTIAL | `web/ocr.js:320–341；macos/FormulaOCR.swift handleOCRRecognize`；clipboard-ocr、ocr-behavior通过（桥接模拟）；本机runner真实推理通过 | 桥接模拟不能证明原生剪贴板稳定 | P1 | 解锁后实测图片/文本混合粘贴及撤销 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 26 | A20 | PDF / DOCX 提取 | PARTIAL | `macos/FormulaDocument.swift；formula-document-runner.py；web/ocr.js`；document-behavior通过；本轮未重跑真实PDF/DOCX集成 | 不可将既有功能当尚未实现，也不能宣称本轮验证通过 | P2 | 复用已安装环境重跑document-integration，禁止重新下载模型 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 27 | A08 | 自动闭合与跳出括号 | PARTIAL | `web/source-assist.mjs:45–49、86–88`；source-assist 通过：ghost接受和已有闭合符跳出 | 与成熟编辑器的自动闭合仍有差距 | P2 | 补成对编辑语义与撤销测试 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 28 | A09 | 手写缩进与自动格式策略 | PARTIAL | `web/source-assist.mjs:71–79；web/app.js:269`；source-mode、visual-format、generated-source 通过 | 用户手写复杂结构仍需手动整理 | P2 | 增加显式缩进命令，避免实时重排 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 29 | A06 | 语法高亮与括号匹配标记 | MISSING | `web/index.html #source 为 textarea；web/source-assist.mjs`；实际源码组件无高亮层/匹配括号标记；测试也未提供该能力 | 不能称为已对标专业源码编辑器 | P2 | 先明确轻量高亮方案和不影响选区的验收条件 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 30 | A04 | 多公式及长公式完整可见 | COMPLETE | `web/v1.1.css:244–245`；probes.json：1/10/50 行；50行 scrollHeight5214、首端top1、末端bottom−0.75；长公式横向6863px两端可达 | 不代表所有 renderer 或遮罩组合已验证 | P2 | 把本次1/10/50与横向边界探针转为正式CI断言 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 31 | A11 | 自动生成源码格式规范 | COMPLETE | `web/format-latex.mjs；scripts/sync-latexlive-catalog.mjs；docs/GENERATED_SOURCE_STANDARD.md`；generated-source、visual-format、template-generated-source、ocr-format 通过；126模板MathJax实际渲染+幂等 | 复杂自定义宏仍保守处理；不可把幂等当作数学语义证明 | P2 | 加入更多宏/注释/Typst文档保真样本 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 32 | A22 | 自定义工具栏 | COMPLETE | `web/app.js:296–410；web/v1.1.css工具区`；custom-toolbar重测通过：真实drag增删排序、持久化、模式、恢复默认；panels frame稳定 | 全局菜单/快捷键风险不由此项保证 | P2 | 保留当前回归并补最小宽度溢出断言 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 33 | A36 | 错误输入与Last Valid Preview | COMPLETE | `web/app.js:68–75、85–123`；last-valid-preview通过：保留上一有效图像，禁止导出陈旧结果 | 本项结论限已测失效/恢复场景 | P2 | 维持陈旧结果不可导出的回归约束 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 34 | A39 | 收藏公式图形展示 | COMPLETE | `web/app.js:206–210；web/v1.1.css:223–224`；compact-layout与custom-toolbar/现有渲染路径通过；代码渲染SVG到收藏card | 本项只确认图形展示基础路径，不将其当自动History | P2 | 补复杂宏fallback与收藏搜索 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 35 | A37 | 输出字体与无闪烁切换 | COMPLETE | `web/app.js MathJax字体加载/渲染；web/v1.1.css`；math-fonts、font-controls、font-native-reload通过 | 浏览器测试不代替用户对所有Mac显示器的闪烁感受 | P3 | 补原生视觉冒烟，不扩大字体UI | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 36 | A38 | 独立编辑缩放与输出字号 | COMPLETE | `web/app.js editor-size/output-size；Formula.swift render`；editor-zoom、native-preview-size通过 | 保留各自状态，不重新合并缩放 | P3 | 保持回归测试 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 37 | A01 | 任务驱动工作流 | PARTIAL | `web/index.html；web/app.js:539–606`；commands、output-actions、ocr-behavior 通过 | 低频工具仍有重叠入口；不能以入口齐全代表任务闭环 | P1 | 先修上下文和编辑连续性，再做任务效率对比 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 38 | A35 | 本机安装与构建可重复性 | ARCHITECTURE RISK | `scripts/install-local.sh`；npm build:vendor成功；当前Swift真实编译成功；应用bundle hash与工作区不同 | 不能称干净通用构建；资源更新可能漏复制，安装不能等同代码构建 | P1 | 先补产物清单/回滚，再安装经验证候选 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 39 | A32 | 自动测试体系与CI | PARTIAL | `.github/workflows；tests/*.cjs；docs/audit/2026-10-14/test-summary.json`；本轮30个JS脚本29通过1失败；Python OCR单元2项通过 | 绿色旧CI不能证明本轮新架构；旧测试等待已删除#input-color超时 | P1 | 整理统一测试入口，新增高风险测试接CI并修旧断言 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 40 | A33 | 真实Mac完整工作流 | TEST COVERAGE MISSING | `/Applications/Formula.app；本轮CUA记录`；连接运行中应用成功、读到公式与旧菜单；后续操作无响应且截图不可用，已请求解锁 | 不得把headless或已有进程当新版本真实验收通过 | P1 | 解锁后按19步清单实测，保留用户原公式/设置 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
 
 ### 逐项证据、已实现及缺口
 
@@ -102,14 +106,12 @@
 
 #### A03 布局与编辑上下文稳定
 
-- 当前状态：**PARTIAL**。
-- 代码证据：`web/v1.1.css:232–250；web/app.js:413、591`。
-- 运行证据：panels.json：760/1180 宽全部六标签+History+Palette frame 不变；probes.json 另测820/1440。
-- 已实现：固定工具区、浮层、核心区域稳定；源码 selection [1,3] 保留。
-- 未实现/未验证：原生 WKWebView、设置、所有长内容滚动与焦点恢复未全覆盖。
-- Bug或风险：标签点击后焦点在按钮，未恢复编辑器；滚动探针内容不够长，不能证明滚动保留。
-- 严重性：P1。
-- 下一步：补长源码、设置和原生 UI 的 frame/焦点/滚动断言。
+- 当前状态：**COMPLETE**（2026-10-15补充技术验收，等待用户体验）。
+- 实现：统一独立UI上下文捕获/恢复，标签不抢焦点；设置/命令/历史/tool关闭恢复选区与滚动。132px工具区、116px卡片、200px编辑/预览固定占位；品牌栏移除、OCR仅工作时动态进度。
+- 自动证据：760/1120/1440三模式100行矩阵、设置关闭/滚动/框架、命令与Undo回归。
+- 原生证据：源码设置Done与可视化设置Escape选区保留；60行公式末尾滚动经设置返回不变；Undo/Redo/Undo恢复原文与预览；磁盘数据核对原公式/模式/外观/收藏一致。
+- 本轮没有新增产品代码，复核已安装版本；详见 `docs/audit/2026-10-15/a03-context/verification-20261015.md`。
+- 边界：A25统一历史所有权和A33全产品原生工作流仍独立验收，本项不替代它们。
 
 #### A04 多公式及长公式完整可见
 
@@ -212,14 +214,13 @@
 
 #### A13 Visual / Source 双向同步
 
-- 当前状态：**PARTIAL**。
-- 代码证据：`web/app.js:124–147、269–288、526–532`。
-- 运行证据：source-mode、visual-format、commands、selection-transforms通过。
-- 已实现：两向同步与格式化；避免手写源码自动重排。
-- 未实现/未验证：转换失败/跨renderer/不同Undo入口组合未稳定。
-- Bug或风险：readSource调用mf.setValue；两套历史可分歧。
-- 严重性：P0。
-- 下一步：先统一历史所有权，补跨模式连续操作测试。
+- 当前状态：**COMPLETE**（技术验证完成，等待用户体验）。
+- 根因1：MathJax4行内公式默认拆多个SVG，应用只提取首个；x+y+z+w复现4片段但预览缺后续项。设置svg.linebreaks.inline=false保留行内数学样式，生成完整单SVG供预览/导出。
+- 根因2：readSource无条件mf.setValue重建树，未变源码也抹去visual占位符和选区；现在visual数学内容相同时保留原树，实际源码变化仍同步更新。
+- 回归：source-preview-sync覆盖全部glyph/导出元数据、重复读取placeholder/selection、Typst→visual修饰→LaTeX及Undo/Redo、错误输入保留和修正；43组测试全部通过，含原内容契约、History、生成格式与布局矩阵。
+- 原生：备份20261015-192646，正常/Applications/Formula.app构建签名安装启动；实际设置行内x+y+z+w截图四变量/三加号完整，随后两次Undo恢复最新用户公式及黄色背景。源码/模式/输出设置/缩放/收藏与测试前一致。
+- 边界：不扩张转换能力，复杂语义保真继续A14/A17；无数据结构迁移/模型操作，未推送GitHub。新批次累计2/5。
+- 证据：docs/audit/2026-10-15/a13/README.md、editor-tests.log、install.log。
 
 #### A14 双语言复杂公式支持
 
@@ -245,14 +246,11 @@
 
 #### A16 统一内容与双源码模型
 
-- 当前状态：**ARCHITECTURE RISK**。
-- 代码证据：`web/app.js:22、65、133、147、232`。
-- 运行证据：兼容探针证明100种可编译但其中19反向失败；数据只存rawSource+latex+mode。
-- 已实现：保留原文与canonical LaTeX；部分避免未修改文本往返。
-- 未实现/未验证：没有统一语义AST或带能力/损失信息的双representation模型。
-- Bug或风险：并非简单字符串替换库，但应用层仍依赖字符串双转，不能承诺无损。
-- 严重性：P1。
-- 下一步：先明确representation与转换结果契约，不直接重写整个AST。
+- 当前状态：**COMPLETE**（2026-10-15技术验收，等待用户体验）。
+- 已实现：FormulaContent权威原文、带来源版本的双representation、转换状态及exact/unverified保真边界；编辑失效、切换/输出缓存复用、快照/持久化/旧配置兼容。
+- 证据：`docs/audit/2026-10-15/a16/README.md`、33组回归、三种宽度、真实Mac Typst重启返回LaTeX仍保留cfrac。
+- 边界：不声称语义AST或无损双向转换；A14/A17转换覆盖、A31/A25事务、A26History策略、A40文档身份依然各自保留。
+- 原始风险和兼容性探针为2026-10-14历史证据，见I节及初始报告；新状态以B表为准。
 
 #### A17 模板库双语言完整性
 
@@ -344,14 +342,14 @@
 
 #### A25 Undo / Redo 统一所有权
 
-- 当前状态：**ARCHITECTURE RISK**。
-- 代码证据：`web/commands.mjs RevisionHistory；web/editor-transforms.mjs；MathLive内部executeCommand`。
-- 运行证据：undo-divergence.json：registry hat后MathLive undo到x，revision.index仍2且canRedo=false，registry redo无效。
-- 已实现：registry ⌘Z/⇧⌘Z核心测试通过，MathLive自身Undo也通过。
-- 未实现/未验证：两套Undo入口未统一；textarea原生历史亦未彻底协调。
-- Bug或风险：当前可复现历史分歧；不能称统一撤销已完成。
-- 严重性：P0。
-- 下一步：统一所有入口与事务边界，补混合入口跨模式回归。
+- 当前状态：**COMPLETE**（A25.1/.2技术验收；等待用户实际体验，不代表已获发布授权）。
+- 原因：可视化placeholder-only编辑被签名去重；异步editTransaction在finally才记录，Undo可越过正在执行的修改；失败编辑也错误记入历史。
+- 修改：transaction/go/Undo/Redo共用顺序所有权；显式child context合并同一事务，Registry别名只委托叶事务；失败恢复文档/选区及原redo分支，双重恢复失败明确AggregateError；字体加载与commit统一事务；排队设置在执行时判断no-op；记录完成后通知自动History。
+- 编辑连续性：异步状态修改短暂保护输入表面并保留焦点意图；普通预览绘制不持有Undo输入锁，旧渲染由revision guard丢弃；无布局改动。
+- 测试：tests/edit-transactions.cjs、undo-ownership.cjs；40组编辑器回归全部通过。含Visual/LaTeX/Typst、Undo/Redo/History、760/1120/1440、生成源码及126模板渲染。阶段回归含离线真实基础单图/整页2公式、专业单图、文档解析、原生输出/工具链。
+- 原生：备份安装 /Applications/Formula.app（20261015-151859）并启动；立即字号Undo/Redo、模式撤销、Typst焦点、Undo后立即输入+2通过，随后恢复原公式。资源SHA256匹配；原源码、模式、输出设置、收藏一致。
+- 数据/边界：无schema迁移/模型下载/用户资产删除。A26产品History、A27快照字段覆盖、A40生命周期、资产Undo及A24 Office验收不由本项替代。
+- 证据：docs/audit/2026-10-15/a25/transactions/README.md、STAGE_REGRESSION.md及日志。累计主项5/5，阶段回归已执行；未推送GitHub。下一项建议A27，本轮未开始。
 
 #### A26 可查看的自动编辑History
 
@@ -366,14 +364,14 @@
 
 #### A27 History快照覆盖排版设置
 
-- 当前状态：**BROKEN**。
-- 代码证据：`web/commands.mjs signature；web/app.js captureRevision`。
-- 运行证据：probes.json signature=true：透明true/false判作同一revision。
-- 已实现：snapshot捕获透明/scale/displayMode等字段。
-- 未实现/未验证：signature未包含透明、scale、displayMode；mathFont未capture。
-- Bug或风险：透明/分辨率/字体等更改不可靠地进入可撤销历史。
-- 严重性：P1。
-- 下一步：集中声明文档状态字段并测试每项变化的Undo。
+- 当前状态：**COMPLETE**（等待用户体验，未推送）。
+- 旧透明/scale/displayMode/mathFont遗漏已在前轮修复，本轮验证后保留。新增统一字段清单覆盖size/padding/scale/color/backgroundColor/preamble/typstPreamble/displayMode/mathFont及兼容transparent，捕获/去重/恢复共用。
+- 复现并修复：恢复Bonum快照时state/UI为bonum而实际MathJax仍Newcm；共享restore现在加载真实字体，并将异步恢复结果传递到project/SVG/favorite/History事务。
+- 测试：history-settings检查全部字段签名、三编辑模式Undo/Redo、project/favorite/version还原及MathJax字体类型、History持久化重载。42组编辑器回归通过。
+- 用户追加：输入A+/A−只改textarea大小，绘制层仍16px；applyEditorZoom同步刷新绘制层。editor-zoom-paint覆盖LaTeX/Typst可见字号、可视化独立字号、选区/历史/导出字号不变、重启与760/1120/1440。
+- 原生：正常备份安装启动（20261015-152546）；打开临时mathforge验证Bonum/38pt/20px/红色/蓝背景/600DPI并Undo回原值；源码A+图形检查后恢复原缩放和可视化模式。原源码/模式/设置/收藏匹配。
+- 无schema迁移/模型操作/资产删除。新批次累计1/5。
+- 下一项A13：原生测试另发现inline模式MathJax多SVG片段只提取首个，源码完整但预览残缺；记入A13处理，不混淆设置快照状态。
 
 #### A28 键盘快捷键体系
 
@@ -410,14 +408,11 @@
 
 #### A31 Command Registry 统一程度
 
-- 当前状态：**ARCHITECTURE RISK**。
-- 代码证据：`web/commands.mjs；web/app.js:539–621、514、remember/restore`。
-- 运行证据：commands测试核心统一入口通过；静态仍见直接engine/settings/favorites修改。
-- 已实现：菜单/快捷键/主要toolbar共享registry；结构helper统一。
-- 未实现/未验证：context未成明确契约；undoable metadata未完整暴露；部分入口绕开transaction。
-- Bug或风险：动态命令与独立事件并存，错误enabled和历史遗漏易反复。
-- 严重性：P1。
-- 下一步：列所有mutation入口，统一状态/事务约定，避免大重写。
+- 当前状态：**COMPLETE**，2026-10-15 A31.1/A31.2/A31.3技术验收完成，等待用户体验。
+- 范围：文档、资产、偏好、运行时命令入口已分类和收敛；context/metadata/错误刷新；收藏/导入、验证后设置/字体/模式别名、批量scope、工具栏、历史资产、配置及OCR桥接适配。
+- 证据：38组回归、OCR单图/多结果/文档/取消/错误专项、真实Mac批量保存取消后完整state恢复；见 `docs/audit/2026-10-15/a31/runtime/README.md`。
+- 内部适配例外：输入/IME/MathLive事件、渲染/初始化/Undo恢复、焦点/选择、OCR进度等不逐事件命令化，边界见 `docs/COMMAND_MUTATION_CONTRACT.md`。
+- 不宣称A25统一历史所有权、通用异步串行/回滚或全部用户资产Undo完成；这些范围保留在对应A项。
 
 #### A32 自动测试体系与CI
 
@@ -509,14 +504,17 @@
 
 #### A40 保存、重新打开与文档生命周期
 
-- 当前状态：**PARTIAL**。
-- 代码证据：`web/app.js:234–240、541–542、originalImport；Formula.swift save/importFile`。
-- 运行证据：output-actions验证MathForge导出名与payload；commands open/save桥接通过。
-- 已实现：可恢复MathForge、源码文件导入、收藏备份。
-- 未实现/未验证：⌘S与另存为都弹保存；无明确文档URL/dirty状态；原生保存再开未全验。
-- Bug或风险：缺持续文档身份与异常恢复证据。
-- 严重性：P1。
-- 下一步：定义最小文档生命周期，验证保存→关闭→重开一致性。
+- 当前状态：**PARTIAL**，A40.1完成，A40.2待实施。
+- 复现：source input后220ms防抖前，localStorage仍是旧公式；未完成输入可能丢失。
+- A40.1：输入事件立即保存精确source authority和pending validation，保留既有延迟解析/渲染；visualDraft保存MathLive占位符树，启动时仅在数学投影匹配时采用。
+- 测试：draft-recovery模拟不经过blur/beforeunload的即时快照新进程恢复，覆盖LaTeX/Typst空白/换行/未完成源码及visual占位符。44组回归通过。
+- 原生：备份安装20261015-193025；实际输入未完成frac后立即正常退出，重开保留精确草稿，Undo恢复用户sideset/nabla公式。原设置/收藏保持一致。
+- 剩余A40.2：持续文件URL与dirty状态、保存和另存为区分、保存取消/失败、文件重开完整生命周期。不得因A40.1通过将主项标COMPLETE。
+- 边界：不声称电源故障/磁盘错误下强持久化；native state桥接仍异步且原子写入。新增visualDraft可选兼容字段，无schema版本变更或资产迁移，未推送。
+- 证据：docs/audit/2026-10-15/a40/README.md及日志。
+
+- A40.2本轮增量：DocumentLifecycle会话id/name/savedSignature；真实编辑/排版字段决定dirty，保存进行中新编辑不会误清dirty；Mac原位保存目标仅由用户选址或成功打开文件的native token绑定，导入元数据不能指定写入路径；SaveAs始终面板，取消/失败不更新savedSignature。窗口采用标准标题/edited状态，无编辑区布局变化。
+- PASS 45组编辑回归及本机首次保存、+1修改后⌘S无面板直接原位写入、⇧⌘S出现面板且取消、最终后缀修复复核。原公式/设置/收藏恢复。备份20261015-193549；文档身份当前不跨重启，主项仍PARTIAL。
 
 ## C. COMPLETE
 
@@ -561,12 +559,12 @@
 
 - A02 焦点感知与标准复制：全局捕获快捷键可覆盖用户复制意图，写错剪贴板。
 - A15 源码语言与renderer解耦：切引擎会改变源码语言；误导用户并触发有损转换。
-- A27 History快照覆盖排版设置：透明/分辨率/字体等更改不可靠地进入可撤销历史。
+- A27 History快照覆盖排版设置：已于2026-10-15验证并修复，详见原表和A27证据。
 
 ## G. ARCHITECTURE RISKS
 
 - A16 统一内容与双源码模型：并非简单字符串替换库，但应用层仍依赖字符串双转，不能承诺无损。
-- A25 Undo / Redo 统一所有权：当前可复现历史分歧；不能称统一撤销已完成。
+- A25 Undo / Redo 统一所有权：已于2026-10-15完成A25.1/.2并通过阶段回归；保留此条作为原始风险的处理记录。
 - A31 Command Registry 统一程度：动态命令与独立事件并存，错误enabled和历史遗漏易反复。
 - A35 本机安装与构建可重复性：不能称干净通用构建；资源更新可能漏复制，安装不能等同代码构建。
 
@@ -829,3 +827,45 @@ GitHub未推送；用户验收及新的推送授权仍是发布前提。
 - 23编辑器套件通过；OCR安装取消/进度/专业版切换测试通过；原生构建通过（现有allowedFileTypes弃用警告保留）。无独立lint/typecheck配置；node语法检查与diff whitespace通过。真实图片OCR完整链通过；文档文件确认布局由集成测试覆盖，本轮未宣称真实文档识别完成。
 - 已备份安装并启动/Applications/Formula.app，正式org.mathforge.desktop不变，bundle哈希与工作区一致。测试前公式和主要设置已恢复；用户在设置中开始操作后停止进一步UI控制。
 - 证据在`docs/audit/2026-10-15/ux-five/`。GitHub未推送，等待用户验收。此前审计转换/Office/架构缺口不因此视为全部关闭。
+
+
+## P. 收尾交互优化（本地，待体验）
+
+- 高级子级使用共享 `--settings-indent`，三角标、标题、内容共同缩进。
+- 删除图片单公式/整页配置，图片选择及剪贴板图片统一请求 page 检测；默认选第一项，后续点击为互斥激活，可取消当前项，不重跑 OCR。空结果显示简洁提示。
+- PDF 保留用户确认的 1/0 默认值；内部兼容 0/0，统一页范围函数将零起始值转换为第1页，并将默认范围限制在20页和实际页数内。
+- 版本历史复用完整 before/after snapshot 和 MathJax，固定预览区；单击不改当前文档，双击/恢复加载 after，保留原文进入历史，操作进入撤销链。
+- 新增 finish-ux 编辑器集成及 document-range 原生测试；原有 OCR 测试更新为新结果选择语义。
+- 本轮未经再次授权不推送；发布版本仍为 v1.6.0，以上为后续本地修改。
+
+
+### 补全候选定位
+
+旧逻辑将 y+line 限制到 clientHeight-130，导致底部候选框被推回当前行。现通过 completion-placement.mjs 统一计算：下方可容纳则 below，上方可容纳则 above，否则取空间较大侧并限高滚动；水平位置受可视宽度约束。LaTeX/Typst 复用同一定位层，滚动、resize、ResizeObserver 和祖先样式变化触发定位，不重置候选高亮。高亮项始终滚入列表可视区。
+
+源码着色层的 pre 继承了通用 max-height:140px，真实 WebKit 测试中末行被裁切；移除该上限，交由编辑器 paint frame 单层裁剪。补全对部分可见行采用相交判定，不错误隐藏底部候选。
+
+新增 completion-placement.cjs 覆盖方向、当前行避让、右边界、字号、窗口、长列表滚动、LaTeX/Typst及键盘接受；source-surface 测试补充绘制层无独立滚动/高度限制断言。
+
+
+### 设置折叠层级及输出选项分组补正
+
+设置每个details的summary之后均使用统一settings-disclosure-content容器，padding-inline-start共享18px token；覆盖导言区/前置代码、批量导出、高级及其子项、最近编译日志，不再只针对高级写特例。分辨率移入右侧export-format-options，与格式选择相邻；位图可用/矢量禁用语义保留并保持占位。
+
+settings-disclosure集成测试检查所有展开内容缩进、无横向越界、编辑区frame不变；另检查分辨率/格式同组且切换格式分组frame稳定。已跑PNG DPI、output-actions、finish-ux、ocr-layout及reference-layout相关回归。未经用户确认不推送。
+
+
+### 字体/背景颜色与字号顺序
+
+字体色默认黑，背景默认透明，替代原透明按钮；独立最近10种颜色存本地，不把Undo操作写进颜色历史。backgroundColor为背景状态，transparent保留为旧数据兼容；旧不透明背景映射白色。SVG背景矩形严格等于公式viewBox加四边padding，PNG/JPEG像素实测；native PDF以矢量绘制补背景并保持media bounds，Typst/SVG/元数据传递新颜色。Windows接线并语法检查，未Windows实机测试。背景进入保存/恢复/撤销快照。
+
+两组字号控件只交换DOM顺序为A+、A−，共用scale-control外观和原事件。
+
+
+## 历史增量记录（非第二任务清单）
+
+2026-10-15此前曾按分组安排工作；该分组台账已撤销，全部40项保留在B表，唯一执行顺序与验收状态以B表为准。
+
+此前已修复“未修改派生源码复制/导出重解析覆盖原LaTeX”，真实Mac与自动测试证明cfrac保留；此证据不等同于A16完整representation契约完成。A03已有设置上下文捕获/恢复改动及浏览器测试，完整验收仍留在A03，未在本轮标为完成。
+
+本轮只处理A02；详细构建、测试、原生验证及风险见 `docs/audit/2026-10-15/a02/README.md`。完成本项后停止，下一项建议A16，尚未开始。

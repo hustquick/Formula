@@ -2,6 +2,7 @@ import Cocoa
 import WebKit
 import PDFKit
 import Darwin
+import CryptoKit
 
 struct ToolFailure: Error { let message: String }
 
@@ -9,6 +10,18 @@ struct ToolFailure: Error { let message: String }
 func typstSourceBody(_ source:String,display:Bool) -> String {
     let markup=source.range(of:"(?m)^\\s*#(?:set|show|let|import|include|context)\\b",options:.regularExpression) != nil
     return markup ? source : (display ? "$ ":"$")+source+(display ? " $":"$")
+}
+
+// Flatten a chosen solid background into the PDF while retaining vector drawing commands.
+func formulaBackgroundPDF(_ url:URL,hex:String) throws {
+    guard let document=CGPDFDocument(url as CFURL),let page=document.page(at:1),let rgb=UInt32(hex.dropFirst(),radix:16) else {throw ToolFailure(message:"背景颜色或PDF无效")}
+    var bounds=page.getBoxRect(.mediaBox)
+    let data=NSMutableData()
+    guard let consumer=CGDataConsumer(data:data as CFMutableData),let context=CGContext(consumer:consumer,mediaBox:&bounds,nil) else {throw ToolFailure(message:"不能生成背景颜色")}
+    context.beginPDFPage(nil)
+    context.setFillColor(red:CGFloat((rgb>>16)&255)/255,green:CGFloat((rgb>>8)&255)/255,blue:CGFloat(rgb&255)/255,alpha:1)
+    context.fill(bounds);context.drawPDFPage(page);context.endPDFPage();context.closePDF()
+    try (data as Data).write(to:url,options:.atomic)
 }
 
 final class MathWebView: WKWebView {
@@ -24,6 +37,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     let worker = DispatchQueue(label: "Formula.compiler")
     var queuedImports: [URL] = []
     var commandStates: [String:Bool] = [:]
+    var pendingProjectURLs:[String:URL]=[:]
+    var currentProjectURL:URL?
+    var currentDocumentID=""
+    var currentProjectDigest:String?
     var ready = false
     let ocrWorker = DispatchQueue(label: "Formula.ocr")
     var ocrBusy = false
@@ -43,6 +60,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         config.userContentController.add(self, name: "mathforge")
         if let data = try? Data(contentsOf: support.appendingPathComponent("state.json")), let json = String(data:data,encoding:.utf8) {
             config.userContentController.addUserScript(WKUserScript(source:"window.FormulaSavedState = \(json);",injectionTime:.atDocumentStart,forMainFrameOnly:true))
+        }
+        // Host-only session record: project metadata cannot authorize a path.
+        if let bytes=try? Data(contentsOf:support.appendingPathComponent("document-session.json")),
+           let session=(try? JSONSerialization.jsonObject(with:bytes)) as? [String:Any],
+           let id=session["id"] as? String {
+            currentDocumentID=id
+            if let path=session["path"] as? String {currentProjectURL=URL(fileURLWithPath:path)}
+            currentProjectDigest=session["digest"] as? String
+            let identity:[String:Any]=["id":id,"name":session["name"] as? String ?? "未命名公式","savedSignature":session["savedSignature"] ?? NSNull()]
+            let encoded=try! JSONSerialization.data(withJSONObject:identity)
+            config.userContentController.addUserScript(WKUserScript(source:"window.FormulaSavedLifecycle = \(String(data:encoded,encoding:.utf8)!);",injectionTime:.atDocumentStart,forMainFrameOnly:true))
         }
         web = MathWebView(frame:.zero,configuration:config)
         web.navigationDelegate = self
@@ -145,6 +173,20 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let p=NSPasteboard.general;p.clearContents()
             for (key,type) in [("png",NSPasteboard.PasteboardType.png),("pdf",.pdf),("svg",NSPasteboard.PasteboardType("public.svg-image")),("jpeg",NSPasteboard.PasteboardType("public.jpeg")),("tiff",.tiff),("eps",NSPasteboard.PasteboardType("com.adobe.encapsulated-postscript"))] {if let encoded=data[key] as? String,let bytes=Data(base64Encoded:encoded){p.setData(bytes,forType:type)}}
         if let equation=data["equation"] as? String,let bytes=equation.data(using:.utf8){p.setData(bytes,forType:NSPasteboard.PasteboardType("org.mathforge.equation"))}
+        case "documentStatus":
+            if let id=data["id"] as? String {
+                if id != currentDocumentID { currentProjectURL=nil;currentProjectDigest=nil;currentDocumentID=id;window.representedURL=currentProjectURL }
+                window.isDocumentEdited=data["dirty"] as? Bool ?? false
+                window.title=(data["name"] as? String ?? "Formula")+" · Formula"
+                window.representedURL=currentProjectURL
+                var session:[String:Any]=["id":id,"name":data["name"] ?? "未命名公式","savedSignature":data["savedSignature"] ?? NSNull()]
+                if let url=currentProjectURL {session["path"]=url.path}
+                if let digest=currentProjectDigest {session["digest"]=digest}
+                if let bytes=try? JSONSerialization.data(withJSONObject:session) {try? bytes.write(to:support.appendingPathComponent("document-session.json"),options:.atomic)}
+            }
+        case "documentOpened":
+            if let token=data["token"] as? String,let url=pendingProjectURLs.removeValue(forKey:token),data["documentID"] as? String == currentDocumentID {currentProjectURL=url;currentProjectDigest=projectDigest(url);window.representedURL=url;js("window.FormulaRefreshDocumentIdentity?.();")}
+        case "saveProject":saveProject(data)
         case "save":saveFile(data)
         case "import":
             let panel=NSOpenPanel();panel.allowedFileTypes=["tex","typ","txt","svg","pdf","mathforge","json"];panel.canChooseDirectories=false
@@ -165,6 +207,34 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         default:break
         }
     }
+    func projectDigest(_ url:URL)->String? {
+        guard let bytes=try? Data(contentsOf:url) else{return nil}
+        return SHA256.hash(data:bytes).map{String(format:"%02x",$0)}.joined()
+    }
+    func saveProject(_ data:[String:Any]) {
+        let id=data["id"] as? String ?? ""
+        guard let documentID=data["documentID"] as? String,documentID==currentDocumentID,
+              let encoded=data["base64"] as? String,let bytes=Data(base64Encoded:encoded) else {reply(id,["error":"公式文档状态无效"]);return}
+        let write:(URL)->Void = {url in
+            do {
+                try bytes.write(to:url,options:.atomic)
+                if self.currentDocumentID==documentID {self.currentProjectURL=url;self.currentProjectDigest=self.projectDigest(url);self.window.representedURL=url}
+                self.reply(id,["saved":true,"name":url.lastPathComponent])
+            } catch {self.reply(id,["error":error.localizedDescription])}
+        }
+        if data["saveAs"] as? Bool != true,let url=currentProjectURL {
+            guard let expected=currentProjectDigest,projectDigest(url)==expected else {
+                reply(id,["error":"文件已被其他程序修改、移动或删除。当前编辑已保留，请使用“另存为”保存副本。"]);return
+            }
+            write(url);return
+        }
+        let panel=NSSavePanel();panel.nameFieldStringValue=((data["name"] as? String ?? "equation.mathforge") as NSString).deletingPathExtension
+        panel.allowedFileTypes=["mathforge"];panel.canCreateDirectories=true
+        panel.beginSheetModal(for:window){response in
+            guard response == .OK,let url=panel.url else {self.reply(id,["cancelled":true]);return}
+            write(url)
+        }
+    }
     func saveFile(_ data:[String:Any]) {
         let id=data["id"] as? String ?? ""
         guard let encoded=data["base64"] as? String,let bytes=Data(base64Encoded:encoded),let name=data["name"] as? String else{reply(id,["error":"导出数据无效"]);return}
@@ -181,7 +251,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 js("window.FormulaImport(\(json(String(subject.dropFirst(10)))), 'mathforge');");return
             }
             let text=try String(contentsOf:url,encoding:.utf8)
-            js("window.FormulaImport(\(json(text)),\(json(url.pathExtension.lowercased())));")
+            let ext=url.pathExtension.lowercased()
+            let project=(try? JSONSerialization.jsonObject(with:Data(text.utf8))) as? [String:Any]
+            let isProject=["mathforge","json"].contains(ext) && project?["format"] as? String == "mathforge-equation"
+            let token=UUID().uuidString
+            if isProject {pendingProjectURLs[token]=url}
+            js("window.FormulaImport(\(json(text)),\(json(ext)),\(isProject ? json(url.lastPathComponent):"undefined"),\(isProject ? json(token):"undefined"));")
         } catch let e as ToolFailure {report(e.message,true)} catch {report(error.localizedDescription,true)}
     }
 
@@ -302,11 +377,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let scale=max(0.75,min(12.5,(o["scale"] as? NSNumber)?.doubleValue ?? 3))
             let color=o["color"] as? String ?? "#18232f"
             guard color.range(of:"^#[0-9A-Fa-f]{6}$",options:.regularExpression) != nil else{throw ToolFailure(message:"颜色设置无效")}
-            let transparent=o["transparent"] as? Bool ?? true
+            let backgroundColor=o["backgroundColor"] as? String ?? ((o["transparent"] as? Bool ?? true) ? "transparent":"#ffffff")
+            let transparent=backgroundColor == "transparent"
+            guard transparent || backgroundColor.range(of:"^#[0-9A-Fa-f]{6}$",options:.regularExpression) != nil else {throw ToolFailure(message:"背景颜色设置无效")}
             let pdfURL=dir.appendingPathComponent("equation.pdf")
             let svgURL=dir.appendingPathComponent("equation.svg")
             if engine=="typst" {
-                let fill=transparent ? "none" : "white"
+                let fill=transparent ? "none" : "rgb(\"\(backgroundColor)\")"
                 let preamble=o["typstPreamble"] as? String ?? ""
                 let display=o["displayMode"] as? String != "inline"
                 let document="""
@@ -353,6 +430,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                     do{let result=try run(dvisvgm,["--pdf","--no-fonts","--output="+svgURL.path,pdfURL.path],cwd:dir);log+="\n"+result.1}catch{log+="\nSVG 转换：\(error)"}
                 }
             }
+            if !transparent {try formulaBackgroundPDF(pdfURL,hex:backgroundColor)}
             guard let doc=PDFDocument(url:pdfURL),doc.pageCount==1,let page=doc.page(at:0) else{throw ToolFailure(message:"请只输入单页数学公式，不要输入完整多页文档。")}
             let bounds=page.bounds(for:.mediaBox)
             let pixels=CGFloat(scale*4/3)
@@ -371,14 +449,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let whiteContext=NSGraphicsContext(bitmapImageRep:white)!
             NSGraphicsContext.saveGraphicsState();NSGraphicsContext.current=whiteContext;let wc=whiteContext.cgContext;wc.setFillColor(NSColor.white.cgColor);wc.fill(CGRect(x:0,y:0,width:CGFloat(width),height:CGFloat(height)));wc.scaleBy(x:pixels,y:pixels);page.draw(with:.mediaBox,to:wc);NSGraphicsContext.restoreGraphicsState()
             let jpeg=white.representation(using:.jpeg,properties:[.compressionFactor:0.96])!
-            let saved:[String:Any]=["format":"mathforge-equation","version":1,"state":["rawSource":source,"editorMode":engine=="typst" ? "typst":"latex","size":size,"padding":padding/0.75,"color":color,"transparent":transparent,"scale":scale,"preamble":o["preamble"] ?? "","typstPreamble":o["typstPreamble"] ?? "","displayMode":o["displayMode"] ?? "display"]]
+            let saved:[String:Any]=["format":"mathforge-equation","version":1,"state":["rawSource":source,"editorMode":engine=="typst" ? "typst":"latex","size":size,"padding":padding/0.75,"color":color,"backgroundColor":backgroundColor,"transparent":transparent,"scale":scale,"preamble":o["preamble"] ?? "","typstPreamble":o["typstPreamble"] ?? "","displayMode":o["displayMode"] ?? "display"]]
             var attrs=doc.documentAttributes ?? [:];attrs[PDFDocumentAttribute.subjectAttribute]="MathForge:"+json(saved);attrs[PDFDocumentAttribute.titleAttribute]="Formula equation";doc.documentAttributes=attrs
             let pdf=doc.dataRepresentation()!
             var result:[String:Any]=["engine":URL(fileURLWithPath:path).lastPathComponent,"pdf":pdf.base64EncodedString(),"png":png.base64EncodedString(),"tiff":tiff.base64EncodedString(),"jpeg":jpeg.base64EncodedString(),"width":width,"height":height]
             if var svg=try? String(contentsOf:svgURL,encoding:.utf8),let range=svg.range(of:"<svg"),let close=svg[range.lowerBound...].firstIndex(of:">") {
                 let metadata=json(saved).replacingOccurrences(of:"&",with:"&amp;").replacingOccurrences(of:"<",with:"&lt;").replacingOccurrences(of:">",with:"&gt;")
                 svg.insert(contentsOf:"<metadata>\(metadata)</metadata>",at:svg.index(after:close))
-                if !transparent,let vbr=svg.range(of:"viewBox=\"[^\"]+\"",options:.regularExpression){let text=String(svg[vbr]).replacingOccurrences(of:"viewBox=\"",with:"").replacingOccurrences(of:"\"",with:"");let parts=text.split(separator:" ");if parts.count==4{let rect="<rect x=\"\(parts[0])\" y=\"\(parts[1])\" width=\"\(parts[2])\" height=\"\(parts[3])\" fill=\"white\"/>";if let r=svg.range(of:"<metadata>"){svg.insert(contentsOf:rect,at:r.lowerBound)}}}
+                if !transparent,let vbr=svg.range(of:"viewBox=\"[^\"]+\"",options:.regularExpression){let text=String(svg[vbr]).replacingOccurrences(of:"viewBox=\"",with:"").replacingOccurrences(of:"\"",with:"");let parts=text.split(separator:" ");if parts.count==4{let rect="<rect x=\"\(parts[0])\" y=\"\(parts[1])\" width=\"\(parts[2])\" height=\"\(parts[3])\" fill=\"\(backgroundColor)\"/>";if let r=svg.range(of:"<metadata>"){svg.insert(contentsOf:rect,at:r.lowerBound)}}}
                 result["svg"]=svg.data(using:.utf8)!.base64EncodedString()
             }
             if let pdftops=paths["pdftops"],!pdftops.isEmpty {do{let eps=dir.appendingPathComponent("equation.eps");let r=try run(pdftops,["-eps",pdfURL.path,eps.path],cwd:dir);log+="\n"+r.1;if r.0==0,let data=try? Data(contentsOf:eps){result["eps"]=data.base64EncodedString()}}catch{log+="\nEPS 转换：\(error)"}}
