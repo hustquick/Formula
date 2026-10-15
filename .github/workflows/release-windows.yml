@@ -29,6 +29,13 @@ jobs:
         with:
           node-version: '22'
           cache: npm
+      - name: Validate document save and restart bridge
+        shell: pwsh
+        run: |
+          node tests/windows-document-session.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/windows-document-bridge.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build Windows portable app
         shell: pwsh
         run: ./Build-Windows.ps1
@@ -39,6 +46,7 @@ jobs:
           if (-not (Test-Path $exe)) { throw 'Formula.exe missing' }
           if (-not (Test-Path 'dist/Formula-Windows-x64/resources/app/web/index.html')) { throw 'web/index.html missing' }
           if (-not (Test-Path 'dist/Formula-Windows-x64/resources/app/web/vendor/latexlive/catalog.js')) { throw 'offline catalog missing' }
+          if (-not (Test-Path 'dist/Formula-Windows-x64/resources/app/document-session.cjs')) { throw 'document session bridge missing' }
           if (-not (Test-Path 'dist/Formula-Windows-x64/resources/app/node_modules/sharp')) { throw 'sharp runtime missing' }
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4

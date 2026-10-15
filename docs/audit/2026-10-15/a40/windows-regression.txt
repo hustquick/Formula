@@ -1,0 +1,10 @@
+PASS Windows host actual filesystem: paired recovery, Save/Save As, new identity, cancel/error, stale panel, external edit/delete, native Open token, provenance and fresh-process Save
+PASS actual Windows main/preload IPC: paired launch, save replies, in-place Save, Open token adoption, conflict/error replies, stale panel rejection and graphics-export identity isolation
+PASS file save/restart/open/edit/Undo/Redo, exact LaTeX authority in Typst, settings, representation dirty state, visual placeholders and invalid drafts
+PASS document identity, dirty source, Save/Save As, cancel/error retain dirty and identity, native-open adoption and new document
+PASS immediate LaTeX/Typst incomplete draft persistence and fresh-process exact recovery; visual placeholder durable recovery
+PASS editor contract: Visual/LaTeX/Typst, exact reload, source edits, Undo/Redo, History, save/import and invalid-source protection
+PASS file/save/export, workspace/copy, find next/previous, native edit routing and settings/palette shortcuts
+PASS batch success/cancel/failure exact restoration, no temporary persistence/history, conflict gate/inert release, preference/assets isolation and validated runtime bridge
+PASS unified format selector, exact copy payload and export filename for eight embedded formats; native-only options disabled
+{"tests":9,"failed":[]}

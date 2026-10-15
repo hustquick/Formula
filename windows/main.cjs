@@ -5,6 +5,7 @@ const path=require('path');
 const os=require('os');
 const sharp=require('sharp');
 const {spawnSync}=require('child_process');
+const {DocumentSession}=require('./document-session.cjs');
 
 let win;
 const appRoot=__dirname;
@@ -13,6 +14,7 @@ const iconPath=path.join(appRoot,'Formula.png');
 const statePath=()=>path.join(app.getPath('userData'),'state.json');
 const toolsPath=()=>path.join(app.getPath('userData'),'tools.json');
 let toolPaths={};
+let documents;
 
 function readJson(file,fallback={}){try{return JSON.parse(fs.readFileSync(file,'utf8'));}catch{return fallback;}}
 function writeJson(file,value){fs.mkdirSync(path.dirname(file),{recursive:true});fs.writeFileSync(file,JSON.stringify(value,null,2));}
@@ -78,18 +80,28 @@ function createWindow(){
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));win.webContents.on('will-navigate',(e,url)=>{if(!url.startsWith('file:'))e.preventDefault();});win.loadFile(path.join(webRoot,'index.html'));createMenu();win.webContents.once('did-finish-load',()=>scanTools());
 }
 
-ipcMain.on('formula-load-state',e=>{e.returnValue=readJson(statePath(),{});});
+ipcMain.on('formula-load-state',e=>{e.returnValue=documents.launch().state;});
+ipcMain.on('formula-load-session',e=>{e.returnValue=documents.launch();});
 ipcMain.on('formula-native',async(event,data)=>{try{const action=data?.action;
-  if(action==='state'){writeJson(statePath(),data.state||{});return;}
+  if(action==='state'){
+    documents.record(data.state,data.document);
+    win.setTitle((data.document.dirty?'* ':'')+(data.document.name||'未命名公式')+' · Formula');
+    return;
+  }
+  if(action==='documentOpened'){documents.opened(data.token,data.documentID);return;}
+  if(action==='saveProject'){
+    const result=await documents.save(data,name=>dialog.showSaveDialog(win,{defaultPath:name,filters:[{name:'Formula Equation',extensions:['mathforge']}],properties:['showOverwriteConfirmation','createDirectory']}));
+    return reply(data.id,result);
+  }
   if(action==='copy'){clipboard.writeText(String(data.text||''));return;}
   if(action==='copyImage'){clipboard.clear();for(const [kind,mime] of [['png','image/png'],['jpeg','image/jpeg'],['svg','image/svg+xml'],['pdf','application/pdf'],['tiff','image/tiff'],['eps','application/postscript']]){if(!data[kind])continue;const bytes=Buffer.from(data[kind],'base64');if(['png','jpeg'].includes(kind))clipboard.writeImage(nativeImage.createFromBuffer(bytes));clipboard.writeBuffer(mime,bytes);if(kind==='svg')clipboard.writeText(bytes.toString('utf8'));}return;}
   if(action==='save'){const r=await dialog.showSaveDialog(win,{defaultPath:data.name});if(r.canceled)return reply(data.id,{cancelled:true});await fsp.writeFile(r.filePath,Buffer.from(data.base64,'base64'));return reply(data.id,{saved:true});}
-  if(action==='import'){const r=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Formula files',extensions:['tex','typ','txt','svg','mathforge','json']}]});if(r.canceled||!r.filePaths[0])return;const file=r.filePaths[0],text=await fsp.readFile(file,'utf8');return send('formula-import',text,path.extname(file).slice(1).toLowerCase());}
+  if(action==='import'){const r=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Formula files',extensions:['tex','typ','txt','svg','mathforge','json']}]});if(r.canceled||!r.filePaths[0])return;const selected=documents.prepareOpen(r.filePaths[0]);return send('formula-import',selected.text,selected.ext,selected.name,selected.token);}
   if(action==='scanTools'){scanTools();return;}
   if(action==='chooseTool'){const r=await dialog.showOpenDialog(win,{properties:['openFile'],filters:[{name:'Executable',extensions:['exe']} ]});if(r.canceled||!r.filePaths[0])return;toolPaths[data.tool]=r.filePaths[0];writeJson(toolsPath(),toolPaths);scanTools();return;}
   if(action==='render'){try{return reply(data.id,await renderNative(data));}catch(err){return reply(data.id,{error:err.message,log:err.stack||err.message});}}
   if(action==='drag'){const dir=path.join(app.getPath('userData'),'DragExports');await fsp.mkdir(dir,{recursive:true});const file=path.join(dir,path.basename(data.name||'equation.svg'));await fsp.writeFile(file,Buffer.from(data.base64,'base64'));win.webContents.startDrag({file,icon:iconPath});return;}
 }catch(err){if(data?.id)reply(data.id,{error:err.message});else send('formula-result',err.message,true);}});
 
-app.whenReady().then(()=>{toolPaths=readJson(toolsPath(),{});createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
+app.whenReady().then(()=>{documents=new DocumentSession(app.getPath('userData'));toolPaths=readJson(toolsPath(),{});createWindow();app.on('activate',()=>{if(BrowserWindow.getAllWindows().length===0)createWindow();});});
 app.on('window-all-closed',()=>{if(process.platform!=='darwin')app.quit();});

@@ -28,6 +28,7 @@ New-Item $appDir -ItemType Directory -Force | Out-Null
 
 Copy-Item windows/main.cjs $appDir
 Copy-Item windows/preload.cjs $appDir
+Copy-Item windows/document-session.cjs $appDir
 Copy-Item web (Join-Path $appDir 'web') -Recurse -Force
 Copy-Item THIRD-PARTY-NOTICES.txt $appDir
 Copy-Item macos/Formula.iconset/icon_256x256.png (Join-Path $appDir 'Formula.png')
