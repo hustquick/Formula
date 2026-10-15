@@ -26,3 +26,7 @@ User confirmed saving and quitting. Updated the existing /Applications/Formula.a
 ## Completion and next candidate
 
 Defined History recording, persistence, restoration, cleanup and error boundaries are exercised. COMPLETE is technical acceptance, not the user's visual/native acceptance or an assertion that upstream missing OCR metadata can be reconstructed. A40 manual acceptance remains pending. Next candidate A15 (language/renderer decoupling): verify existing implementation first because original BROKEN evidence may be stale. Stop after this item. Prior Mac release CI is blocked by tests/ocr-preview.cjs expecting pre-A13 fragmented SVG; A32/A35 were not modified in this item.
+
+## Post-push validation correction
+
+The first 1.6.2 cloud run stopped at validate-v1.1 because the newly generalized README download text omitted the exact current DMG filename required by the existing validation contract. Restored the filename as a build-output description, explicitly distinguishing it from an already published download. No validator assertion was weakened. Local npm run validate:v1.1 subsequently passed. This documentation regression came from this increment and is separate from the prior known ocr-preview assertion.
