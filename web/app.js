@@ -59,7 +59,7 @@ function nativeRequest(action,data){return new Promise((resolve,reject)=>{const 
 window.FormulaNativeReply=(id,result)=>{const req=requests.get(id);if(!req)return;clearTimeout(req.timer);requests.delete(id);if(result.log!==undefined)$('compile-log').textContent=result.log;if(result.error)req.reject(new Error(result.error));else req.resolve(result);};
 function status(text, error=false){ $('status').textContent=text; $('status').classList.toggle('error',error); }
 function send(action, data={}){ bridge?.postMessage({action,...data}); }
-function persist(){if(batchSession)return;if(state.editorMode==='visual'&&typeof mf!=='undefined')state.visualDraft=mf.getValue('latex');captureContent(); try{localStorage.setItem('mathforge',JSON.stringify(state));}catch{} send('state',{state});send('documentStatus',documentLifecycle.getStatus(state)); }
+function persist(){if(batchSession)return;if(state.editorMode==='visual'&&typeof mf!=='undefined')state.visualDraft=mf.getValue('latex');captureContent(); try{localStorage.setItem('mathforge',JSON.stringify(state));}catch{} send('state',{state,document:documentLifecycle.getStatus(state)}); }
 function stripDelimiters(text){
   text=text.trim();
   if(text.startsWith('$$') && text.endsWith('$$'))return text.slice(2,-2).trim();
@@ -280,7 +280,12 @@ function applyUI(){updateOutputFormats();$('math-font').value=state.mathFont;$('
 async function restore(saved){
   const previousFont=state.mathFont;
   saved=normalizeColorSettings(migrateTypesetting(saved));localAttemptSource=null;renderBackendUsed='builtin';const keepHistory=state.history;for(const k of ['latex','rawSource','editorMode',...documentSnapshotSettingKeys])if(saved[k]!==undefined)state[k]=saved[k];state.history=keepHistory;restoreContent(saved);
-  applyUI();$('source').value=content.get(state.sourceLanguage)?.text??state.rawSource;if(state.mathFont!==previousFont)return applyMathFont(state.mathFont);return readSource();
+  applyUI();$('source').value=content.get(state.sourceLanguage)?.text??state.rawSource;
+  await readSource();
+  if(saved.editorMode==='visual'&&typeof saved.visualDraft==='string'&&compactVisualLatex(saved.visualDraft.replace(/\\placeholder\{[^}]*\}/g,''))===compactVisualLatex(state.latex)){
+    updating=true;mf.setValue(saved.visualDraft,{silenceNotifications:true});updating=false;persist();
+  }
+  if(state.mathFont!==previousFont)return applyMathFont(state.mathFont);
 }
 function importContent(text,ext){
   if(window.FormulaDocumentHistory)window.FormulaDocumentHistory.previous=null;
@@ -696,8 +701,8 @@ async function saveDocument(saveAs){
   if(state.editorMode==='visual')state.visualDraft=mf.getValue('latex');captureContent();
   const signature=documentSignature(state),id=documentLifecycle.id;
   const payload=JSON.stringify({format:'mathforge-equation',version:1,state:{...state,history:[]}});
-  const result=await nativeRequest('saveProject',{documentID:id,saveAs,name:documentLifecycle.name==='未命名公式'?'equation.mathforge':documentLifecycle.name,base64:await bytesBase64(new Blob([payload]))});
-  if(!result.cancelled&&documentLifecycle.id===id){documentLifecycle.saved(result.name,signature);persist();}
+  const result=await nativeRequest('saveProject',{documentID:id,signature,saveAs,name:documentLifecycle.name==='未命名公式'?'equation.mathforge':documentLifecycle.name,base64:await bytesBase64(new Blob([payload]))});
+  if(result.saved&&documentLifecycle.id===id){documentLifecycle.saved(result.name,signature);persist();}
   status(result.cancelled?'已取消保存':'已保存 '+(result.name||documentLifecycle.name));return result;
 }
 register('openFormula','打开…','meta+o','文件',()=>window.FormulaChooseImport());
@@ -806,7 +811,7 @@ register('showFavorites','收藏夹',null,'公式',()=>selectToolTab('favorites'
 register('importContent','导入 / 识别公式',null,'文件',args=>{
   if(['json','mathforge'].includes(args.ext)){const data=JSON.parse(args.text);if(data.format==='mathforge-library')return registry.execute('importFavoriteLibrary',{history:data.history});}
   return editTransaction('导入 / 识别公式',async()=>{await importContent(args.text,args.ext);await renderQueue;});
-});window.FormulaImport=(text,ext,name,token)=>registry.execute('importContent',{text,ext}).then(result=>{if(result&&name){documentLifecycle.adopt(name,state);persist();if(token)send('documentOpened',{token,documentID:documentLifecycle.id});}return result;}).catch(error=>{registry.onError(error);return false;});
+});window.FormulaImport=(text,ext,name,token)=>registry.execute('importContent',{text,ext}).then(result=>{if(result&&name){documentLifecycle.adopt(name,state);persist();if(token)send('documentOpened',{token,documentID:documentLifecycle.id});}return result;}).catch(error=>{if(token)send('documentOpened',{token});registry.onError(error);return false;});
 for(const [id,command] of [['input-visual','switchToVisual'],['copy-selected','copySelected'],['export-selected','exportFormula'],['copy-source','copySource'],['input-settings','settings'],['mode-latex','switchLatex'],['mode-typst','switchTypst'],['clear-input','newFormula']]){
   $(id).onclick=safe(()=>registry.execute(command));const item=registry.commands.get(command);$(id).title=item.title+(item.shortcut?' ('+shortcutLabel(item.shortcut)+')':'');
 }

@@ -83,6 +83,8 @@ jobs:
           node tests/shortcut-previews.cjs
           npm run test:editor
           node tests/typst-document-body.cjs
+          node tests/native-document-save.cjs
+          node tests/native-document-conflict.cjs
           node tests/document-range.cjs
           node tests/native-background.cjs
           python -m venv "$RUNNER_TEMP/document-venv"

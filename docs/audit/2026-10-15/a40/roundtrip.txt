@@ -1,0 +1,1 @@
+PASS file save/restart/open/edit/Undo/Redo, exact LaTeX authority in Typst, settings, representation dirty state, visual placeholders and invalid drafts

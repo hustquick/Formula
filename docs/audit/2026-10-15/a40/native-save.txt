@@ -1,0 +1,5 @@
+PASS stale native Save As preserves destination and current identity
+PASS actual native Save/Save As, cancel/error, atomic session restart, in-place Save, external conflicts, import-byte binding and new/legacy identity isolation
+
+PASS separate native process reloads authorized file identity and saves in place
+

@@ -6,9 +6,15 @@ Formula 是面向论文、教材和科研写作的 macOS 公式编辑器。提�
 
 [下载最新 Formula Mac 安装包](https://github.com/hustquick/Formula/releases/latest) · [所有版本](https://github.com/hustquick/Formula/releases)
 
-优先下载 Release 中的 `Formula-1.6.0.dmg`。打开磁盘映像，将 `Formula.app` 拖入 Applications 即可。DMG 内是预编译通用应用，同时支持 Apple Silicon 与 Intel，最终用户无需安装 Node.js、npm 或编译工具。
+优先下载 Release 中的 `Formula-1.6.1.dmg`。打开磁盘映像，将 `Formula.app` 拖入 Applications 即可。DMG 内是预编译通用应用，同时支持 Apple Silicon 与 Intel，最终用户无需安装 Node.js、npm 或编译工具。
 
 > 当前发布采用临时签名，尚未 Apple 开发者公证。首次启动如被 Gatekeeper 阻止，可在“系统设置 → 隐私与安全性”中选择“仍要打开”。
+
+## v1.6.1：统一公式状态与保存恢复
+
+- 统一公式内容契约、命令事务、Undo/Redo 与排版设置快照。
+- 改善 Visual / LaTeX / Typst 同步、颜色输出和保存草稿恢复。
+- 保存与重新打开的验证边界见原 A40 审计记录。
 
 ## v1.6.0：编辑体验与 OCR 工作流更新
 

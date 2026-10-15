@@ -1,4 +1,4 @@
-> 当前执行规则（2026-10-15）：B表 A01–A40 是唯一主任务清单，按 Execution Order 执行；一次只验收一项。其余章节为有日期的历史证据，不能覆盖 B 表当前状态。未经重新验证的条目保留原审计状态。
+> 当前执行规则（2026-10-15）：B表 A01–A40 是唯一主任务清单，按依赖与用户当前优先级选择未完成项，Execution Order 保留历史排序；一次只验收一项。其余章节为有日期的历史证据，不能覆盖 B 表当前状态。未经重新验证的条目保留原审计状态。
 
 # DEVELOPMENT_AUDIT — Formula 阶段性产品审计
 
@@ -45,7 +45,7 @@
 | 4 | A25 | Undo / Redo 统一所有权 | COMPLETE | 2026-10-15 A25.1/.2：编辑/撤销/导航共用队列；失败回滚、显式子事务、字体与焦点；docs/audit/2026-10-15/a25/transactions/ | 预览绘制不持有输入锁；资产Undo、A27字段清单、A40生命周期仍独立 | P0 | 建议下一项A27，先验证现有字段覆盖；本轮停止 | web/commands.mjs；web/app.js；tests/edit-transactions.cjs；tests/undo-ownership.cjs；scripts/test-editor.cjs；docs/COMMAND_MUTATION_CONTRACT.md；未单独提交 | PASS 40组、阶段回归、离线真实OCR、原生即时Undo/Redo/模式焦点、构建安装启动 | 累计5/5，阶段回归通过；无schema迁移/模型下载；已安装等待体验，未推送 |
 | 5 | A27 | History快照覆盖排版设置 | COMPLETE | 2026-10-15统一documentSnapshotSettingKeys；三模式完整设置矩阵、project/favorite/version真实字体及重启；docs/audit/2026-10-15/a27/ | 原漏字段已由前轮修复；本轮补实际字体与state不同步；inline多片段预览丢失另记A13 | P1 | A13继续检查端到端同步与多片段预览 | web/document-settings.mjs；web/commands.mjs；web/app.js；tests/history-settings.cjs；scripts/test-editor.cjs；未单独提交 | PASS 42组、构建签名安装启动、真实Mac快照打开/Undo、源码缩放 | 无schema迁移/模型下载；新批次1/5；另按用户要求修复A+/A−高亮字号；未推送 |
 | 6 | A13 | Visual / Source 双向同步 | COMPLETE | 2026-10-15 inline单SVG输出、未变数学内容保留visual树；source-preview-sync；docs/audit/2026-10-15/a13/ | 复杂双语言转换保真继续归A14/A17，不声称无损AST | P0 | 下一项A40文档生命周期，依赖模型/撤销/同步已齐 | web/index.html；web/app.js；tests/source-preview-sync.cjs；scripts/test-editor.cjs；未单独提交 | PASS 43组回归、构建安装启动、真实Mac行内x+y+z+w完整预览并恢复用户公式 | 新批次2/5；无schema迁移/模型下载；备份20261015-192646；未推送 |
-| 7 | A40 | 保存、重新打开与文档生命周期 | PARTIAL | A40.1即时草稿；A40.2会话文件身份、dirty、原位保存/另存为与原生实测；docs/audit/2026-10-15/a40/ | 重启文件身份、外部变更保护及完整重开验收仍待完成 | P1 | 继续A40，不进入A26 | web/document-lifecycle.mjs；web/app.js；macos/Formula.swift；tests/document-lifecycle.cjs；tests/command-shortcuts.cjs；scripts/test-editor.cjs | PASS 45组、原生首次保存/原位保存/另存为取消、构建安装启动 | 备份20261015-193549；无资产迁移/模型操作；未推送 |
+| 7 | A40 | 保存、重新打开与文档生命周期 | PARTIAL | 2026-10-15：成对草稿/身份原子记录、独立原生进程重启原位保存、文件冲突及完整浏览器文件往返；docs/audit/2026-10-15/a40/RESTART_SAVE.md | macOS 本轮真实界面保存/退出/重开由用户验收；Windows saveProject 桥接尚未实现 | P1 | 本轮停止；先验收 Mac 保存重开，跨平台缺口仍属于 A40；之后候选 A26 | macos/Formula.swift；web/app.js；web/document-lifecycle.mjs；tests/document-roundtrip.cjs；tests/native-document-save.cjs | PASS 定向原生真实方法/文件IO/独立进程测试；21个相关套件最终通过（两项离线目录缺失后复测） | 无用户数据/模型迁移；1.6.1；原位更新正式App，不建其他bundle；本轮主项未标COMPLETE |
 | 8 | A26 | 可查看的自动编辑History | PARTIAL | `web/commands.mjs RevisionHistory；web/app.js:591–617`；revision-history、commands通过：恢复、分支、100条/4MB限制 | schedule.flush丢具体标题；本机安装版尚无新History UI | P1 | 先与Undo统一，再完善持久化与清理 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
 | 9 | A15 | 源码语言与renderer解耦 | BROKEN | `web/app.js:140–141、514`；代码明确禁止本机LaTeX+Typst源码/本机Typst+LaTeX源码；引擎切换改state.mode | 切引擎会改变源码语言；误导用户并触发有损转换 | P1 | 保留原始sourceLanguage，通过独立转换适配renderer | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
 | 10 | A14 | 双语言复杂公式支持 | PARTIAL | `web/app.js:65、133、140–147；tex2typst0.6.2`；compatibility.json：126模板，100正向转换并本机编译，81反向解析成功 | 不支持的宏与转换器边界使双语言体验不一致 | P1 | 优先覆盖现有模板的可等价语法 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
@@ -504,17 +504,18 @@
 
 #### A40 保存、重新打开与文档生命周期
 
-- 当前状态：**PARTIAL**，A40.1完成，A40.2待实施。
-- 复现：source input后220ms防抖前，localStorage仍是旧公式；未完成输入可能丢失。
-- A40.1：输入事件立即保存精确source authority和pending validation，保留既有延迟解析/渲染；visualDraft保存MathLive占位符树，启动时仅在数学投影匹配时采用。
-- 测试：draft-recovery模拟不经过blur/beforeunload的即时快照新进程恢复，覆盖LaTeX/Typst空白/换行/未完成源码及visual占位符。44组回归通过。
-- 原生：备份安装20261015-193025；实际输入未完成frac后立即正常退出，重开保留精确草稿，Undo恢复用户sideset/nabla公式。原设置/收藏保持一致。
-- 剩余A40.2：持续文件URL与dirty状态、保存和另存为区分、保存取消/失败、文件重开完整生命周期。不得因A40.1通过将主项标COMPLETE。
-- 边界：不声称电源故障/磁盘错误下强持久化；native state桥接仍异步且原子写入。新增visualDraft可选兼容字段，无schema版本变更或资产迁移，未推送。
-- 证据：docs/audit/2026-10-15/a40/README.md及日志。
-
-- A40.2本轮增量：DocumentLifecycle会话id/name/savedSignature；真实编辑/排版字段决定dirty，保存进行中新编辑不会误清dirty；Mac原位保存目标仅由用户选址或成功打开文件的native token绑定，导入元数据不能指定写入路径；SaveAs始终面板，取消/失败不更新savedSignature。窗口采用标准标题/edited状态，无编辑区布局变化。
-- PASS 45组编辑回归及本机首次保存、+1修改后⌘S无面板直接原位写入、⇧⌘S出现面板且取消、最终后缀修复复核。原公式/设置/收藏恢复。备份20261015-193549；文档身份当前不跨重启，主项仍PARTIAL。
+- 当前状态：**PARTIAL**。A40.1/.2既有能力保留，本轮补齐 macOS 重启身份与保存保护的自动验证及必要修复；不把自动验证等同于用户本机体验验收。
+- 选择依据：A16内容契约→A31命令→A25撤销→A27设置快照→A13同步已完成；A40是A26持久化历史和A01/A33流程闭环的前置状态边界。
+- 初始证据：文件URL/摘要重启代码已存在，但测试仅覆盖摘要工具；state.json与document-session.json分开写入，可能恢复不匹配的草稿/文件身份。实际native saveProject方法测试复现旧Save As面板在换文档后仍写文件。
+- 修改：单条state消息携带内容及dirty身份，native将草稿、id、savedSignature及host拥有的URL/摘要原子写入同一会话记录；保存成功在回复前写入同一记录。老的分离记录保留，但不再用其路径绑定无法确认配对的草稿；保留state.json兼容读取，因此升级首次保存可能需要选址。
+- 文件保护：Save As确认时再次检查documentID；打开文件的摘要来自实际读取字节，避免回调期间外部改动被误当作基线；失败token清理。外部修改/删除阻止原位保存；取消/失败不把前端标为已保存。
+- 对象连续性：当前编辑表示纳入dirty签名；重新打开visual文件恢复仍可编辑的占位符树。原精确源码、FormulaContent双表示/来源字段、排版设置均随文件保存；不修改OCR环境、转换器、History政策或工具栏布局。
+- 自动验证：document-roundtrip浏览器+真实临时文件覆盖保存→新页面重启→新建→重新打开→编辑→Undo/Redo、Typst中的原始LaTeX、背景、visual占位符及无效草稿。native-document-save使用实际生产Swift方法、实际文件IO和两个独立Swift进程，覆盖取消/失败/重启原位保存/外部冲突/旧面板保护/读取摘要/token及旧记录身份隔离；只模拟文件面板确认回调，不创建App bundle或触碰用户数据。
+- 回归：21个相关套件最终通过；首次selection-transforms/template-generated-source因迁移目录缺失被忽略的LaTeXLive离线资源而超时，复用既有正式App资源后原断言重测通过（126模板），未削弱测试。另native摘要测试通过；web构建及当前Swift编译通过，保留两处既有allowedFileTypes弃用警告。
+- 部署：按用户要求原位更新同一/Applications/Formula.app至1.6.1（build21），不新建DEV/测试/临时bundle；应用退出后更换可执行文件与资源，保留正式ID及用户数据/model路径。具体签名、启动与状态核对结果见本轮证据。
+- 未关闭：Windows的saveProject/原生文件身份桥接仍缺实现，本轮未运行Windows；完整Mac交互由用户验收。未保证断电时尚在JS/native异步队列中的输入持久化，也未声称抵御不协作进程在摘要核验后立即并发覆写。不能将A40整项标COMPLETE。
+- 下一候选：A40剩余跨平台/人工验收闭环；Mac本轮确认后可评估A26 — 可查看的自动编辑History。不自动开始。
+- 证据：docs/audit/2026-10-15/a40/RESTART_SAVE.md、对应测试输出。其他39项状态未更改。
 
 ## C. COMPLETE
 

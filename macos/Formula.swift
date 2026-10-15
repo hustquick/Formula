@@ -37,10 +37,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
     let worker = DispatchQueue(label: "Formula.compiler")
     var queuedImports: [URL] = []
     var commandStates: [String:Bool] = [:]
-    var pendingProjectURLs:[String:URL]=[:]
+    var pendingProjectURLs:[String:(url:URL,digest:String)]=[:]
     var currentProjectURL:URL?
     var currentDocumentID=""
     var currentProjectDigest:String?
+    var currentDocumentDraft:[String:Any]?
+    var currentDocumentStatus:[String:Any]?
     var ready = false
     let ocrWorker = DispatchQueue(label: "Formula.ocr")
     var ocrBusy = false
@@ -58,19 +60,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "mathforge")
-        if let data = try? Data(contentsOf: support.appendingPathComponent("state.json")), let json = String(data:data,encoding:.utf8) {
-            config.userContentController.addUserScript(WKUserScript(source:"window.FormulaSavedState = \(json);",injectionTime:.atDocumentStart,forMainFrameOnly:true))
+        // Restore one atomic host-owned record: draft and file identity cannot be mixed.
+        let session=loadDocumentSession()
+        let draft=session?["draft"] as? [String:Any] ?? ((try? Data(contentsOf:support.appendingPathComponent("state.json"))).flatMap{(try? JSONSerialization.jsonObject(with:$0)) as? [String:Any]})
+        if let draft=draft {
+            config.userContentController.addUserScript(WKUserScript(source:"window.FormulaSavedState = \(json(draft));",injectionTime:.atDocumentStart,forMainFrameOnly:true))
         }
-        // Host-only session record: project metadata cannot authorize a path.
-        if let bytes=try? Data(contentsOf:support.appendingPathComponent("document-session.json")),
-           let session=(try? JSONSerialization.jsonObject(with:bytes)) as? [String:Any],
-           let id=session["id"] as? String {
-            currentDocumentID=id
-            if let path=session["path"] as? String {currentProjectURL=URL(fileURLWithPath:path)}
-            currentProjectDigest=session["digest"] as? String
-            let identity:[String:Any]=["id":id,"name":session["name"] as? String ?? "未命名公式","savedSignature":session["savedSignature"] ?? NSNull()]
-            let encoded=try! JSONSerialization.data(withJSONObject:identity)
-            config.userContentController.addUserScript(WKUserScript(source:"window.FormulaSavedLifecycle = \(String(data:encoded,encoding:.utf8)!);",injectionTime:.atDocumentStart,forMainFrameOnly:true))
+        if let session=session {
+            let identity:[String:Any]=["id":session["id"]!,"name":session["name"] ?? "未命名公式","savedSignature":session["savedSignature"] ?? NSNull()]
+            config.userContentController.addUserScript(WKUserScript(source:"window.FormulaSavedLifecycle = \(json(identity));",injectionTime:.atDocumentStart,forMainFrameOnly:true))
         }
         web = MathWebView(frame:.zero,configuration:config)
         web.navigationDelegate = self
@@ -165,7 +163,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let allowed=["cut":"cut:","copy":"copy:","paste":"paste:","selectAll":"selectAll:","undo":"undo:","redo":"redo:"]
             if let name=data["edit"] as? String,let selector=allowed[name]{NSApp.sendAction(Selector(selector),to:nil,from:self)}
         case "state":
-            if let state=data["state"],let bytes=try? JSONSerialization.data(withJSONObject:state) {try? bytes.write(to:support.appendingPathComponent("state.json"),options:.atomic)}
+            if let state=data["state"] as? [String:Any] {
+                do {
+                    if let document=data["document"] as? [String:Any] {try persistDocumentSession(state,document)}
+                    let bytes=try JSONSerialization.data(withJSONObject:state)
+                    try bytes.write(to:support.appendingPathComponent("state.json"),options:.atomic)
+                } catch {report("草稿保存失败："+error.localizedDescription,true)}
+            }
         case "copy":
             guard let text=data["text"] as? String else{return};let p=NSPasteboard.general;p.clearContents();p.setString(text,forType:.string)
             if data["format"] as? String == "svg",let bytes=text.data(using:.utf8) {p.setData(bytes,forType:NSPasteboard.PasteboardType("public.svg-image"))}
@@ -173,19 +177,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let p=NSPasteboard.general;p.clearContents()
             for (key,type) in [("png",NSPasteboard.PasteboardType.png),("pdf",.pdf),("svg",NSPasteboard.PasteboardType("public.svg-image")),("jpeg",NSPasteboard.PasteboardType("public.jpeg")),("tiff",.tiff),("eps",NSPasteboard.PasteboardType("com.adobe.encapsulated-postscript"))] {if let encoded=data[key] as? String,let bytes=Data(base64Encoded:encoded){p.setData(bytes,forType:type)}}
         if let equation=data["equation"] as? String,let bytes=equation.data(using:.utf8){p.setData(bytes,forType:NSPasteboard.PasteboardType("org.mathforge.equation"))}
-        case "documentStatus":
-            if let id=data["id"] as? String {
-                if id != currentDocumentID { currentProjectURL=nil;currentProjectDigest=nil;currentDocumentID=id;window.representedURL=currentProjectURL }
-                window.isDocumentEdited=data["dirty"] as? Bool ?? false
-                window.title=(data["name"] as? String ?? "Formula")+" · Formula"
-                window.representedURL=currentProjectURL
-                var session:[String:Any]=["id":id,"name":data["name"] ?? "未命名公式","savedSignature":data["savedSignature"] ?? NSNull()]
-                if let url=currentProjectURL {session["path"]=url.path}
-                if let digest=currentProjectDigest {session["digest"]=digest}
-                if let bytes=try? JSONSerialization.data(withJSONObject:session) {try? bytes.write(to:support.appendingPathComponent("document-session.json"),options:.atomic)}
-            }
+        case "documentStatus":updateDocumentStatus(data)
         case "documentOpened":
-            if let token=data["token"] as? String,let url=pendingProjectURLs.removeValue(forKey:token),data["documentID"] as? String == currentDocumentID {currentProjectURL=url;currentProjectDigest=projectDigest(url);window.representedURL=url;js("window.FormulaRefreshDocumentIdentity?.();")}
+            if let token=data["token"] as? String {bindOpenedProject(token,documentID:data["documentID"] as? String)}
         case "saveProject":saveProject(data)
         case "save":saveFile(data)
         case "import":
@@ -207,6 +201,39 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         default:break
         }
     }
+    func loadDocumentSession()->[String:Any]? {
+        guard let bytes=try? Data(contentsOf:support.appendingPathComponent("document-session.json")),
+              let session=(try? JSONSerialization.jsonObject(with:bytes)) as? [String:Any],
+              session["version"] as? Int == 1,let draft=session["draft"] as? [String:Any],
+              let id=session["id"] as? String,!id.isEmpty else{return nil}
+        currentDocumentID=id;currentDocumentDraft=draft;currentDocumentStatus=session
+        if let path=session["path"] as? String,let digest=session["digest"] as? String {
+            currentProjectURL=URL(fileURLWithPath:path);currentProjectDigest=digest
+        }
+        return session
+    }
+    func updateDocumentStatus(_ data:[String:Any]) {
+        guard let id=data["id"] as? String,!id.isEmpty else{return}
+        if id != currentDocumentID {currentProjectURL=nil;currentProjectDigest=nil;currentDocumentID=id}
+        currentDocumentStatus=data
+        window.isDocumentEdited=data["dirty"] as? Bool ?? false
+        window.title=(data["name"] as? String ?? "Formula")+" · Formula"
+        window.representedURL=currentProjectURL
+    }
+    func persistDocumentSession(_ draft:[String:Any],_ status:[String:Any]) throws {
+        guard let id=status["id"] as? String,!id.isEmpty else {throw ToolFailure(message:"公式文档身份无效")}
+        updateDocumentStatus(status);currentDocumentDraft=draft
+        var session:[String:Any]=["version":1,"id":id,"name":status["name"] ?? "未命名公式","savedSignature":status["savedSignature"] ?? NSNull(),"draft":draft]
+        if let url=currentProjectURL,let digest=currentProjectDigest {session["path"]=url.path;session["digest"]=digest}
+        try JSONSerialization.data(withJSONObject:session).write(to:support.appendingPathComponent("document-session.json"),options:.atomic)
+    }
+    func bindOpenedProject(_ token:String,documentID:String?) {
+        guard let selected=pendingProjectURLs.removeValue(forKey:token),documentID==currentDocumentID else{return}
+        currentProjectURL=selected.url;currentProjectDigest=selected.digest;window.representedURL=selected.url
+        if let draft=currentDocumentDraft,let status=currentDocumentStatus {
+            do {try persistDocumentSession(draft,status)} catch {report("草稿保存失败："+error.localizedDescription,true)}
+        }
+    }
     func projectDigest(_ url:URL)->String? {
         guard let bytes=try? Data(contentsOf:url) else{return nil}
         return SHA256.hash(data:bytes).map{String(format:"%02x",$0)}.joined()
@@ -216,9 +243,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         guard let documentID=data["documentID"] as? String,documentID==currentDocumentID,
               let encoded=data["base64"] as? String,let bytes=Data(base64Encoded:encoded) else {reply(id,["error":"公式文档状态无效"]);return}
         let write:(URL)->Void = {url in
+            guard self.currentDocumentID==documentID else {self.reply(id,["error":"当前公式已改变，旧保存操作已取消"]);return}
             do {
                 try bytes.write(to:url,options:.atomic)
-                if self.currentDocumentID==documentID {self.currentProjectURL=url;self.currentProjectDigest=self.projectDigest(url);self.window.representedURL=url}
+                self.currentProjectURL=url;self.currentProjectDigest=SHA256.hash(data:bytes).map{String(format:"%02x",$0)}.joined();self.window.representedURL=url
+                if let draft=self.currentDocumentDraft,var status=self.currentDocumentStatus,let signature=data["signature"] as? String {
+                    status["name"]=url.lastPathComponent;status["savedSignature"]=signature
+                    try self.persistDocumentSession(draft,status)
+                }
                 self.reply(id,["saved":true,"name":url.lastPathComponent])
             } catch {self.reply(id,["error":error.localizedDescription])}
         }
@@ -250,12 +282,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 guard let doc=PDFDocument(url:url),let subject=doc.documentAttributes?[PDFDocumentAttribute.subjectAttribute] as? String,subject.hasPrefix("MathForge:") else {throw ToolFailure(message:"该 PDF 不含 Formula 源码。请导入 .tex、.typ 或 .mathforge 文件。")}
                 js("window.FormulaImport(\(json(String(subject.dropFirst(10)))), 'mathforge');");return
             }
-            let text=try String(contentsOf:url,encoding:.utf8)
+            let bytes=try Data(contentsOf:url)
+            guard let text=String(data:bytes,encoding:.utf8) else {throw ToolFailure(message:"公式文件不是有效的 UTF-8 文本")}
             let ext=url.pathExtension.lowercased()
             let project=(try? JSONSerialization.jsonObject(with:Data(text.utf8))) as? [String:Any]
             let isProject=["mathforge","json"].contains(ext) && project?["format"] as? String == "mathforge-equation"
             let token=UUID().uuidString
-            if isProject {pendingProjectURLs[token]=url}
+            if isProject {pendingProjectURLs[token]=(url,SHA256.hash(data:bytes).map{String(format:"%02x",$0)}.joined())}
             js("window.FormulaImport(\(json(text)),\(json(ext)),\(isProject ? json(url.lastPathComponent):"undefined"),\(isProject ? json(token):"undefined"));")
         } catch let e as ToolFailure {report(e.message,true)} catch {report(error.localizedDescription,true)}
     }

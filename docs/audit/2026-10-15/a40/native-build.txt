@@ -1,0 +1,17 @@
+/tmp/formula-a40-main.swift:186:43: warning: 'allowedFileTypes' was deprecated in macOS 12.0: Use -allowedContentTypes instead [#DeprecatedDeclaration]
+ 184 |         case "save":saveFile(data)
+ 185 |         case "import":
+ 186 |             let panel=NSOpenPanel();panel.allowedFileTypes=["tex","typ","txt","svg","pdf","mathforge","json"];panel.canChooseDirectories=false
+     |                                           `- warning: 'allowedFileTypes' was deprecated in macOS 12.0: Use -allowedContentTypes instead [#DeprecatedDeclaration]
+ 187 |             panel.beginSheetModal(for:window){response in if response == .OK,let url=panel.url{self.importFile(url)}}
+ 188 |         case "scanTools":scanTools()
+
+/tmp/formula-a40-main.swift:264:15: warning: 'allowedFileTypes' was deprecated in macOS 12.0: Use -allowedContentTypes instead [#DeprecatedDeclaration]
+ 262 |         }
+ 263 |         let panel=NSSavePanel();panel.nameFieldStringValue=((data["name"] as? String ?? "equation.mathforge") as NSString).deletingPathExtension
+ 264 |         panel.allowedFileTypes=["mathforge"];panel.canCreateDirectories=true
+     |               `- warning: 'allowedFileTypes' was deprecated in macOS 12.0: Use -allowedContentTypes instead [#DeprecatedDeclaration]
+ 265 |         panel.beginSheetModal(for:window){response in
+ 266 |             guard response == .OK,let url=panel.url else {self.reply(id,["cancelled":true]);return}
+
+[#DeprecatedDeclaration]: <https://docs.swift.org/compiler/documentation/diagnostics/deprecated-declaration>

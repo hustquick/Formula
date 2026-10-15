@@ -1,3 +1,9 @@
+# Formula 1.6.1
+
+本次更新统一公式内容、编辑事务及排版设置快照，改善三种编辑表示间的同步、颜色输出及文档保存恢复。A40 的具体测试结果和限制以 DEVELOPMENT_AUDIT.md 的当前 B 表与对应证据为准。Windows 版本配置同步为 1.6.1，尚未进行 Windows 实机验收。
+
+以下保留 1.6.0 的功能说明：
+
 # Formula 1.6.0
 
 本次较大版本更新集中改善源码编辑、结构变换与 OCR 工作流。
@@ -21,7 +27,7 @@
 
 ## 安装与限制
 
-下载 `Formula-1.6.0.dmg`，将 Formula.app 拖到 Applications。通用应用支持 Apple Silicon / Intel，要求 macOS 12 或更新版本。
+下载 `Formula-1.6.1.dmg`，将 Formula.app 拖到 Applications。通用应用支持 Apple Silicon / Intel，要求 macOS 12 或更新版本。
 
 发布包采用临时签名，尚未 Apple 开发者公证。LaTeX / Typst 转换尚非完整语言级转换；遇到不支持的结构保留原文并提示。图形剪贴板不代表 Office 原生可编辑公式，WPS 兼容性仍需进一步实测。识别模型按需安装，不包含在 DMG 中。
 

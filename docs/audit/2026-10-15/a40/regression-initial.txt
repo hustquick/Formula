@@ -1,0 +1,32 @@
+PASS file save/restart/open/edit/Undo/Redo, exact LaTeX authority in Typst, settings, representation dirty state, visual placeholders and invalid drafts
+PASS document identity, dirty source, Save/Save As, cancel/error retain dirty and identity, native-open adoption and new document
+PASS immediate LaTeX/Typst incomplete draft persistence and fresh-process exact recovery; visual placeholder durable recovery
+PASS content contract: authority, revision, provenance, cache invalidation, persistence and failed conversion
+PASS editor contract: Visual/LaTeX/Typst, exact reload, source edits, Undo/Redo, History, save/import and invalid-source protection
+PASS validated settings, single transactions, every setting Undo/Redo, source authority, invalid-input rollback, font failure, UI dispatch, preference zoom and mode aliases
+PASS all layout snapshot fields, Visual/LaTeX/Typst Undo/Redo, project/favorite/History actual-font restoration, full setting round trip and persisted history reload
+PASS async document/Undo ordering, failed-edit rollback and redo preservation, selection/inert release, queued settings, delayed font commit/Undo and explicit nested transaction
+PASS serialized rapid Undo/Redo, failed-restore recovery, visual placeholders, mixed MathLive/registry/keyboard ownership, pending source and Typst mode round trip
+PASS complete inline preview/export glyphs and unchanged-source visual placeholder/selection continuity
+PASS registry conflicts, shared commands, structural undo/redo, palette/history and contextual copy
+PASS file/save/export, workspace/copy, find next/previous, native edit routing and settings/palette shortcuts
+page.waitForFunction: Timeout 30000ms exceeded.
+    at /Users/hustquick/Documents/Projects/Formula/tests/selection-transforms.cjs:2:138 {
+  log: [],
+  name: 'TimeoutError'
+}
+page.waitForFunction: Timeout 30000ms exceeded.
+    at /Users/hustquick/Documents/Projects/Formula/tests/template-generated-source.cjs:1:213 {
+  log: [],
+  name: 'TimeoutError'
+}
+PASS batch success/cancel/failure exact restoration, no temporary persistence/history, conflict gate/inert release, preference/assets isolation and validated runtime bridge
+PASS unified format selector, exact copy payload and export filename for eight embedded formats; native-only options disabled
+PASS A02 focus/selection/native menu routing, LaTeX/Typst/visual/preview at 760px
+PASS A02 focus/selection/native menu routing, LaTeX/Typst/visual/preview at 1120px
+PASS A02 focus/selection/native menu routing, LaTeX/Typst/visual/preview at 1440px
+PASS long source selection/scroll/focus restored after settings Done/Escape, unchanged editor frame
+OCR progress, tiered model selection, live checkbox page extraction, cancellation, import and reply routing OK
+Document UI: engine/page request, source labels, warnings, live selection, cancellation and range validation passed
+PASS text paste preserved, clipboard image routed, first candidate selected automatically
+{"tests":21,"failed":["selection-transforms","template-generated-source"]}

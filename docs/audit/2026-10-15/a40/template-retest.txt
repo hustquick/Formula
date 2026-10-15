@@ -1,0 +1,2 @@
+PASS actual accent/script menu clicks retain operand, undo/redo, expression wrappers and empty placeholders
+PASS 126 built-in templates: stable generated format and actual MathJax rendering
