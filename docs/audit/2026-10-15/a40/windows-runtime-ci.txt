@@ -1,0 +1,12 @@
+Run: https://github.com/hustquick/Formula/actions/runs/38740469562
+Commit: 0990a52825d2b3732957e85e9c8501ed89060e54
+Result: success (windows-latest, packaged Formula 1.6.1)
+
+release	Validate document save and restart bridge	2026-10-15T13:10:55.2102952Z PASS Windows host actual filesystem: paired recovery, Save/Save As, new identity, cancel/error, stale panel, external edit/delete, native Open token, provenance and fresh-process Save
+release	Validate document save and restart bridge	2026-10-15T13:10:55.3239380Z PASS actual Windows main/preload IPC: paired launch, save replies, in-place Save, Open token adoption, conflict/error replies, stale panel rejection and graphics-export identity isolation
+release	Build Windows portable app	2026-10-15T13:11:16.4306660Z PASS v1.1.0: 10 shortcut categories / 365 shortcut items; 10 template categories / 126 template items; floating menus, keyboard navigation, Finder toolbar customization, offline catalog, local build, docs and DMG gates verified.
+release	Build Windows portable app	2026-10-15T13:11:46.4345961Z Built: D:\a\Formula\Formula\dist\Formula-1.6.1-Windows-x64.zip
+release	Validate packaged Formula save and restart	2026-10-15T13:12:01.8178810Z PASS packaged app first Save: exact LaTeX authority retained under Typst and layout settings written
+release	Validate packaged Formula save and restart	2026-10-15T13:12:04.5966744Z PASS real process restart: same identity and in-place Ctrl+S without another file panel
+release	Validate packaged Formula save and restart	2026-10-15T13:12:04.7393111Z PASS packaged app Undo/Redo, cancellation, external conflict, SaveAs copy and native Open acknowledgement
+release	Validate packaged Formula save and restart	2026-10-15T13:12:06.9586356Z PASS packaged Windows Formula: real launch, exact authority/settings in Typst, Save, quit/restart/in-place Ctrl+S, edit/Undo/Redo, SaveAs cancel, external conflict, native Open token adoption and visual placeholder restart
