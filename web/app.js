@@ -288,7 +288,6 @@ async function restore(saved){
   if(state.mathFont!==previousFont)return applyMathFont(state.mathFont);
 }
 function importContent(text,ext){
-  if(window.FormulaDocumentHistory)window.FormulaDocumentHistory.previous=null;
   if(['mathforge','json'].includes(ext)){const data=JSON.parse(text);if(data.format==='mathforge-library')return registry.execute('importFavoriteLibrary',{history:data.history});if(data.format!=='mathforge-equation')throw new Error('无法识别的公式文件');return restore(data.state);}
   if(ext==='svg'){const meta=new DOMParser().parseFromString(text,'image/svg+xml').querySelector('metadata');if(!meta)throw new Error('SVG 中没有可恢复源码');const data=JSON.parse(meta.textContent);if(data.state)return restore(data.state);return loadLatex(data.latex);}
   if(ext==='tex'&&text.includes('\\begin{document}')){const body=text.match(/\\begin\{document\}([\s\S]*?)\\end\{document\}/);if(!body)throw new Error('LaTeX 文档不完整');state.preamble=text.split('\\begin{document}')[0].replace(/\\documentclass(?:\[[^\]]*\])?\{[^}]*\}/,'').trim();text=body[1];}
@@ -614,7 +613,9 @@ const formulaHistory=new FormulaHistory(savedFormulaHistory);let formulaHistoryT
 if(!savedFormulaHistory.migrated){try{const old=JSON.parse(localStorage.getItem('formula-operation-history')||'{}');for(const entry of old.entries||[]){const snapshot=migrateTypesetting(entry.snapshot||{});if(snapshot.rawSource?.trim())formulaHistory.observe(snapshot,entry.title||'历史公式版本');}}catch{}savedFormulaHistory.migrated=true;}
 
 function saveFormulaHistory(){try{localStorage.setItem('formula-document-history',JSON.stringify({...formulaHistory.serialize(),migrated:true}));}catch{status('历史空间不足，当前公式未受影响',true);}}
-function observeFormula(){if(batchSession||!valid||revisions.restoring||revisions.inTransaction)return;formulaHistory.observe(captureRevision());saveFormulaHistory();}
+function recordFormulaSnapshot(snapshot,title){if(batchSession)return;formulaHistory.observe(snapshot,title);saveFormulaHistory();}
+function observeFormula(title='编辑公式'){if(batchSession||revisions.restoring||revisions.inTransaction||revisions.busy||revisions.timer)return;recordFormulaSnapshot(captureRevision(),title);}
+formulaHistory.onOversize=()=>status('公式超过历史容量，本次内容未写入历史；当前编辑仍保留。',true);
 window.FormulaDocumentHistory=formulaHistory;
 const revisions=new RevisionHistory(captureRevision,async snapshot=>{
   snapshot=normalizeColorSettings(migrateTypesetting(snapshot));localAttemptSource=null;renderBackendUsed='builtin';
@@ -625,7 +626,10 @@ const revisions=new RevisionHistory(captureRevision,async snapshot=>{
 const registry=new CommandRegistry(()=>updateCommandState());registry.onError=e=>status(e.message,true);
 window.FormulaCommands=registry;window.FormulaRevisions=revisions;
 let commandDepth=0;
-async function editTransaction(title,execute){return revisions.transaction(title,async context=>{commandDepth++;try{return await execute(context);}finally{commandDepth--;}});}
+async function editTransaction(title,execute){
+  const result=await revisions.transaction(title,async context=>{recordFormulaSnapshot(captureRevision(),'编辑前的公式');commandDepth++;try{return await execute(context);}finally{commandDepth--;}});
+  observeFormula(title);return result;
+}
 // Protect the editable surfaces only while a queued document operation owns
 // state. Their geometry is unchanged; commands and Undo remain available.
 let transactionInert,transactionLock;
@@ -694,7 +698,7 @@ registry.register({id:'resetToolbar',title:'恢复默认工具栏',mutation:'pre
 const auxiliaryInput=()=>{const n=document.activeElement;return n!==$('source')&&n!==mf&&!!n?.matches('input:not([type=checkbox]):not([type=color]):not([type=range]):not([type=button]),textarea,[contenteditable=true]');};
 register('undo','撤销','meta+z','编辑',()=>auxiliaryInput()?nativeEdit('undo'):revisions.undo(),()=>auxiliaryInput()||revisions.canUndo);
 register('redo','重做','meta+shift+z','编辑',()=>auxiliaryInput()?nativeEdit('redo'):revisions.redo(),()=>auxiliaryInput()||revisions.canRedo);
-register('newFormula','新建公式','meta+n','文件',()=>editTransaction('新建公式',()=>{documentLifecycle.adopt('未命名公式',{});documentLifecycle.savedSignature=null;formulaHistory.previous=null;state.latex='';state.rawSource='';content=new FormulaContent(null,{language:state.sourceLanguage,text:''});$('source').value='';updating=true;mf.setValue('');updating=false;++renderID;valid=false;svgResult=null;nativeResult=null;$('preview').replaceChildren();persist();}));
+register('newFormula','新建公式','meta+n','文件',()=>editTransaction('新建公式',()=>{documentLifecycle.adopt('未命名公式',{});documentLifecycle.savedSignature=null;state.latex='';state.rawSource='';content=new FormulaContent(null,{language:state.sourceLanguage,text:''});$('source').value='';updating=true;mf.setValue('');updating=false;++renderID;valid=false;svgResult=null;nativeResult=null;$('preview').replaceChildren();persist();}));
 async function saveDocument(saveAs){
   if(!bridge)return exportFile('project');
   if(!content.matches(state.sourceLanguage,$('source').value))await readSource();
@@ -830,22 +834,22 @@ function drawCommands(){commandList.replaceChildren();const term=commandSearch.v
 register('commandPalette','命令面板','meta+k','视图',()=>showCommands('commands'));
 register('showHistory','历史公式',null,'公式',()=>showFormulaHistory());
 registry.register({id:'restoreFormulaVersion',title:'恢复公式历史版本',mutation:'document',undoable:true,context:args=>formulaHistory.versions.some(v=>v.id===args?.id),execute:async args=>{
-  const version=formulaHistory.versions.find(v=>v.id===args.id);clearTimeout(formulaHistoryTimer);const before=captureRevision();formulaHistory.observe(before,'恢复前的编辑');saveFormulaHistory();
-  $('tool-dialog').close();await registry.execute('importContent',{text:JSON.stringify({format:'mathforge-equation',state:version.after}),ext:'mathforge'});
-  formulaHistory.previous=before;formulaHistory.observe(captureRevision(),'恢复历史版本');saveFormulaHistory();if(state.editorMode==='visual')mf.focus();else $('source').focus();
+  const version=formulaHistory.versions.find(v=>v.id===args.id);clearTimeout(formulaHistoryTimer);$('tool-dialog').close();
+  await editTransaction('恢复历史版本',()=>restore({...version.after,visualDraft:version.after.visualLatex}));
+  if(state.editorMode==='visual')mf.focus();else $('source').focus();
 }});
 
-registry.register({id:'clearFormulaHistory',title:'清空历史公式',mutation:'asset',execute:()=>{formulaHistory.clear();saveFormulaHistory();drawFormulaHistory();}});
+registry.register({id:'clearFormulaHistory',title:'清空全部历史',mutation:'asset',execute:()=>{clearTimeout(formulaHistoryTimer);formulaHistory.clear(captureRevision());selectedVersionID=null;saveFormulaHistory();drawFormulaHistory();if($('show-formula-versions').open)drawVersionHistory();}});
 registry.register({id:'removeFormulaHistory',title:'删除历史公式',mutation:'asset',context:args=>formulaHistory.formulas.some(x=>x.id===args?.id),execute:args=>{formulaHistory.remove(args.id);saveFormulaHistory();drawFormulaHistory();}});
 function showFormulaHistory(){
-  returnContext=captureEditorContext();revisions.flush();if(valid)observeFormula();panelKind='formulas';commandPanel.querySelector('.find-replace').hidden=true;commandPanel.hidden=false;commandSearch.value='';commandSearch.placeholder='搜索历史公式';drawFormulaHistory();commandSearch.focus();
+  returnContext=captureEditorContext();revisions.flush();observeFormula();panelKind='formulas';commandPanel.querySelector('.find-replace').hidden=true;commandPanel.hidden=false;commandSearch.value='';commandSearch.placeholder='搜索历史公式';drawFormulaHistory();commandSearch.focus();
 }
 function drawFormulaHistory(){
-  commandList.replaceChildren();const clear=document.createElement('button');clear.textContent='清空历史公式';clear.onclick=()=>registry.execute('clearFormulaHistory');commandList.append(clear);
+  commandList.replaceChildren();const clear=document.createElement('button');clear.textContent='清空全部历史';clear.onclick=()=>registry.execute('clearFormulaHistory');commandList.append(clear);
   for(const item of formulaHistory.formulas.filter(x=>x.snapshot.rawSource.toLowerCase().includes(commandSearch.value.toLowerCase()))){
-    const row=document.createElement('div');row.className='formula-history-row';const open=document.createElement('button');open.className='formula-history-preview';open.textContent=item.snapshot.rawSource;open.setAttribute('aria-label','打开历史公式 '+item.snapshot.rawSource);open.onclick=()=>{closeCommands();registry.execute('importContent',{text:JSON.stringify({format:'mathforge-equation',state:item.snapshot}),ext:'mathforge'});};
-    if(item.snapshot.latex)MathJax.startup.promise.then(()=>MathJax.tex2svgPromise(item.snapshot.latex,{display:true})).then(node=>{const svg=node.querySelector('svg');if(svg&&open.isConnected){svg.removeAttribute('width');svg.removeAttribute('height');open.replaceChildren(svg);}}).catch(()=>{});
-    const time=document.createElement('small');time.textContent=new Date(item.time).toLocaleString()+' · '+(item.snapshot.editorMode==='typst'?'Typst':'LaTeX');const remove=document.createElement('button');remove.textContent='×';remove.setAttribute('aria-label','删除历史公式');remove.onclick=()=>registry.execute('removeFormulaHistory',{id:item.id});row.append(open,time,remove);commandList.append(row);
+    const row=document.createElement('div');row.className='formula-history-row';const open=document.createElement('button');open.className='formula-history-preview';open.textContent=item.snapshot.rawSource||'空公式';open.setAttribute('aria-label','打开历史公式 '+(item.snapshot.rawSource||'空公式'));open.onclick=()=>{closeCommands();registry.execute('importContent',{text:JSON.stringify({format:'mathforge-equation',state:item.snapshot}),ext:'mathforge'});};
+    if(item.snapshot.latex&&(!item.snapshot.formulaContent||item.snapshot.formulaContent.validation==='parsed'))MathJax.startup.promise.then(()=>MathJax.tex2svgPromise(item.snapshot.latex,{display:true})).then(node=>{const svg=node.querySelector('svg');if(svg&&open.isConnected){svg.removeAttribute('width');svg.removeAttribute('height');open.replaceChildren(svg);}}).catch(()=>{});
+    const time=document.createElement('small');time.textContent=new Date(item.time).toLocaleString()+' · '+(item.snapshot.editorMode==='visual'?'可视化':item.snapshot.editorMode==='typst'?'Typst':'LaTeX');const remove=document.createElement('button');remove.textContent='×';remove.setAttribute('aria-label','删除历史公式');remove.onclick=()=>registry.execute('removeFormulaHistory',{id:item.id});row.append(open,time,remove);commandList.append(row);
   }
 }
 let selectedVersionID=null;
@@ -856,6 +860,7 @@ function drawVersionHistory(){
   const list=document.createElement('div');list.className='formula-version-list';list.setAttribute('role','listbox');list.setAttribute('aria-label','公式版本');
   const preview=document.createElement('div');preview.className='formula-version-preview';layout.append(list,preview);host.append(layout);
   async function renderSnapshot(target,snapshot){
+    if(snapshot.formulaContent&&snapshot.formulaContent.validation!=='parsed'){target.textContent=snapshot.rawSource;return;}
     try{const latex=snapshot.latex||(snapshot.editorMode==='typst'?typst2tex(snapshot.rawSource,{nonStrict:false}):snapshot.rawSource);await MathJax.startup.promise;const node=await MathJax.tex2svgPromise(latex,{display:true});if(target.isConnected)target.replaceChildren(node);}
     catch{target.textContent='该版本暂无法预览';target.title=snapshot.rawSource||'';}
   }
@@ -889,12 +894,12 @@ $('preview').addEventListener('contextmenu',e=>{e.preventDefault();showCommands(
 const historyEntry=document.createElement('button');historyEntry.className='history-menu-entry';historyEntry.textContent='历史公式';historyEntry.onpointerdown=e=>e.preventDefault();historyEntry.onclick=()=>registry.execute('showHistory');document.querySelector('.editor-card>.section-head').insertBefore(historyEntry,$('input-settings'));
 function updateCommandState(){const list=registry.list();send('commandStates',{states:Object.fromEntries(list.map(c=>[c.id,c.enabled]))});formatButtons();if(!commandPanel.hidden&&panelKind!=='find'&&panelKind!=='formulas')drawCommands();}
 revisions.onOversize=()=>status('公式超过历史快照容量，本次内容未写入历史。',true);
-revisions.onChange=()=>{clearTimeout(formulaHistoryTimer);if(!revisions.restoring)formulaHistoryTimer=setTimeout(observeFormula,1800);updateCommandState();try{localStorage.setItem('formula-operation-history',JSON.stringify({index:revisions.index,entries:revisions.entries}));}catch{}};
+revisions.onChange=()=>{clearTimeout(formulaHistoryTimer);if(!revisions.restoring){const title=revisions.entries[revisions.index]?.title||'编辑公式';observeFormula(title);formulaHistoryTimer=setTimeout(()=>observeFormula(title),1800);}updateCommandState();try{localStorage.setItem('formula-operation-history',JSON.stringify({index:revisions.index,entries:revisions.entries}));}catch{}};
 // Native edit events are grouped; structural registry operations are separate transactions.
 $('source').addEventListener('input',e=>{if(!batchSession&&!commandDepth)revisions.schedule(e.inputType?.includes('Paste')?'粘贴源码':e.inputType?.includes('delete')?'删除内容':'输入源码','source');});
 window.FormulaRecordVisual=()=>{if(!batchSession&&!commandDepth)revisions.schedule('可视化编辑','visual');};
 mf.addEventListener('input',()=>{window.FormulaRecordVisual();if(state.editorMode==='visual'&&!updating)persist();});
-window.addEventListener('beforeunload',()=>{revisions.flush();if(valid)observeFormula();});
+window.addEventListener('beforeunload',()=>{revisions.flush();observeFormula();});
 try{const saved=JSON.parse(localStorage.getItem('formula-operation-history')||'null');if(saved&&Array.isArray(saved.entries)&&JSON.stringify(saved).length<=revisions.bytes){revisions.entries=saved.entries.filter(e=>e.snapshot&&typeof e.snapshot.rawSource==='string').slice(-100).map(e=>({...e,snapshot:migrateTypesetting(e.snapshot)}));revisions.index=Math.min(Math.max(0,saved.index),revisions.entries.length-1);revisions.counter=Math.max(0,...revisions.entries.map(e=>Number(e.id)||0));}}catch{}
 revisions.record('当前公式','initial');
 // Native paste/cut/select-all and system quit/close stay in the responder chain.

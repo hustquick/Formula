@@ -1,0 +1,12 @@
+AssertionError [ERR_ASSERTION]: different exact authorities must not collapse under the same rendered LaTeX
+
+1 !== 2
+
+    at /Users/hustquick/Documents/Projects/Formula/tests/formula-history.cjs:6:9 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 2,
+  operator: 'strictEqual',
+  diff: 'simple'
+}

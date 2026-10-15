@@ -1,0 +1,1 @@
+PASS automatic command history, exact restart chain, search, restore/edit/Undo/Redo, retained old branches and incoming OCR metadata, invalid source, visual placeholders, clear/reload and Undo isolation

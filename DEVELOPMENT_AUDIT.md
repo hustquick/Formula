@@ -46,7 +46,7 @@
 | 5 | A27 | History快照覆盖排版设置 | COMPLETE | 2026-10-15统一documentSnapshotSettingKeys；三模式完整设置矩阵、project/favorite/version真实字体及重启；docs/audit/2026-10-15/a27/ | 原漏字段已由前轮修复；本轮补实际字体与state不同步；inline多片段预览丢失另记A13 | P1 | A13继续检查端到端同步与多片段预览 | web/document-settings.mjs；web/commands.mjs；web/app.js；tests/history-settings.cjs；scripts/test-editor.cjs；未单独提交 | PASS 42组、构建签名安装启动、真实Mac快照打开/Undo、源码缩放 | 无schema迁移/模型下载；新批次1/5；另按用户要求修复A+/A−高亮字号；未推送 |
 | 6 | A13 | Visual / Source 双向同步 | COMPLETE | 2026-10-15 inline单SVG输出、未变数学内容保留visual树；source-preview-sync；docs/audit/2026-10-15/a13/ | 复杂双语言转换保真继续归A14/A17，不声称无损AST | P0 | 下一项A40文档生命周期，依赖模型/撤销/同步已齐 | web/index.html；web/app.js；tests/source-preview-sync.cjs；scripts/test-editor.cjs；未单独提交 | PASS 43组回归、构建安装启动、真实Mac行内x+y+z+w完整预览并恢复用户公式 | 新批次2/5；无schema迁移/模型下载；备份20261015-192646；未推送 |
 | 7 | A40 | 保存、重新打开与文档生命周期 | PARTIAL | 2026-10-15 Mac成对恢复/重启保存；Windows完整桥接及正式Formula.exe真实进程保存重启；docs/audit/2026-10-15/a40/WINDOWS_RUNTIME.md | 用户回复Mac尚未测试；文件选择面板交互感由用户验收；Mac发布CI仍被ocr-preview旧断言阻断（不属本轮修复） | P1 | 本轮停止；Mac保存重开确认后候选A26 | tests/windows-document-runtime.cjs；.github/workflows/release-windows.yml；既有A40实现保留 | PASS Windows CI 38740469562：真实Electron/前端/IPC/文件IO、启动/退出/重启/Ctrl+S/UndoRedo/Open/冲突/占位符；构建打包发布成功 | 无本轮产品代码变更；1.6.1；main；不新建App/OCR环境；其余39项状态保留 |
-| 8 | A26 | 可查看的自动编辑History | PARTIAL | `web/commands.mjs RevisionHistory；web/app.js:591–617`；revision-history、commands通过：恢复、分支、100条/4MB限制 | schedule.flush丢具体标题；本机安装版尚无新History UI | P1 | 先与Undo统一，再完善持久化与清理 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
+| 8 | A26 | 可查看的自动编辑History | COMPLETE | 2026-10-15技术验收：精确authority去重、事务前后记录、重启previous连续性、无效草稿/占位符、清空及4MiB边界；docs/audit/2026-10-15/a26/ | 不声明语义AST等价；仅保留收到的OCR元数据；旧记录此前已合并的信息无法重建；用户体验待验收 | P1 | 下一候选A15先复核已实现的语言/renderer解耦，不自动开始 | web/formula-history.mjs；web/app.js；tests/formula-history*.cjs；scripts/test-editor.cjs | PASS 21套相关回归、前端构建、原位签名/资源/启动及用户原文设置收藏核对 | 1.6.2 build22；History与Undo独立；A40仍PARTIAL未视为人工验收；本批次技术完成3/5 |
 | 9 | A15 | 源码语言与renderer解耦 | BROKEN | `web/app.js:140–141、514`；代码明确禁止本机LaTeX+Typst源码/本机Typst+LaTeX源码；引擎切换改state.mode | 切引擎会改变源码语言；误导用户并触发有损转换 | P1 | 保留原始sourceLanguage，通过独立转换适配renderer | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
 | 10 | A14 | 双语言复杂公式支持 | PARTIAL | `web/app.js:65、133、140–147；tex2typst0.6.2`；compatibility.json：126模板，100正向转换并本机编译，81反向解析成功 | 不支持的宏与转换器边界使双语言体验不一致 | P1 | 优先覆盖现有模板的可等价语法 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
 | 11 | A17 | 模板库双语言完整性 | PARTIAL | `web/vendor/latexlive/catalog.js（生成产物）；scripts/sync-latexlive-catalog.mjs`；compatibility.json遍历十类126模板：原生双源0、仅LaTeX126 | UI能力被renderer规则额外限制；详见I节 | P1 | 补原生Typst与转换能力标记，先解决高频模板 | — | 沿用历史记录；待该项重新验证 | 未在本轮验收；保留原始任务范围 |
@@ -353,14 +353,15 @@
 
 #### A26 可查看的自动编辑History
 
-- 当前状态：**PARTIAL**。
-- 代码证据：`web/commands.mjs RevisionHistory；web/app.js:591–617`。
-- 运行证据：revision-history、commands通过：恢复、分支、100条/4MB限制。
-- 已实现：历史UI、搜索、时间戳、恢复、localStorage持久化，与收藏分开。
-- 未实现/未验证：清理UI、可靠数据迁移、完整paste/delete/OCR原生记录未完成。
-- Bug或风险：schedule.flush丢具体标题；本机安装版尚无新History UI。
-- 严重性：P1。
-- 下一步：先与Undo统一，再完善持久化与清理。
+- 当前状态：**COMPLETE（本轮定义的数据与自动验证条件通过，等待用户体验）**。用户明确要求继续下一轮，未把该要求当作A40人工验收，A40状态保持PARTIAL。
+- 问题证据：旧formulaIdentity按去空白的渲染LaTeX合并记录，新测试实际复现不同authority只剩1条；previous未序列化导致重启后的Before断链；1.8秒定时记录无法确保快速连续导入都保留；跳过无效源码；旧清空仅清recent而未清versions，重载可能重新补入。
+- 修改：最近公式按精确原始authority语言/文本标识（旧无模型记录保守兼容）；内容版本比较authority元数据与可编辑占位符。纯表示/设置切换更新完整快照而不伪造内容变化。快照深拷贝，previous成对持久化，旧数据按已保存快照恢复链并过滤畸形条目。
+- 记录：文档事务前保留当前状态、成功后记录完整结果；输入仍按既有450ms分组点记录，保留来源命令标题；无效/空公式和新建可进入变化链。History资产与Undo栈完全分开，Undo新分支不截断用户History。恢复旧版本沿用Command和事务层，支持视觉占位符及继续编辑。
+- 清理/容量：现有按钮改为“清空全部历史”，清recent/versions/previous；当前文档和Undo不变，活动内容签名避免未编辑的重启/查看将清空结果立即补入。100条与100版本、合计4MiB UTF-8上限，超大记录明确提示且不影响当前编辑或旧History。
+- 自动测试：新增formula-history与formula-history-editor，覆盖精确原文去重、重启链、快速导入、搜索、恢复/编辑/Undo/Redo、旧分支、收到的OCR字段、无效草稿、占位符、清空重载、容量、旧数据。21套相关回归全部通过，含模板126渲染、OCR/文档/剪贴板接口、批量、输出、事务与设置。
+- 部署：前端构建通过；用户保存退出后原位更新同一/Applications/Formula.app为1.6.2 build22，复用未改变的既有native可执行文件；资源SHA256、ad-hoc签名验证和启动进程通过。原authority、表示、设置、收藏逐字段一致；不创建DEV/Test/临时bundle，不触碰OCR环境/model。详细证据见a26目录。
+- 边界：只保证现有FormulaContent中收到的来源/识别元数据保存，不能重构上游未传入或旧版本已合并丢弃的原始识别数据；不宣称统一数学AST、每个按键单独一个版本、无限历史或绕过localStorage总配额。配额错误保持当前公式与已有持久化数据，并提示历史空间不足。用户的实际交互验收仍待反馈。
+- 下一候选：A15 — 源码语言与renderer解耦，先复核既有实现及原表BROKEN证据是否过时；本轮不开始。
 
 #### A27 History快照覆盖排版设置
 

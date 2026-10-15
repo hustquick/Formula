@@ -1,0 +1,22 @@
+PASS exact authority identity, continuous restart versions, representation metadata, invalid source, immutable snapshots, clear/reload, bounded UTF-8 storage, oversize isolation and legacy validation
+PASS automatic command history, exact restart chain, search, restore/edit/Undo/Redo, retained old branches and incoming OCR metadata, invalid source, visual placeholders, clear/reload and Undo isolation
+PASS all layout snapshot fields, Visual/LaTeX/Typst Undo/Redo, project/favorite/History actual-font restoration, full setting round trip and persisted history reload
+PASS settings nesting, page-only detection, initial/active selection without rerun, empty results, 1/0 defaults, history before/after SVG, click isolation, double-click restore and undo
+PASS semantic tools, formula/version separation, format-aware resolution and identical scale controls
+PASS content contract: authority, revision, provenance, cache invalidation, persistence and failed conversion
+PASS editor contract: Visual/LaTeX/Typst, exact reload, source edits, Undo/Redo, History, save/import and invalid-source protection
+PASS immediate LaTeX/Typst incomplete draft persistence and fresh-process exact recovery; visual placeholder durable recovery
+PASS file save/restart/open/edit/Undo/Redo, exact LaTeX authority in Typst, settings, representation dirty state, visual placeholders and invalid drafts
+PASS async document/Undo ordering, failed-edit rollback and redo preservation, selection/inert release, queued settings, delayed font commit/Undo and explicit nested transaction
+PASS serialized rapid Undo/Redo, failed-restore recovery, visual placeholders, mixed MathLive/registry/keyboard ownership, pending source and Typst mode round trip
+PASS batch success/cancel/failure exact restoration, no temporary persistence/history, conflict gate/inert release, preference/assets isolation and validated runtime bridge
+PASS registry conflicts, shared commands, structural undo/redo, palette/history and contextual copy
+PASS file/save/export, workspace/copy, find next/previous, native edit routing and settings/palette shortcuts
+PASS complete inline preview/export glyphs and unchanged-source visual placeholder/selection continuity
+PASS actual accent/script menu clicks retain operand, undo/redo, expression wrappers and empty placeholders
+PASS 126 built-in templates: stable generated format and actual MathJax rendering
+PASS unified format selector, exact copy payload and export filename for eight embedded formats; native-only options disabled
+PASS text paste preserved, clipboard image routed, first candidate selected automatically
+OCR progress, tiered model selection, live checkbox page extraction, cancellation, import and reply routing OK
+Document UI: engine/page request, source labels, warnings, live selection, cancellation and range validation passed
+{"tests":21,"failed":[]}
