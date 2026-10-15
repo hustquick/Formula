@@ -83,6 +83,8 @@ jobs:
           node tests/shortcut-previews.cjs
           npm run test:editor
           node tests/typst-document-body.cjs
+          node tests/document-range.cjs
+          node tests/native-background.cjs
           python -m venv "$RUNNER_TEMP/document-venv"
           "$RUNNER_TEMP/document-venv/bin/python" -m pip install -r macos/document-requirements.txt
           "$RUNNER_TEMP/document-venv/bin/python" macos/formula-document-runner.py --check

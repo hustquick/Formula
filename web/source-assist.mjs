@@ -1,3 +1,4 @@
+import {computeCompletionPopupPlacement} from './completion-placement.mjs';
 import macroData from './completion-data/macros.json';
 import environmentData from './completion-data/environments.json';
 export function fuzzyScore(query,word){
@@ -29,7 +30,13 @@ export function installSourceAssist(source,getLanguage){
     const line=parseFloat(style.lineHeight)||parseFloat(style.fontSize)*1.5;
     ghost.style.left=x+'px';ghost.style.top=y+'px';ghost.style.font=style.font;ghost.style.lineHeight=style.lineHeight;
     ghost.hidden=!ghost.textContent||x<0||y<0||y+line>source.clientHeight;
-    panel.style.left=Math.max(0,Math.min(x,source.clientWidth-220))+'px';panel.style.top=Math.max(0,Math.min(y+line,source.clientHeight-130))+'px';
+    if(!panel.hidden){
+      const viewport={left:rect.left-parent.left+source.clientLeft,top:rect.top-parent.top+source.clientTop,right:rect.left-parent.left+source.clientLeft+source.clientWidth,bottom:rect.top-parent.top+source.clientTop+source.clientHeight};
+      panel.style.maxHeight='240px';panel.style.width=Math.min(210,source.clientWidth)+'px';
+      const placement=computeCompletionPopupPlacement({caret:{left:x,top:y,bottom:y+line},viewport,preferredWidth:210,preferredHeight:Math.min(240,panel.scrollHeight+2)});
+      panel.style.left=placement.left+'px';panel.style.top=placement.top+'px';panel.style.width=placement.width+'px';panel.style.maxHeight=placement.height+'px';panel.style.visibility=placement.visible?'visible':'hidden';panel.dataset.placement=placement.side;
+      const active=panel.children[index];if(active){if(active.offsetTop<panel.scrollTop)panel.scrollTop=active.offsetTop;else if(active.offsetTop+active.offsetHeight>panel.scrollTop+panel.clientHeight)panel.scrollTop=active.offsetTop+active.offsetHeight-panel.clientHeight;}
+    }
   }
   function show(){
     panel.replaceChildren();source.removeAttribute('aria-activedescendant');
@@ -76,8 +83,11 @@ export function installSourceAssist(source,getLanguage){
     if(window.FormulaCommands)window.FormulaCommands.execute('sourceAccept',{execute:perform});else perform();
   }
   source.addEventListener('compositionstart',()=>{composing=true;hide()});source.addEventListener('compositionend',()=>{composing=false;refresh()});
-  for(const event of ['input','click','focus','scroll'])source.addEventListener(event,refresh);
-  source.addEventListener('blur',hide);window.addEventListener('resize',refresh);
+  for(const event of ['input','click','focus'])source.addEventListener(event,refresh);
+  const relocate=()=>{if(!panel.hidden||!ghost.hidden)locate();};
+  source.addEventListener('scroll',relocate);source.addEventListener('blur',hide);window.addEventListener('resize',relocate);window.addEventListener('scroll',relocate,true);
+  const resizeObserver=new ResizeObserver(relocate);resizeObserver.observe(source);resizeObserver.observe(source.parentElement);
+  const styleObserver=new MutationObserver(relocate);for(let node=source;node&&node!==document.body;node=node.parentElement)styleObserver.observe(node,{attributes:true,attributeFilter:['style','class']});
   source.addEventListener('keyup',e=>{if(!['ArrowDown','ArrowUp','Escape','Tab','Enter'].includes(e.key))refresh();});
   source.addEventListener('keydown',e=>{
     if(composing||e.isComposing||e.metaKey||e.ctrlKey||e.altKey)return;

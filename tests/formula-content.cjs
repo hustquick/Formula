@@ -1,0 +1,20 @@
+const assert=require('node:assert/strict');
+(async()=>{
+ const {FormulaContent}=await import('../web/formula-content.mjs');
+ const original=String.raw`\cfrac{1}{x}`;
+ const c=new FormulaContent(null,{language:'latex',text:original});c.parsed(original);
+ assert.equal(c.resolve('typst',()=> '1/x'),'1/x');
+ assert.equal(c.authority.text,original);assert.equal(c.get('typst').fidelity,'unverified');
+ const reload=new FormulaContent(c.serialize(),{language:'typst',text:'1/x'});
+ assert.equal(reload.get('latex').text,original);assert.equal(reload.validation,'parsed');
+ assert.equal(reload.edit('typst','1/x'),false);assert.equal(reload.revision,0);
+ reload.edit('typst','2/x');assert.equal(reload.revision,1);assert.equal(reload.get('latex'),null);
+ reload.parsed(String.raw`\frac{2}{x}`);assert.equal(reload.authority.text,'2/x');
+ const previous=c.serialize();delete c.representations.typst;assert.throws(()=>c.resolve('typst',()=>{throw Error('unsupported')}));
+ assert.deepEqual(c.authority,previous.authority);assert.equal(c.conversions.typst.status,'unsupported');
+ assert.throws(()=>c.resolve('bogus',()=>''));
+ c.derive('typst','1/x','test');const stale=new FormulaContent(c.serialize(),{language:'typst',text:'3/x'});assert.equal(stale.get('latex'),null);
+ c.edit('latex','\\frac{');assert.equal(c.validation,'pending');assert.equal(c.get('typst'),null);
+ const {RevisionHistory}=await import('../web/commands.mjs');const history=new RevisionHistory(()=>({}),()=>{});assert.notEqual(history.signature({rawSource:'1/x',formulaContent:{authority:{language:'latex',text:original}}}),history.signature({rawSource:'1/x',formulaContent:{authority:{language:'typst',text:'1/x'}}}));
+ console.log('PASS content contract: authority, revision, provenance, cache invalidation, persistence and failed conversion');
+})().catch(e=>{console.error(e);process.exit(1)});

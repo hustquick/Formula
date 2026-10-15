@@ -27,10 +27,10 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  assert.equal(await page.locator('[data-status]').textContent(),'正在识别第 2 页');
  await page.evaluate(()=>FormulaNativeReply(calls.at(-1).id,{sourceName:'测试.pdf',engine:'Pix2Text',warnings:['仅处理第 2–3 页'],formulas:[{latex:'a/b',source:'第 2 页'},{latex:'x^2',source:'Word 段落 3'}]}));
  await page.waitForFunction(()=>document.querySelectorAll('.ocr-result').length===2);
- assert.match(await page.locator('[data-status]').textContent(),/仅处理第 2–3 页/);
+ assert.match(await page.locator('[data-log]').textContent(),/仅处理第 2–3 页/);
  assert.match(await page.locator('.ocr-result').first().textContent(),/第 2 页/);
  await page.locator('.ocr-result input').first().check();assert.equal(await page.locator('#source').inputValue(),'a/b');
- await page.locator('.ocr-result input').nth(1).check();assert.match(await page.locator('#source').inputValue(),/gathered/);
+ await page.locator('.ocr-result input').nth(1).check();assert.equal(await page.locator('#source').inputValue(),'x^2');
  await page.locator('.ocr-result input').first().uncheck();assert.equal(await page.locator('#source').inputValue(),'x^2');
  await page.locator('[data-recognize]').click();
  const taskId=await page.evaluate(()=>calls.at(-1).id);
@@ -38,7 +38,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES?process.
  await page.evaluate(id=>FormulaNativeReply(id,{error:'已取消文档识别。'}),taskId);
  await page.waitForFunction(()=>document.querySelector('[data-cancel-document]').hidden);
  assert.equal(await page.locator('[data-recognize]').isEnabled(),true);
- await page.locator('[data-first]').fill('0');await page.locator('[data-recognize]').click();
+ await page.locator('[data-first]').fill('-1');await page.locator('[data-recognize]').click();
  assert.match(await page.locator('[data-status]').textContent(),/页码无效/);
  await browser.close();console.log('Document UI: engine/page request, source labels, warnings, live selection, cancellation and range validation passed');
 })().catch(e=>{console.error(e);process.exit(1)});

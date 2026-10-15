@@ -3,6 +3,12 @@ import WebKit
 import PDFKit
 import UniformTypeIdentifiers
 
+func documentPageRange(total:Int,first:Int,last:Int) throws -> ClosedRange<Int> {
+    let start=max(1,first),end=last==0 ? min(total,start+19) : last
+    guard first>=0,start<=total,end>=start,end<=total,end-start<20 else {throw ToolFailure(message:"PDF 页码超出范围，共 \(total) 页；每次最多识别 20 页。")}
+    return start...end
+}
+
 extension AppDelegate {
     private var wordVenv:URL { ocrRoot.appendingPathComponent("venv-document",isDirectory:true) }
     private var wordPython:URL { wordVenv.appendingPathComponent("bin/python3") }
@@ -45,8 +51,9 @@ extension AppDelegate {
     func handleDocumentRecognize(_ data:[String:Any]) {
         let id=data["id"] as? String ?? ""
         let engine=validOCREngine(data["engine"])
-        let first=data["first"] as? Int ?? 1,last=data["last"] as? Int ?? 0
-        guard first>=1,last>=0,(last==0 || (last>=first && last-first<20)) else {reply(id,["error":"PDF 页码无效，每次最多识别 20 页。"]);return}
+        let requestedFirst=data["first"] as? Int ?? 1,last=data["last"] as? Int ?? 0
+        let first=max(1,requestedFirst)
+        guard requestedFirst>=0,last>=0,(last==0 || (last>=first && last-first<20)) else {reply(id,["error":"PDF 页码无效，每次最多识别 20 页。"]);return}
         guard !ocrBusy && !(ocrInstallBusy && (engine != "pix2text" || ocrBasicInstalling)) else {reply(id,["error":"所选识别组件正在忙，请稍后重试。"]);return}
         guard ocrInstalled(engine),FileManager.default.fileExists(atPath:ocrMFDReady.path) else {reply(id,["error":"请先安装基础识别与 MFD；专业识别需安装专业版。"]);return}
         ocrBusy=true;documentCancelled=false
@@ -97,8 +104,7 @@ extension AppDelegate {
             if source.pathExtension.lowercased()=="pdf" {
                 guard let pdf=PDFDocument(url:source) else {throw ToolFailure(message:"无法打开 PDF，文件可能已损坏。")}
                 guard !pdf.isLocked else {throw ToolFailure(message:"PDF 已加密，请先解除密码保护。")}
-                let total=pdf.pageCount,end=last==0 ? min(total,first+19) : last
-                guard first>=1,first<=total,end>=first,end<=total,end-first<20 else {throw ToolFailure(message:"PDF 页码超出范围，共 \(total) 页；每次最多识别 20 页。")}
+                let total=pdf.pageCount,range=try documentPageRange(total:total,first:first,last:last),end=range.upperBound
                 if end<total || first>1 {warnings.append("本次仅处理第 \(first)–\(end) 页，文档共 \(total) 页。")}
                 for number in first...end {
                     try checkDocumentCancellation()

@@ -288,3 +288,54 @@ footer>span:last-child{text-align:right}
 .formula-history-row>button:last-child{grid-column:2;grid-row:1/3}
 #formula-versions pre{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;padding:8px;background:#f7f8fa}
 .input-format .scale-control,.settings .scale-control{width:78px;padding:0;gap:0;box-sizing:border-box}
+
+/* Disclosure nesting uses one shared indentation token, including triangle/title. */
+#tool-dialog { --settings-indent: 18px; }
+#tool-dialog .settings-disclosure-content { padding-inline-start: var(--settings-indent); min-width:0; }
+.formula-version-layout { display:grid;grid-template-columns:minmax(130px,1fr) minmax(0,1.2fr);gap:12px;height:230px; }
+.formula-version-list { overflow:auto;min-width:0; }
+.formula-version-entry { display:block;width:100%;text-align:start;border:0;background:transparent;padding:6px;font-size:12px; }
+.formula-version-entry[aria-selected=true] { background:#e8f0ff;color:#2466dc; }
+.formula-version-preview { overflow:auto;min-width:0; }
+.formula-version-render { min-height:64px;max-height:86px;overflow:auto;display:grid;place-items:center; }
+.formula-version-render svg { max-width:100%;height:auto; }
+
+.source-assist { box-sizing:border-box;overflow-y:auto;overflow-x:hidden; }
+.source-assist button { overflow:hidden;text-overflow:ellipsis;white-space:nowrap; }
+
+.source-syntax pre { max-height:none;overflow:visible; }
+
+.export-format-options { display:flex;align-items:center;gap:8px;flex:none; }
+.export-resolution { display:inline-flex;align-items:center;gap:5px;white-space:nowrap;font-size:11px;color:#788593; }
+.export-resolution #scale { height:29px;min-width:100px;box-sizing:border-box; }
+
+.output-color { display:inline-flex;align-items:center;gap:6px;white-space:nowrap; }
+.output-swatch { width:22px;height:20px;min-height:20px;padding:0;border:1px solid #cfd5de;border-radius:3px;box-shadow:none; }
+.transparent-swatch { background-color:white;background-image:conic-gradient(#d9dee5 25%,white 0 50%,#d9dee5 0 75%,white 0);background-size:8px 8px; }
+.color-popover { position:fixed;z-index:1200;width:196px;padding:10px;background:white;border:1px solid #dce2eb;border-radius:6px;color:#596579;font-size:11px; }
+.color-popover[hidden] { display:none; }
+.palette-row { display:flex;flex-wrap:wrap;gap:6px;margin:3px 0 8px; }
+.palette-swatch { width:23px;height:23px;padding:0;border:1px solid #cfd5de;border-radius:3px; }
+.palette-swatch:hover { outline:2px solid #8cafef;outline-offset:1px; }
+.custom-color { display:flex;align-items:center;justify-content:space-between;gap:8px; }
+.custom-color input { width:34px;height:24px;padding:0; }
+
+/* Stable shelf and editing surfaces: cards fill the shelf, longer content scrolls. */
+:root{--formula-workspace-height:200px;--formula-tool-height:132px;--formula-category-height:116px}
+.tool-deck,.tool-deck[data-active-tab="custom"],.tool-deck.show-recognition{
+  height:var(--formula-tool-height);min-height:var(--formula-tool-height);max-height:var(--formula-tool-height);overflow:auto;
+}
+.input-editors .source-card textarea,.input-editors .visual-pane,.preview-card #preview{
+  height:var(--formula-workspace-height);min-height:var(--formula-workspace-height);max-height:var(--formula-workspace-height);overflow:auto;
+}
+.input-editors .source-card textarea{resize:none}
+.input-editors math-field{min-height:calc(var(--formula-workspace-height) - 2px)}
+#tools[data-tab="quick"]{padding:8px 16px;gap:7px}
+#tools[data-tab="quick"]>.tool-group>summary,.ll-template-category{height:var(--formula-category-height)}
+#tools[data-tab="quick"] .category-art,.ll-template-category .ll-category-art{height:58px}
+#tools[data-tab="quick"] .category-art svg,.ll-template-category .ll-category-art svg{max-height:54px}
+.ll-template-browser{padding:8px 16px!important}
+.tool-deck[data-active-tab="custom"]{grid-template-rows:var(--formula-tool-height) auto}
+.tool-deck[data-active-tab="custom"] .toolbar-customize{height:var(--formula-tool-height)}
+/* Daily work starts at the input area, without a branding banner. */
+header{display:none}

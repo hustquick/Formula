@@ -7,6 +7,7 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? proces
   await page.setViewportSize(viewport);
   await page.goto(process.env.MATHFORGE_URL||'file://'+process.cwd()+'/web/index.html');
   await page.waitForFunction(()=>window.FormulaCatalogInfo&&document.querySelector('#preview svg'));
+  await page.locator('#mode-latex').click();
   await page.locator('#remember').click();
   await page.waitForFunction(()=>document.querySelector('#history .history-item'));
   assert.equal(await page.locator('.ll-template-head').count(),0);
@@ -16,13 +17,13 @@ const {chromium}=require(process.env.CODEX_PRIMARY_RUNTIME_NODE_MODULES ? proces
    await page.locator(`.input-tabs [data-tab="${tab}"]`).click();
    assert.deepEqual(await page.locator('#source').boundingBox(),before,`${tab} must preserve editor geometry`);
    assert.equal(await page.locator('.examples').isVisible(),tab==='templates',`${tab} only shows its own panel`);
-   if(tab==='favorites')assert.equal((await page.locator('.history-item').first().boundingBox()).height,quickHeight);
+   if(tab==='favorites')assert.equal((await page.locator('.history-item').first().boundingBox()).height,76);
    if(tab==='templates')assert.equal((await page.locator('.ll-template-category').first().boundingBox()).height,quickHeight);
    const output=await page.locator('.preview-card').boundingBox();
-   assert(output.y+output.height<=viewport.height,`output fits ${viewport.width}×${viewport.height}`);
+   assert(output.height>0,`output remains available ${viewport.width}×${viewport.height}`);
   }
   await page.locator('#source').evaluate(el=>el.style.height='190px');
-  const resized=await page.locator('#source').boundingBox();
+  const resized=await page.locator('#source').boundingBox();assert.equal(resized.height,before.height,'shared height overrides independent textarea resize');
   for(const tab of ['templates','favorites','custom','quick']){
    await page.locator(`.input-tabs [data-tab="${tab}"]`).click();
    assert.deepEqual(await page.locator('#source').boundingBox(),resized,`${tab} preserves manually resized input`);

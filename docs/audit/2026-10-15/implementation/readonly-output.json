@@ -1,0 +1,39 @@
+{
+  "typst": "1/x",
+  "untouchedRoundtrip": "\\cfrac{1}{x}",
+  "roundtripAfterCopy": "\\cfrac{1}{x}",
+  "originalPreservedAfterCopy": true,
+  "clipboardPayloadKeys": [
+    "action",
+    "svg",
+    "equation",
+    "png"
+  ],
+  "revisionEntries": [
+    {
+      "title": "当前公式",
+      "mode": "latex"
+    },
+    {
+      "title": "导入 / 识别公式",
+      "mode": "latex"
+    },
+    {
+      "title": "转换为 Typst",
+      "mode": "typst"
+    },
+    {
+      "title": "转换为 LaTeX",
+      "mode": "latex"
+    },
+    {
+      "title": "转换为 Typst",
+      "mode": "typst"
+    },
+    {
+      "title": "转换为 LaTeX",
+      "mode": "latex"
+    }
+  ],
+  "scope": "headless real editor; bridge payload captured, no target Office application paste"
+}

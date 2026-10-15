@@ -1,0 +1,25 @@
+{
+  "editorSuites": 25,
+  "ocrSuites": [
+    "ocr-behavior",
+    "document-behavior",
+    "clipboard-ocr",
+    "ocr-preview"
+  ],
+  "nativeRangeTest": true,
+  "nativeApplication": {
+    "path": "/Applications/Formula.app",
+    "backup": "20261015-080942",
+    "started": true,
+    "typstBottomPopupAbove": true,
+    "sourceLastLineVisible": true,
+    "historyBeforeAfterRendered": true,
+    "historyDoubleClickRestored": true,
+    "historyUndoReturnedOriginal": true,
+    "realPageOCRCount": 2,
+    "firstResultDefaultSelected": true,
+    "switchSecondResultWithoutOCR": true
+  },
+  "remotePushed": false,
+  "note": "PDF page cap tested in native helper; no full native document OCR run in this iteration."
+}
