@@ -9,6 +9,7 @@ on:
       - 'scripts/**'
       - 'Build-Windows.ps1'
       - '.github/workflows/release-windows.yml'
+      - 'tests/windows-document-*.cjs'
       - 'package*.json'
       - 'build-vendor.mjs'
   workflow_dispatch:
@@ -48,6 +49,13 @@ jobs:
           if (-not (Test-Path 'dist/Formula-Windows-x64/resources/app/web/vendor/latexlive/catalog.js')) { throw 'offline catalog missing' }
           if (-not (Test-Path 'dist/Formula-Windows-x64/resources/app/document-session.cjs')) { throw 'document session bridge missing' }
           if (-not (Test-Path 'dist/Formula-Windows-x64/resources/app/node_modules/sharp')) { throw 'sharp runtime missing' }
+      - name: Validate packaged Formula save and restart
+        shell: pwsh
+        run: |
+          npm install --no-save --package-lock=false --ignore-scripts playwright
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          node tests/windows-document-runtime.cjs
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
