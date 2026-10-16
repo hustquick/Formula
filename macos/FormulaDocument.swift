@@ -15,6 +15,34 @@ extension AppDelegate {
     private var wordReady:URL { ocrRoot.appendingPathComponent("ready-document-v2.txt") }
     private var documentRunner:URL { Bundle.main.resourceURL!.appendingPathComponent("formula-document-runner.py") }
 
+    // Conversion is read-only and runs off the main thread. The web layer
+    // rechecks the captured entity revision before committing the clipboard.
+    func prepareSourceEquation(_ data:[String:Any]) {
+        let id=data["id"] as? String ?? ""
+        guard let latex=data["latex"] as? String,!latex.isEmpty,latex.utf8.count<=100000 else {reply(id,["error":"公式源码为空或过长。"]);return}
+        guard FileManager.default.isExecutableFile(atPath:wordPython.path) else {reply(id,["error":"原生公式复制需要离线 Word 转换组件，请在设置中安装 Word 组件；原剪贴板已保留。"]);return}
+        let python=wordPython,runner=Bundle.main.resourceURL!.appendingPathComponent("formula-latex-ooxml.py")
+        worker.async {
+            let folder=FileManager.default.temporaryDirectory.appendingPathComponent("formula-source-equation-"+UUID().uuidString,isDirectory:true)
+            var result:[String:Any]
+            do {
+                try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
+                defer {try? FileManager.default.removeItem(at:folder)}
+                let source=folder.appendingPathComponent("input.tex"),output=folder.appendingPathComponent("output",isDirectory:true)
+                try Data(latex.utf8).write(to:source,options:.atomic)
+                let converted=try self.run(python.path,[runner.path,source.path,output.path],cwd:folder,timeout:30)
+                guard converted.0==0 else {throw ToolFailure(message:"LaTeX 原生公式转换失败："+String(converted.1.suffix(2000)))}
+                let omml=try String(contentsOf:output.appendingPathComponent("candidate.omml"),encoding:.utf8)
+                guard omml.hasPrefix("<m:oMath ") else {throw ToolFailure(message:"转换结果不是有效原生数学对象。")}
+                let gvml=try Data(contentsOf:output.appendingPathComponent("candidate.gvml"))
+                result=["omml":omml,"gvml":gvml.base64EncodedString(),"latex":latex,"converter":"Pandoc/texmath"]
+            } catch let failure as ToolFailure {result=["error":failure.message]}
+            catch {result=["error":"LaTeX 原生公式转换失败："+error.localizedDescription]}
+            let completed=result
+            DispatchQueue.main.async {self.reply(id,completed)}
+        }
+    }
+
     func handleDocumentInstall(_ data:[String:Any]) {
         let id=data["id"] as? String ?? ""
         guard !ocrBusy && !ocrInstallBusy else { reply(id,["error":"已有安装或识别任务正在运行。"]);return }

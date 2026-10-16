@@ -3,10 +3,10 @@ const clone=value=>JSON.parse(JSON.stringify(value));
 const valid=snapshot=>snapshot&&typeof snapshot.rawSource==='string';
 const bytes=value=>new TextEncoder().encode(JSON.stringify(value)).length;
 export function formulaIdentity(snapshot){
-  const authority=snapshot.formulaContent?.authority;
+  const authority=snapshot.formulaObject?.content?.authority??snapshot.formulaContent?.authority;
   return JSON.stringify(authority?[authority.language,authority.text]:[snapshot.latex||'',snapshot.rawSource||'']);
 }
-function contentSignature(snapshot){return JSON.stringify([formulaIdentity(snapshot),snapshot.formulaContent?.authority,snapshot.visualLatex?.includes('\\placeholder')?snapshot.visualLatex:undefined]);}
+function contentSignature(snapshot){return JSON.stringify([formulaIdentity(snapshot),snapshot.formulaObject?.content?.authority??snapshot.formulaContent?.authority,snapshot.formulaObject?.recognition,snapshot.visualLatex?.includes('\\placeholder')?snapshot.visualLatex:undefined]);}
 export class FormulaHistory{
   constructor(saved={}, {limit=100,bytes:budget=4*1024*1024}={}){
     saved=saved&&typeof saved==='object'?saved:{};this.limit=limit;this.bytes=budget;

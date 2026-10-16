@@ -1,0 +1,396 @@
+{
+  "advertisedTypes" : [
+    "com.trolltech.anymime.Art::GVML ClipFormat",
+    "com.trolltech.anymime.org.chromium.web-custom-data",
+    "com.trolltech.anymime.WPS Drawing Shape Format",
+    "public.tiff",
+    "NeXT TIFF v4.0 pasteboard type",
+    "com.trolltech.anymime.application--x-qt-image",
+    "public.png",
+    "Apple PNG pasteboard type",
+    "com.trolltech.anymime.image--png",
+    "public.jpeg",
+    "CorePasteboardFlavorType 0x4A504547",
+    "com.trolltech.anymime.image--jpeg",
+    "com.trolltech.anymime.image--bmp",
+    "com.trolltech.anymime.CF_ENHMETAFILE",
+    "com.trolltech.anymime.Kingsoft Data Descriptor",
+    "com.trolltech.anymime.Kingsoft Shapes Tag"
+  ],
+  "capturedAt" : "2026-10-16T11:01:40Z",
+  "carbonRepresentations" : [
+    {
+      "bytes" : 9405,
+      "file" : "carbon-item-0-type-0.bin",
+      "item" : 0,
+      "position" : 0,
+      "sha256" : "58230ad202a7cd9bbfed7872b173b84c96266f724240f89d305931b29b5d34f8",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Art::GVML ClipFormat"
+    },
+    {
+      "bytes" : 25500,
+      "file" : "carbon-item-0-type-1.bin",
+      "item" : 0,
+      "position" : 1,
+      "sha256" : "853806cb5258aaf10bb3fc620982fc279c715ecd37548fb5b9b3b5c48441f5d6",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.org.chromium.web-custom-data"
+    },
+    {
+      "bytes" : 4467,
+      "file" : "carbon-item-0-type-2.bin",
+      "item" : 0,
+      "position" : 2,
+      "sha256" : "e4d60511635cb5c53daaac5580af3cbd40ceed7cf8f16adf332dad18ec7f28af",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.WPS Drawing Shape Format"
+    },
+    {
+      "bytes" : 77142,
+      "file" : "carbon-item-0-type-3.bin",
+      "item" : 0,
+      "position" : 3,
+      "sha256" : "fe443d7c39907882dd0c135fa8fb8ee7920e6e8eadee8deec20399575cda00eb",
+      "status" : 0,
+      "type" : "public.tiff"
+    },
+    {
+      "bytes" : 0,
+      "file" : "carbon-item-0-type-4.bin",
+      "item" : 0,
+      "position" : 4,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.application--x-qt-image"
+    },
+    {
+      "bytes" : 3171,
+      "file" : "carbon-item-0-type-5.bin",
+      "item" : 0,
+      "position" : 5,
+      "sha256" : "d0efed25c2d3b383a2cf7164651d0aaabcd0fb26d4eff755325399b4ac55d1ce",
+      "status" : 0,
+      "type" : "public.png"
+    },
+    {
+      "bytes" : 3171,
+      "file" : "carbon-item-0-type-6.bin",
+      "item" : 0,
+      "position" : 6,
+      "sha256" : "d0efed25c2d3b383a2cf7164651d0aaabcd0fb26d4eff755325399b4ac55d1ce",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.image--png"
+    },
+    {
+      "bytes" : 7124,
+      "file" : "carbon-item-0-type-7.bin",
+      "item" : 0,
+      "position" : 7,
+      "sha256" : "73ad702ce5db9896c32de96b7bbf15c43cb1a1719f4512f71d0da2b1330c4e7b",
+      "status" : 0,
+      "type" : "public.jpeg"
+    },
+    {
+      "bytes" : 7124,
+      "file" : "carbon-item-0-type-8.bin",
+      "item" : 0,
+      "position" : 8,
+      "sha256" : "73ad702ce5db9896c32de96b7bbf15c43cb1a1719f4512f71d0da2b1330c4e7b",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.image--jpeg"
+    },
+    {
+      "bytes" : 55598,
+      "file" : "carbon-item-0-type-9.bin",
+      "item" : 0,
+      "position" : 9,
+      "sha256" : "8c049c7772fa3bd7b71bbb980a74711aed70ac180be5fe740fe06bd7b409a626",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.image--bmp"
+    },
+    {
+      "bytes" : 0,
+      "file" : "carbon-item-0-type-10.bin",
+      "item" : 0,
+      "position" : 10,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.CF_ENHMETAFILE"
+    },
+    {
+      "bytes" : 16,
+      "file" : "carbon-item-0-type-11.bin",
+      "item" : 0,
+      "position" : 11,
+      "sha256" : "f2c08d5c1d527b414cc503e24f90d8027698e64149343769dd1a7b3f3f8cea69",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Kingsoft Data Descriptor"
+    },
+    {
+      "bytes" : 39,
+      "file" : "carbon-item-0-type-12.bin",
+      "item" : 0,
+      "position" : 12,
+      "sha256" : "dd695dd12a684025cb26b8b3ba6f510312d18ade760a2e2f82c9bf4c4c42dfee",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Kingsoft Shapes Tag"
+    },
+    {
+      "bytes" : 19272,
+      "file" : "carbon-item-0-type-13.bin",
+      "item" : 0,
+      "position" : 13,
+      "sha256" : "b08e511e786636237e5a8b3a4c75815986b71a48e9c1903272f813974d5b5d12",
+      "status" : 0,
+      "type" : "com.apple.atx"
+    },
+    {
+      "bytes" : 2320,
+      "file" : "carbon-item-0-type-14.bin",
+      "item" : 0,
+      "position" : 14,
+      "sha256" : "b878e55b2f53aea052bacb8163ead882902aee01e0532625d08b80ba04847dd7",
+      "status" : 0,
+      "type" : "public.avif"
+    },
+    {
+      "bytes" : 2979,
+      "file" : "carbon-item-0-type-15.bin",
+      "item" : 0,
+      "position" : 15,
+      "sha256" : "5691a5bacdfa83e9cd1de214253787c0078b9467be78b4354ccc2506018c220a",
+      "status" : 0,
+      "type" : "public.heic"
+    },
+    {
+      "bytes" : 12730,
+      "file" : "carbon-item-0-type-16.bin",
+      "item" : 0,
+      "position" : 16,
+      "sha256" : "60ddb966198bc5143af8881158a847e84483ff1267b179d294e32cbc3d08b765",
+      "status" : 0,
+      "type" : "com.adobe.photoshop-image"
+    },
+    {
+      "bytes" : 221361,
+      "file" : "carbon-item-0-type-17.bin",
+      "item" : 0,
+      "position" : 17,
+      "sha256" : "e1bef29d75f50e7f68d78339b7433aabbb9394bc04623ea3ca99bcae0ebad937",
+      "status" : 0,
+      "type" : "public.pbm"
+    },
+    {
+      "bytes" : 4644,
+      "file" : "carbon-item-0-type-18.bin",
+      "item" : 0,
+      "position" : 18,
+      "sha256" : "4e53041e2ad5e5f224803b464f5ee70c5c3963a5d558d15588a02d9e9ecf27f8",
+      "status" : 0,
+      "type" : "com.ilm.openexr-image"
+    },
+    {
+      "item" : 0,
+      "position" : 19,
+      "status" : -25133,
+      "type" : "public.pvr"
+    },
+    {
+      "bytes" : 1174,
+      "file" : "carbon-item-0-type-20.bin",
+      "item" : 0,
+      "position" : 20,
+      "sha256" : "908ea65f5ae53d2282f52996caf44aa1b4ca84f8a456aef7d201fb873074b59b",
+      "status" : 0,
+      "type" : "com.compuserve.gif"
+    },
+    {
+      "bytes" : 6942,
+      "file" : "carbon-item-0-type-21.bin",
+      "item" : 0,
+      "position" : 21,
+      "sha256" : "0a0da23486c0c06ef6908d1322890317a89687caca5daba9ee2140360035850a",
+      "status" : 0,
+      "type" : "public.jpeg-2000"
+    },
+    {
+      "bytes" : 4844,
+      "file" : "carbon-item-0-type-22.bin",
+      "item" : 0,
+      "position" : 22,
+      "sha256" : "6d27be84e14a86e7e0e43ea871b1e5e5f952dbc1b65e1b73a9af7819e3ef72b8",
+      "status" : 0,
+      "type" : "public.heics"
+    },
+    {
+      "bytes" : 147672,
+      "file" : "carbon-item-0-type-23.bin",
+      "item" : 0,
+      "position" : 23,
+      "sha256" : "0123f4c9c35ad7277afeb01f053e0e6093a5e6767897e5199723ecabda85dbf4",
+      "status" : 0,
+      "type" : "org.khronos.ktx"
+    },
+    {
+      "bytes" : 73914,
+      "file" : "carbon-item-0-type-24.bin",
+      "item" : 0,
+      "position" : 24,
+      "sha256" : "23e9bbb0c8c838ca3a2a723a49aaa0a91ddf5b9124aab64e25f50f844596ebdf",
+      "status" : 0,
+      "type" : "com.microsoft.bmp"
+    },
+    {
+      "bytes" : 147832,
+      "file" : "carbon-item-0-type-25.bin",
+      "item" : 0,
+      "position" : 25,
+      "sha256" : "b88945dedc084bc86565e7d1938bb211efa3cdfba2525e6a365a2cae41a353a5",
+      "status" : 0,
+      "type" : "org.khronos.ktx2"
+    },
+    {
+      "bytes" : 7051,
+      "file" : "carbon-item-0-type-26.bin",
+      "item" : 0,
+      "position" : 26,
+      "sha256" : "1be6a2eb2d14ccfcff2839a33f38eeca7b1f7b41966c68cb4a869df9355d90e5",
+      "status" : 0,
+      "type" : "com.truevision.tga-image"
+    },
+    {
+      "bytes" : 19024,
+      "file" : "carbon-item-0-type-27.bin",
+      "item" : 0,
+      "position" : 27,
+      "sha256" : "6b41a5f1ef44895aa62176d41c0a47d1230fde6ce784680d1b5294bbb22c1ea0",
+      "status" : 0,
+      "type" : "org.khronos.astc"
+    },
+    {
+      "bytes" : 0,
+      "file" : "carbon-item-0-type-28.bin",
+      "item" : 0,
+      "position" : 28,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status" : 0,
+      "type" : "com.microsoft.dds"
+    }
+  ],
+  "changeCountAfter" : 260,
+  "changeCountBefore" : 260,
+  "itemCount" : 1,
+  "representations" : [
+    {
+      "item" : 0,
+      "position" : 0,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Art::GVML ClipFormat"
+    },
+    {
+      "bytes" : 25500,
+      "file" : "item-0-type-1.bin",
+      "item" : 0,
+      "position" : 1,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "853806cb5258aaf10bb3fc620982fc279c715ecd37548fb5b9b3b5c48441f5d6",
+      "type" : "com.trolltech.anymime.org.chromium.web-custom-data"
+    },
+    {
+      "item" : 0,
+      "position" : 2,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.WPS Drawing Shape Format"
+    },
+    {
+      "bytes" : 77142,
+      "file" : "item-0-type-3.bin",
+      "item" : 0,
+      "position" : 3,
+      "readAPI" : "NSPasteboardItem",
+      "registeredName" : "NeXT TIFF v4.0 pasteboard type",
+      "sha256" : "fe443d7c39907882dd0c135fa8fb8ee7920e6e8eadee8deec20399575cda00eb",
+      "type" : "public.tiff"
+    },
+    {
+      "bytes" : 0,
+      "file" : "item-0-type-4.bin",
+      "item" : 0,
+      "position" : 4,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "type" : "com.trolltech.anymime.application--x-qt-image"
+    },
+    {
+      "bytes" : 3171,
+      "file" : "item-0-type-5.bin",
+      "item" : 0,
+      "position" : 5,
+      "readAPI" : "NSPasteboardItem",
+      "registeredName" : "Apple PNG pasteboard type",
+      "sha256" : "d0efed25c2d3b383a2cf7164651d0aaabcd0fb26d4eff755325399b4ac55d1ce",
+      "type" : "public.png"
+    },
+    {
+      "bytes" : 3171,
+      "file" : "item-0-type-6.bin",
+      "item" : 0,
+      "position" : 6,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "d0efed25c2d3b383a2cf7164651d0aaabcd0fb26d4eff755325399b4ac55d1ce",
+      "type" : "com.trolltech.anymime.image--png"
+    },
+    {
+      "bytes" : 7124,
+      "file" : "item-0-type-7.bin",
+      "item" : 0,
+      "position" : 7,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "73ad702ce5db9896c32de96b7bbf15c43cb1a1719f4512f71d0da2b1330c4e7b",
+      "type" : "public.jpeg"
+    },
+    {
+      "bytes" : 7124,
+      "file" : "item-0-type-8.bin",
+      "item" : 0,
+      "position" : 8,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "73ad702ce5db9896c32de96b7bbf15c43cb1a1719f4512f71d0da2b1330c4e7b",
+      "type" : "com.trolltech.anymime.image--jpeg"
+    },
+    {
+      "bytes" : 55598,
+      "file" : "item-0-type-9.bin",
+      "item" : 0,
+      "position" : 9,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "8c049c7772fa3bd7b71bbb980a74711aed70ac180be5fe740fe06bd7b409a626",
+      "type" : "com.trolltech.anymime.image--bmp"
+    },
+    {
+      "item" : 0,
+      "position" : 10,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.CF_ENHMETAFILE"
+    },
+    {
+      "item" : 0,
+      "position" : 11,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Kingsoft Data Descriptor"
+    },
+    {
+      "item" : 0,
+      "position" : 12,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Kingsoft Shapes Tag"
+    }
+  ],
+  "stable" : true
+}

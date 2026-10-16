@@ -1,5 +1,8 @@
 import {captureDocumentSettings} from './document-settings.mjs';
-export function documentSignature(state){return JSON.stringify([state.formulaContent?.authority?.text??state.rawSource,state.formulaContent?.authority?.language??state.editorMode,state.editorMode,state.editorMode==='visual'?state.visualDraft:undefined,captureDocumentSettings(state)]);}
+export function documentSignature(state){
+ const object=state.formulaObject,authority=object?.content?.authority??state.formulaContent?.authority;
+ return JSON.stringify([authority?.text??state.rawSource,authority?.language??state.editorMode,object?.presentation?.mode??state.editorMode,state.editorMode==='visual'?(object?.derived?.visual?.value??state.visualDraft):undefined,object?.formatting??captureDocumentSettings(state),object?.recognition]);
+}
 // File identity is session-owned by the native host, never restored from an
 // imported project's metadata. Draft recovery remains independent of that file.
 export class DocumentLifecycle{

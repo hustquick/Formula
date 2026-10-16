@@ -1,0 +1,309 @@
+{
+  "advertisedTypes" : [
+    "com.trolltech.anymime.Kingsoft Data Descriptor",
+    "com.trolltech.anymime.Kingsoft WPS 9.0 Format",
+    "com.trolltech.anymime.Embed Source",
+    "com.trolltech.anymime.Object Descriptor",
+    "com.trolltech.anymime.Kingsoft Image Data",
+    "com.trolltech.anymime.Rich Text Format",
+    "com.trolltech.anymime.text--rtf",
+    "com.trolltech.anymime.text--richtext",
+    "com.trolltech.anymime.Kingsoft Shapes Tag",
+    "com.apple.traditional-mac-plain-text",
+    "CorePasteboardFlavorType 0x54455854",
+    "public.utf16-plain-text",
+    "CorePasteboardFlavorType 0x75747874",
+    "public.utf8-plain-text",
+    "NSStringPboardType",
+    "public.text",
+    "com.trolltech.anymime.text--plain",
+    "public.html",
+    "Apple HTML pasteboard type",
+    "com.trolltech.anymime.text--html"
+  ],
+  "capturedAt" : "2026-10-16T11:04:53Z",
+  "carbonRepresentations" : [
+    {
+      "bytes" : 133,
+      "file" : "carbon-item-0-type-0.bin",
+      "item" : 0,
+      "position" : 0,
+      "sha256" : "eb3469b6f8af823e29ffde6282761dcaecbe8cbc014f44375fe2097eac798c2b",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Kingsoft Data Descriptor"
+    },
+    {
+      "bytes" : 7296,
+      "file" : "carbon-item-0-type-1.bin",
+      "item" : 0,
+      "position" : 1,
+      "sha256" : "0fb8fada50f29cd95c0c08d97dff4c659fa29a436526c8e6e2f480be666ae844",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Kingsoft WPS 9.0 Format"
+    },
+    {
+      "bytes" : 0,
+      "file" : "carbon-item-0-type-2.bin",
+      "item" : 0,
+      "position" : 2,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Embed Source"
+    },
+    {
+      "bytes" : 88,
+      "file" : "carbon-item-0-type-3.bin",
+      "item" : 0,
+      "position" : 3,
+      "sha256" : "1ab4bc8a157b885690ffcc222ab93eef2ed2b9e892e6aef18456c96bbf6ea2af",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Object Descriptor"
+    },
+    {
+      "bytes" : 1187,
+      "file" : "carbon-item-0-type-4.bin",
+      "item" : 0,
+      "position" : 4,
+      "sha256" : "c608654d3a58ca08b022e6cab250adaca3bfbe247df7c3f3ddcf275929f585a2",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Kingsoft Image Data"
+    },
+    {
+      "bytes" : 16433,
+      "file" : "carbon-item-0-type-5.bin",
+      "item" : 0,
+      "position" : 5,
+      "sha256" : "daf86d5b94e0ba4a448846753412eb4c3ffab647a562ecca155665ed0a993c36",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Rich Text Format"
+    },
+    {
+      "bytes" : 16433,
+      "file" : "carbon-item-0-type-6.bin",
+      "item" : 0,
+      "position" : 6,
+      "sha256" : "daf86d5b94e0ba4a448846753412eb4c3ffab647a562ecca155665ed0a993c36",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.text--rtf"
+    },
+    {
+      "bytes" : 16433,
+      "file" : "carbon-item-0-type-7.bin",
+      "item" : 0,
+      "position" : 7,
+      "sha256" : "daf86d5b94e0ba4a448846753412eb4c3ffab647a562ecca155665ed0a993c36",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.text--richtext"
+    },
+    {
+      "bytes" : 32,
+      "file" : "carbon-item-0-type-8.bin",
+      "item" : 0,
+      "position" : 8,
+      "sha256" : "e96e956c0258bcac306282369b7e9fb5bec6f74dbc7e94dedc91ad58dca4d389",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Kingsoft Shapes Tag"
+    },
+    {
+      "bytes" : 8,
+      "file" : "carbon-item-0-type-9.bin",
+      "item" : 0,
+      "position" : 9,
+      "sha256" : "259c6da4c7b6345c8cd89ba0167472d232a06ca0e84d4c84554b72ea8c106faf",
+      "status" : 0,
+      "type" : "com.apple.traditional-mac-plain-text"
+    },
+    {
+      "bytes" : 16,
+      "file" : "carbon-item-0-type-10.bin",
+      "item" : 0,
+      "position" : 10,
+      "sha256" : "3a56309a6da0c38797124ef95ba4c643ef874b1d39a43f278ea88ab259423812",
+      "status" : 0,
+      "type" : "public.utf16-plain-text"
+    },
+    {
+      "bytes" : 8,
+      "file" : "carbon-item-0-type-11.bin",
+      "item" : 0,
+      "position" : 11,
+      "sha256" : "259c6da4c7b6345c8cd89ba0167472d232a06ca0e84d4c84554b72ea8c106faf",
+      "status" : 0,
+      "type" : "public.text"
+    },
+    {
+      "bytes" : 8,
+      "file" : "carbon-item-0-type-12.bin",
+      "item" : 0,
+      "position" : 12,
+      "sha256" : "259c6da4c7b6345c8cd89ba0167472d232a06ca0e84d4c84554b72ea8c106faf",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.text--plain"
+    },
+    {
+      "bytes" : 30952,
+      "file" : "carbon-item-0-type-13.bin",
+      "item" : 0,
+      "position" : 13,
+      "sha256" : "8df00cf59957ec45b8680328405e3fa5b45bff7fea14f6a2b9c7cd079b3eae18",
+      "status" : 0,
+      "type" : "public.html"
+    },
+    {
+      "bytes" : 30952,
+      "file" : "carbon-item-0-type-14.bin",
+      "item" : 0,
+      "position" : 14,
+      "sha256" : "8df00cf59957ec45b8680328405e3fa5b45bff7fea14f6a2b9c7cd079b3eae18",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.text--html"
+    },
+    {
+      "bytes" : 18,
+      "file" : "carbon-item-0-type-15.bin",
+      "item" : 0,
+      "position" : 15,
+      "sha256" : "8ddaea7a7a0e7047ed3d7b0c6c277f26f07e8151888235f8a2bde8be51dececa",
+      "status" : 0,
+      "type" : "public.utf16-external-plain-text"
+    }
+  ],
+  "changeCountAfter" : 264,
+  "changeCountBefore" : 264,
+  "itemCount" : 1,
+  "representations" : [
+    {
+      "item" : 0,
+      "position" : 0,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Kingsoft Data Descriptor"
+    },
+    {
+      "item" : 0,
+      "position" : 1,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Kingsoft WPS 9.0 Format"
+    },
+    {
+      "item" : 0,
+      "position" : 2,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Embed Source"
+    },
+    {
+      "item" : 0,
+      "position" : 3,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Object Descriptor"
+    },
+    {
+      "item" : 0,
+      "position" : 4,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Kingsoft Image Data"
+    },
+    {
+      "item" : 0,
+      "position" : 5,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Rich Text Format"
+    },
+    {
+      "bytes" : 16433,
+      "file" : "item-0-type-6.bin",
+      "item" : 0,
+      "position" : 6,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "daf86d5b94e0ba4a448846753412eb4c3ffab647a562ecca155665ed0a993c36",
+      "type" : "com.trolltech.anymime.text--rtf"
+    },
+    {
+      "bytes" : 16433,
+      "file" : "item-0-type-7.bin",
+      "item" : 0,
+      "position" : 7,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "daf86d5b94e0ba4a448846753412eb4c3ffab647a562ecca155665ed0a993c36",
+      "type" : "com.trolltech.anymime.text--richtext"
+    },
+    {
+      "item" : 0,
+      "position" : 8,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Kingsoft Shapes Tag"
+    },
+    {
+      "bytes" : 8,
+      "file" : "item-0-type-9.bin",
+      "item" : 0,
+      "position" : 9,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "259c6da4c7b6345c8cd89ba0167472d232a06ca0e84d4c84554b72ea8c106faf",
+      "type" : "com.apple.traditional-mac-plain-text"
+    },
+    {
+      "bytes" : 16,
+      "file" : "item-0-type-10.bin",
+      "item" : 0,
+      "position" : 10,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "3a56309a6da0c38797124ef95ba4c643ef874b1d39a43f278ea88ab259423812",
+      "type" : "public.utf16-plain-text"
+    },
+    {
+      "bytes" : 8,
+      "file" : "item-0-type-11.bin",
+      "item" : 0,
+      "position" : 11,
+      "readAPI" : "NSPasteboardItem",
+      "registeredName" : "NSStringPboardType",
+      "sha256" : "259c6da4c7b6345c8cd89ba0167472d232a06ca0e84d4c84554b72ea8c106faf",
+      "type" : "public.utf8-plain-text"
+    },
+    {
+      "bytes" : 8,
+      "file" : "item-0-type-12.bin",
+      "item" : 0,
+      "position" : 12,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "259c6da4c7b6345c8cd89ba0167472d232a06ca0e84d4c84554b72ea8c106faf",
+      "type" : "public.text"
+    },
+    {
+      "bytes" : 8,
+      "file" : "item-0-type-13.bin",
+      "item" : 0,
+      "position" : 13,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "259c6da4c7b6345c8cd89ba0167472d232a06ca0e84d4c84554b72ea8c106faf",
+      "type" : "com.trolltech.anymime.text--plain"
+    },
+    {
+      "bytes" : 30952,
+      "file" : "item-0-type-14.bin",
+      "item" : 0,
+      "position" : 14,
+      "readAPI" : "NSPasteboardItem",
+      "registeredName" : "Apple HTML pasteboard type",
+      "sha256" : "8df00cf59957ec45b8680328405e3fa5b45bff7fea14f6a2b9c7cd079b3eae18",
+      "type" : "public.html"
+    },
+    {
+      "bytes" : 30952,
+      "file" : "item-0-type-15.bin",
+      "item" : 0,
+      "position" : 15,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "8df00cf59957ec45b8680328405e3fa5b45bff7fea14f6a2b9c7cd079b3eae18",
+      "type" : "com.trolltech.anymime.text--html"
+    }
+  ],
+  "stable" : true
+}

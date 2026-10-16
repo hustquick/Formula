@@ -6,9 +6,10 @@ const assert = require('node:assert/strict');
   try {
     for (const width of [760, 1120, 1440]) {
       const page = await browser.newPage({ viewport: { width, height: 1000 } });
+      await require('./source-equation-bridge.cjs')(page);
       await page.addInitScript(() => {
         window.messages = [];
-        window.webkit = { messageHandlers: { mathforge: { postMessage: m => messages.push(m) } } };
+        window.webkit = { messageHandlers: { mathforge: { postMessage: m => {messages.push(m);window.FormulaSourceTestReply(m)} } } };
       });
       await page.goto('file://' + process.cwd() + '/web/index.html');
       await page.waitForFunction(() => window.FormulaCommands);
@@ -16,13 +17,13 @@ const assert = require('node:assert/strict');
       const clear = () => page.evaluate(() => messages.length = 0);
       const assertNative = async () => {
         assert(await page.evaluate(() => messages.some(m => m.action === 'nativeEdit' && m.edit === 'copy')));
-        assert(!await page.evaluate(() => messages.some(m => ['copyImage', 'copy'].includes(m.action))));
+        assert(!await page.evaluate(() => messages.some(m => ['copyImage', 'copyEquation', 'copy'].includes(m.action))));
       };
       await press('k');
       await page.locator('.command-overlay>input').fill('hat');
       await press('a');
       await clear(); await press('c');
-      assert(!await page.evaluate(() => messages.some(m => ['copyImage', 'copy'].includes(m.action))));
+      assert(!await page.evaluate(() => messages.some(m => ['copyImage', 'copyEquation', 'copy'].includes(m.action))));
       await page.evaluate(() => FormulaCommands.execute('copy'));
       await assertNative();
       await page.keyboard.press('Escape');
@@ -33,7 +34,7 @@ const assert = require('node:assert/strict');
         await page.locator(selector).evaluate(n => { n.value = 'alpha'; n.focus(); n.setSelectionRange(0, n.value.length); });
         await clear(); await press('c');
         assert.deepEqual(await page.locator(selector).evaluate(n => [n.selectionStart, n.selectionEnd]), [0, 5]);
-        assert(!await page.evaluate(() => messages.some(m => ['copyImage', 'copy'].includes(m.action))), selector);
+        assert(!await page.evaluate(() => messages.some(m => ['copyImage', 'copyEquation', 'copy'].includes(m.action))), selector);
         await page.evaluate(() => FormulaCommands.execute('copy'));
         await assertNative();
       }
@@ -45,7 +46,7 @@ const assert = require('node:assert/strict');
         await page.locator('#source').evaluate(n => { n.focus(); n.setSelectionRange(0, 1); });
         await clear(); await press('c');
         assert(await page.evaluate(() => messages.some(m => m.action === 'copy' && m.text === 'x')));
-        assert(!await page.evaluate(() => messages.some(m => m.action === 'copyImage')));
+        assert(!await page.evaluate(() => messages.some(m => m.action === 'copyEquation')));
         await page.locator('#source').evaluate(n => n.setSelectionRange(1, 1));
         await clear(); await press('c'); await assertNative();
       }
@@ -64,7 +65,7 @@ const assert = require('node:assert/strict');
       assert(await page.evaluate(() => messages.some(m => m.action === 'copy' && /x/.test(m.text))));
       await page.locator('#preview').focus();
       await clear(); await press('c');
-      await page.waitForFunction(() => messages.some(m => m.action === 'copyImage'));
+      await page.waitForFunction(() => messages.some(m => m.action === 'copyEquation'));
       console.log(`PASS A02 focus/selection/native menu routing, LaTeX/Typst/visual/preview at ${width}px`);
       await page.close();
     }

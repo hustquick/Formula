@@ -1,0 +1,13 @@
+const assert=require('node:assert/strict'),fs=require('node:fs'),{chromium}=require('playwright');
+(async()=>{const b=await chromium.launch();try{const p=await b.newPage();await require('./source-equation-bridge.cjs')(p);await p.addInitScript(()=>{window.messages=[];window.webkit={messageHandlers:{mathforge:{postMessage:m=>{messages.push(m);window.FormulaSourceTestReply(m)}}}}});await p.goto('file://'+process.cwd()+'/web/index.html');await p.waitForFunction(()=>window.FormulaTest&&FormulaTest.getSVG());
+const result=await p.evaluate(async()=>{const source=String.raw`\int\frac{1}{1+x^2}\mathrm{d}x=\arctan x+C`;document.getElementById('source').value=source;await FormulaTest.readSource();await FormulaCommands.execute('smartCopy');const payload=messages.findLast(m=>m.action==='copyEquation');const doc=new DOMParser().parseFromString(payload.omml,'application/xml'),ns='http://schemas.openxmlformats.org/officeDocument/2006/math';return {latex:payload.latex,mathml:payload.mathml,omml:payload.omml,runs:[...doc.getElementsByTagNameNS(ns,'r')].map(r=>({text:r.getElementsByTagNameNS(ns,'t')[0].textContent,style:r.getElementsByTagNameNS(ns,'sty')[0]?.getAttributeNS(ns,'val')}))}});
+assert(result.latex.includes(String.raw`\mathrm{d}`));assert(result.mathml.includes('mathvariant="normal">d'));
+assert.equal(result.runs.find(r=>r.text==='d').style,'p');assert.equal(result.runs.find(r=>r.text==='arctan').style,'p');assert(result.runs.filter(r=>r.text==='x').every(r=>r.style===undefined));assert.equal(result.runs.find(r=>r.text==='C').style,undefined);assert(result.omml.includes('<m:f>'));assert(result.omml.includes('<m:func>'));
+assert(!result.omml.includes('\u2062'));assert(!result.omml.includes('\u2061'));
+assert(result.runs.filter(r=>['1','2','+','=','∫'].includes(r.text)).every(r=>r.style===undefined));
+assert.equal(result.runs.filter(r=>r.style==='p').length,2);
+await p.addScriptTag({content:fs.readFileSync('web/math-omml.mjs','utf8').replace('export function','function')+';window.mathmlToOMML=mathmlToOMML;'});
+const inherited=await p.evaluate(()=>mathmlToOMML('<math><mstyle mathvariant="normal"><mi>d</mi><mi mathvariant="italic">x</mi></mstyle><mi>sin</mi></math>'));
+assert.match(inherited,/<m:sty m:val="p"\/><\/m:rPr><m:t xml:space="preserve">d/);assert.match(inherited,/<m:sty m:val="i"\/><\/m:rPr><m:t xml:space="preserve">x/);assert.match(inherited,/<m:sty m:val="p"\/><\/m:rPr><m:t xml:space="preserve">sin/);
+console.log('PASS exact user integral: upright differential/function, italic variables, preserved source/fraction; inherited and overridden mathvariant');
+}finally{await b.close()}})().catch(e=>{console.error(e);process.exit(1)});

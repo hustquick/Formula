@@ -3,6 +3,109 @@ import WebKit
 import PDFKit
 import Darwin
 import CryptoKit
+import CoreServices
+
+// BEGIN EQUATION CLIPBOARD ADAPTER
+struct EquationClipboard {
+    // Registered clipboard names are converted to UTIs on macOS; the names
+    // "MathML Presentation" and MIME strings are not themselves valid UTIs.
+    static func registeredType(_ name:String)->NSPasteboard.PasteboardType {
+        let uti=UTTypeCreatePreferredIdentifierForTag(kUTTagClassNSPboardType,name as CFString,nil)!.takeRetainedValue() as String
+        return NSPasteboard.PasteboardType(uti)
+    }
+    static let wpsType = NSPasteboard.PasteboardType("com.trolltech.anymime.Kingsoft WPS 9.0 Format")
+    // Self-contained OOXML package, generated without captured user documents.
+    static func officePackage(_ omml:String)->Data {
+        let files:[(String,String)] = [
+            ("[Content_Types].xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Types xmlns=\"http://schemas.openxmlformats.org/package/2006/content-types\"><Default Extension=\"rels\" ContentType=\"application/vnd.openxmlformats-package.relationships+xml\"/><Default Extension=\"xml\" ContentType=\"application/xml\"/><Override PartName=\"/word/document.xml\" ContentType=\"application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml\"/></Types>"),
+            ("_rels/.rels", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><Relationships xmlns=\"http://schemas.openxmlformats.org/package/2006/relationships\"><Relationship Id=\"rId1\" Type=\"http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument\" Target=\"word/document.xml\"/></Relationships>"),
+            ("word/document.xml", "<?xml version=\"1.0\" encoding=\"UTF-8\"?><w:document xmlns:w=\"http://schemas.openxmlformats.org/wordprocessingml/2006/main\"><w:body><w:p>"+omml+"</w:p></w:body></w:document>")
+        ]
+        // ZIP STORE: no external process, model, runtime or network dependency.
+        func bytes(_ value:UInt32,_ count:Int)->Data {Data((0..<count).map{UInt8(truncatingIfNeeded:value >> ($0*8))})}
+        func crc(_ data:Data)->UInt32 {var c:UInt32=0xffffffff;for b in data {c ^= UInt32(b);for _ in 0..<8 {c = (c >> 1) ^ ((c & 1) == 1 ? 0xedb88320 : 0)}};return c ^ 0xffffffff}
+        var output=Data(),central=Data()
+        for (name,text) in files {
+            let n=Data(name.utf8),d=Data(text.utf8),sum=crc(d),size=UInt32(d.count),offset=UInt32(output.count)
+            output += bytes(0x04034b50,4)
+            output += bytes(20,2)
+            output += bytes(0,2)
+            output += bytes(0,2)
+            output += bytes(0,2)
+            output += bytes(33,2)
+            output += bytes(sum,4)
+            output += bytes(size,4)
+            output += bytes(size,4)
+            output += bytes(UInt32(n.count),2)
+            output += bytes(0,2)
+            output += n
+            output += d
+            central += bytes(0x02014b50,4)
+            central += bytes(20,2)
+            central += bytes(20,2)
+            central += bytes(0,2)
+            central += bytes(0,2)
+            central += bytes(0,2)
+            central += bytes(33,2)
+            central += bytes(sum,4)
+            central += bytes(size,4)
+            central += bytes(size,4)
+            central += bytes(UInt32(n.count),2)
+            central += bytes(0,2)
+            central += bytes(0,2)
+            central += bytes(0,2)
+            central += bytes(0,2)
+            central += bytes(0,4)
+            central += bytes(offset,4)
+            central += n
+        }
+        let offset=UInt32(output.count);output += central
+        output += bytes(0x06054b50,4)
+        output += bytes(0,2)
+        output += bytes(0,2)
+        output += bytes(UInt32(files.count),2)
+        output += bytes(UInt32(files.count),2)
+        output += bytes(UInt32(central.count),4)
+        output += bytes(offset,4)
+        output += bytes(0,2)
+        return output
+    }
+    static func representations(_ payload:[String:Any])->[(NSPasteboard.PasteboardType,Data)] {
+        guard let math=payload["mathml"] as? String,math.hasPrefix("<math"),let html=payload["html"] as? String,let text=payload["text"] as? String else{return []}
+        var values:[(NSPasteboard.PasteboardType,Data)]=[]
+        for name in ["MathML","MathML Presentation"] {values.append((registeredType(name),math.data(using:.utf16LittleEndian)!))}
+        values.append((NSPasteboard.PasteboardType("org.w3.mathml"),math.data(using:.utf8)!))
+        values.append((NSPasteboard.PasteboardType("public.mathml"),math.data(using:.utf8)!))
+        values.append((.html,html.data(using:.utf8)!))
+        if let latex=payload["latex"] as? String {values.append((NSPasteboard.PasteboardType("org.mathforge.latex"),latex.data(using:.utf8)!))}
+        values.append((.string,text.data(using:.utf8)!))
+        if let equation=payload["equation"] as? String {values.append((NSPasteboard.PasteboardType("org.mathforge.equation"),equation.data(using:.utf8)!))}
+        for (key,type) in [("svg",NSPasteboard.PasteboardType("public.svg-image")),("pdf",.pdf),("png",.png)] {if let encoded=payload[key] as? String,let bytes=Data(base64Encoded:encoded){values.append((type,bytes))}}
+        if let typst=payload["typst"] as? String {values.append((NSPasteboard.PasteboardType("org.mathforge.typst"),Data(typst.utf8)))}
+        if let omml=payload["omml"] as? String,omml.hasPrefix("<m:oMath ") {
+            values.insert((wpsType,officePackage(omml)),at:0)
+            values.insert((NSPasteboard.PasteboardType("org.mathforge.omml"),Data(omml.utf8)),at:1)
+        }
+        if let encoded=payload["gvml"] as? String,let bytes=Data(base64Encoded:encoded),!bytes.isEmpty {
+            values.insert((NSPasteboard.PasteboardType("com.trolltech.anymime.Art::GVML ClipFormat"),bytes),at:min(1,values.count))
+        }
+        return values
+    }
+    static func write(_ payload:[String:Any],to board:NSPasteboard = .general)->Bool {
+        let values=representations(payload);guard !values.isEmpty else{return false}
+        // Carbon preserves legacy Qt/WPS flavor names containing spaces.
+        // All representations belong to the same item, including the native package.
+        var carbon:Pasteboard?
+        guard PasteboardCreate(board.name.rawValue as CFString,&carbon)==noErr,let carbon=carbon else{return false}
+        guard PasteboardClear(carbon)==noErr else{return false}
+        let item=UnsafeMutableRawPointer(bitPattern:1)!
+        for (type,data) in values {
+            if PasteboardPutItemFlavor(carbon,item,type.rawValue as CFString,data as CFData,PasteboardFlavorFlags(rawValue:0)) != noErr {return false}
+        }
+        return true
+    }
+}
+// END EQUATION CLIPBOARD ADAPTER
 
 struct ToolFailure: Error { let message: String }
 
@@ -60,6 +163,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
         let config = WKWebViewConfiguration()
         config.userContentController.add(self, name: "mathforge")
+        config.userContentController.addUserScript(WKUserScript(source:"window.FormulaSourceEquationSupported=true;",injectionTime:.atDocumentStart,forMainFrameOnly:true))
         // Restore one atomic host-owned record: draft and file identity cannot be mixed.
         let session=loadDocumentSession()
         let draft=session?["draft"] as? [String:Any] ?? ((try? Data(contentsOf:support.appendingPathComponent("state.json"))).flatMap{(try? JSONSerialization.jsonObject(with:$0)) as? [String:Any]})
@@ -132,6 +236,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
                 if shortcut.contains("alt"){modifiers.insert(.option)}
                 item.keyEquivalentModifierMask=modifiers;parent.submenu?.addItem(item)
             }
+            if category=="编辑" {
+                let copyMenu=NSMenuItem(title:"复制",action:nil,keyEquivalent:"");copyMenu.submenu=NSMenu(title:"复制");parent.submenu?.addItem(copyMenu)
+                for command in commands where command["category"] as? String == "复制" {
+                    guard let id=command["id"] as? String,let title=command["title"] as? String else{continue}
+                    let item=NSMenuItem(title:title,action:#selector(registeredCommand(_:)),keyEquivalent:"");item.target=self;item.representedObject=id;copyMenu.submenu?.addItem(item)
+                }
+            }
             if category=="公式" {
                 let insert=NSMenuItem();insert.submenu=NSMenu(title:"插入结构");parent.submenu?.addItem(insert)
                 for command in commands where command["category"] as? String == "结构" {
@@ -173,6 +284,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         case "copy":
             guard let text=data["text"] as? String else{return};let p=NSPasteboard.general;p.clearContents();p.setString(text,forType:.string)
             if data["format"] as? String == "svg",let bytes=text.data(using:.utf8) {p.setData(bytes,forType:NSPasteboard.PasteboardType("public.svg-image"))}
+        case "prepareEquation":prepareSourceEquation(data)
+        case "copyEquation":
+            if !EquationClipboard.write(data){report("无法写入数学剪贴板，原公式已保留。",true)}
         case "copyImage":
             let p=NSPasteboard.general;p.clearContents()
             for (key,type) in [("png",NSPasteboard.PasteboardType.png),("pdf",.pdf),("svg",NSPasteboard.PasteboardType("public.svg-image")),("jpeg",NSPasteboard.PasteboardType("public.jpeg")),("tiff",.tiff),("eps",NSPasteboard.PasteboardType("com.adobe.encapsulated-postscript"))] {if let encoded=data[key] as? String,let bytes=Data(base64Encoded:encoded){p.setData(bytes,forType:type)}}
@@ -482,7 +596,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
             let whiteContext=NSGraphicsContext(bitmapImageRep:white)!
             NSGraphicsContext.saveGraphicsState();NSGraphicsContext.current=whiteContext;let wc=whiteContext.cgContext;wc.setFillColor(NSColor.white.cgColor);wc.fill(CGRect(x:0,y:0,width:CGFloat(width),height:CGFloat(height)));wc.scaleBy(x:pixels,y:pixels);page.draw(with:.mediaBox,to:wc);NSGraphicsContext.restoreGraphicsState()
             let jpeg=white.representation(using:.jpeg,properties:[.compressionFactor:0.96])!
-            let saved:[String:Any]=["format":"mathforge-equation","version":1,"state":["rawSource":source,"editorMode":engine=="typst" ? "typst":"latex","size":size,"padding":padding/0.75,"color":color,"backgroundColor":backgroundColor,"transparent":transparent,"scale":scale,"preamble":o["preamble"] ?? "","typstPreamble":o["typstPreamble"] ?? "","displayMode":o["displayMode"] ?? "display"]]
+            let saved:[String:Any]=["format":"mathforge-equation","version":1,"state":request["document"] as? [String:Any] ?? ["rawSource":source,"editorMode":engine=="typst" ? "typst":"latex","size":size,"padding":padding/0.75,"color":color,"backgroundColor":backgroundColor,"transparent":transparent,"scale":scale,"preamble":o["preamble"] ?? "","typstPreamble":o["typstPreamble"] ?? "","displayMode":o["displayMode"] ?? "display"]]
             var attrs=doc.documentAttributes ?? [:];attrs[PDFDocumentAttribute.subjectAttribute]="MathForge:"+json(saved);attrs[PDFDocumentAttribute.titleAttribute]="Formula equation";doc.documentAttributes=attrs
             let pdf=doc.dataRepresentation()!
             var result:[String:Any]=["engine":URL(fileURLWithPath:path).lastPathComponent,"pdf":pdf.base64EncodedString(),"png":png.base64EncodedString(),"tiff":tiff.base64EncodedString(),"jpeg":jpeg.base64EncodedString(),"width":width,"height":height]

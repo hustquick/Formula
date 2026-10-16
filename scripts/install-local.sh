@@ -3,6 +3,31 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 [[ $(uname -s) == Darwin ]]
 task_target="/Applications/Formula.app"
+# Anchor the executable path; allow launch arguments, reject command-line substrings.
+formula_process_status() {
+  local task_status
+  if pgrep -f -x '/Applications/Formula[.]app/Contents/MacOS/Formula([[:space:]].*)?' >/dev/null; then
+    return 0
+  else
+    task_status=$?
+  fi
+  case "$task_status" in
+    1) return 1 ;;
+    *) echo "Formula 进程检测失败（pgrep: ${task_status}），停止部署" >&2; return 2 ;;
+  esac
+}
+require_formula_stopped() {
+  local task_status
+  if formula_process_status; then
+    echo '请保存并正常退出 Formula' >&2
+    echo 'NEEDS_USER_ACTION: SAVE_AND_QUIT_FORMULA' >&2
+    return 1
+  else
+    task_status=$?
+  fi
+  [[ "$task_status" == 1 ]]
+}
+require_formula_stopped || exit 1
 task_stage=$(mktemp -d)
 trap 'rm -rf "$task_stage"' EXIT
 [[ -d /Applications/Formula.app ]] || { echo '需要已安装的正式版作为离线资源基线'; exit 1; }
@@ -26,7 +51,7 @@ cp web/completion-data/LICENSE.txt "$task_app/Contents/Resources/LaTeX-Workshop-
 cp web/vendor/latexlive/catalog.js "$task_app/Contents/Resources/web/vendor/latexlive/catalog.js"
 cp web/vendor/latexlive/map_input.json "$task_app/Contents/Resources/web/vendor/latexlive/map_input.json"
 ditto --noextattr --noqtn web/vendor "$task_app/Contents/Resources/web/vendor"
-for task_file in formula-ocr-runner.py formula-document-runner.py ocr-requirements.txt unimernet-requirements.txt document-requirements.txt; do cp "macos/$task_file" "$task_app/Contents/Resources/$task_file"; done
+for task_file in formula-ocr-runner.py formula-document-runner.py formula-latex-ooxml.py formula-wps-clipboard.py ocr-requirements.txt unimernet-requirements.txt document-requirements.txt; do cp "macos/$task_file" "$task_app/Contents/Resources/$task_file"; done
 python3 - "$task_app" <<'PYVERIFY'
 import hashlib,sys
 from pathlib import Path
@@ -40,7 +65,7 @@ print('Verified current offline web resource manifest')
 PYVERIFY
 codesign --force --deep --sign - "$task_app"
 codesign --verify --deep --strict "$task_app"
-if pgrep -f "$task_target/Contents/MacOS/Formula" >/dev/null; then echo '正式版正在运行，请先退出再安装（不强制结束未保存编辑）'; exit 1; fi
+require_formula_stopped || exit 1
 [[ "$task_target" == /Applications/Formula.app ]]
 [[ $(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$task_target/Contents/Info.plist") == org.mathforge.desktop ]]
 task_backup="$HOME/Library/Application Support/Formula-Backups/$(date +%Y%m%d-%H%M%S)"
@@ -51,11 +76,36 @@ task_next="/Applications/.Formula-local-$$.app"
 task_previous="/Applications/.Formula-previous-$$.app"
 ditto --noextattr --noqtn "$task_app" "$task_next"
 codesign --verify --deep --strict "$task_next"
+require_formula_stopped || exit 1
 mv "$task_target" "$task_previous"
 if ! mv "$task_next" "$task_target"; then mv "$task_previous" "$task_target"; exit 1; fi
 if ! codesign --verify --deep --strict "$task_target"; then mv "$task_target" "$task_stage/failed.app"; mv "$task_previous" "$task_target"; exit 1; fi
 open -n "$task_target" || true
-for task_attempt in {1..10}; do if pgrep -f "$task_target/Contents/MacOS/Formula" >/dev/null; then mv "$task_previous" "$task_stage/previous.app"; echo "已安装并启动：${task_target}；备份：$task_backup"; exit 0; fi; sleep 1; done
+for task_attempt in {1..10}; do
+  if formula_process_status; then
+    mv "$task_previous" "$task_stage/previous.app"
+    echo "已安装并启动：${task_target}；备份：$task_backup"
+    exit 0
+  else
+    task_status=$?
+  fi
+  if [[ "$task_status" != 1 ]]; then
+    echo "无法确认启动状态，保留当前应用和原应用：${task_previous}；备份：$task_backup" >&2
+    exit 1
+  fi
+  sleep 1
+done
+# Recheck immediately before rollback; never move an app with unknown/running status.
+if formula_process_status; then
+  echo "已确认新版本启动：${task_target}；备份：$task_backup"
+  exit 0
+else
+  task_status=$?
+fi
+if [[ "$task_status" != 1 ]]; then
+  echo "无法确认进程状态，未回滚；原应用：${task_previous}；备份：$task_backup" >&2
+  exit 1
+fi
 mv "$task_target" "$task_stage/failed.app"
 mv "$task_previous" "$task_target"
 open "$task_target"

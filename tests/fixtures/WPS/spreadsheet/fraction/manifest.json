@@ -1,0 +1,377 @@
+{
+  "advertisedTypes" : [
+    "com.trolltech.anymime.Kingsoft Shapes Tag",
+    "com.trolltech.anymime.Art::GVML ClipFormat",
+    "com.trolltech.anymime.Et Internal Shape",
+    "com.trolltech.anymime.WPS Spreadsheets 6.0 Format",
+    "public.tiff",
+    "NeXT TIFF v4.0 pasteboard type",
+    "com.trolltech.anymime.application--x-qt-image",
+    "public.png",
+    "Apple PNG pasteboard type",
+    "com.trolltech.anymime.image--png",
+    "public.jpeg",
+    "CorePasteboardFlavorType 0x4A504547",
+    "com.trolltech.anymime.image--jpeg",
+    "com.trolltech.anymime.image--bmp",
+    "com.trolltech.anymime.WPS Drawing Shape Format"
+  ],
+  "capturedAt" : "2026-10-16T11:03:16Z",
+  "carbonRepresentations" : [
+    {
+      "bytes" : 39,
+      "file" : "carbon-item-0-type-0.bin",
+      "item" : 0,
+      "position" : 0,
+      "sha256" : "dd695dd12a684025cb26b8b3ba6f510312d18ade760a2e2f82c9bf4c4c42dfee",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Kingsoft Shapes Tag"
+    },
+    {
+      "bytes" : 4997,
+      "file" : "carbon-item-0-type-1.bin",
+      "item" : 0,
+      "position" : 1,
+      "sha256" : "369e4eee13be9f0c96917bcf69119eebce66eaa02ac4272473d84c78182ecafa",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Art::GVML ClipFormat"
+    },
+    {
+      "bytes" : 5460,
+      "file" : "carbon-item-0-type-2.bin",
+      "item" : 0,
+      "position" : 2,
+      "sha256" : "546f9b1de51ed8e9d7090b6f87e16312945f03788690db1d332eba7f3079b967",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.Et Internal Shape"
+    },
+    {
+      "bytes" : 5662,
+      "file" : "carbon-item-0-type-3.bin",
+      "item" : 0,
+      "position" : 3,
+      "sha256" : "78f269d2b5fec61ee09aa0d29cdf9b6d065be63580fc3758698257d66eea5025",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.WPS Spreadsheets 6.0 Format"
+    },
+    {
+      "bytes" : 49846,
+      "file" : "carbon-item-0-type-4.bin",
+      "item" : 0,
+      "position" : 4,
+      "sha256" : "622d39c0cdd55fd31855fe71b1b827c4fae9cd5538cec3c86096b6445b61e590",
+      "status" : 0,
+      "type" : "public.tiff"
+    },
+    {
+      "bytes" : 0,
+      "file" : "carbon-item-0-type-5.bin",
+      "item" : 0,
+      "position" : 5,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.application--x-qt-image"
+    },
+    {
+      "bytes" : 1612,
+      "file" : "carbon-item-0-type-6.bin",
+      "item" : 0,
+      "position" : 6,
+      "sha256" : "731fb8b5f5eadfb1d9929fd285fce2d6b812f7cbe24f8bceb5a4196ea9439174",
+      "status" : 0,
+      "type" : "public.png"
+    },
+    {
+      "bytes" : 1612,
+      "file" : "carbon-item-0-type-7.bin",
+      "item" : 0,
+      "position" : 7,
+      "sha256" : "731fb8b5f5eadfb1d9929fd285fce2d6b812f7cbe24f8bceb5a4196ea9439174",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.image--png"
+    },
+    {
+      "bytes" : 2323,
+      "file" : "carbon-item-0-type-8.bin",
+      "item" : 0,
+      "position" : 8,
+      "sha256" : "3db0c071aa65e537b978c0a12579bfdadbd3eaab6197c80ee2e988edb36774c1",
+      "status" : 0,
+      "type" : "public.jpeg"
+    },
+    {
+      "bytes" : 2323,
+      "file" : "carbon-item-0-type-9.bin",
+      "item" : 0,
+      "position" : 9,
+      "sha256" : "3db0c071aa65e537b978c0a12579bfdadbd3eaab6197c80ee2e988edb36774c1",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.image--jpeg"
+    },
+    {
+      "bytes" : 35054,
+      "file" : "carbon-item-0-type-10.bin",
+      "item" : 0,
+      "position" : 10,
+      "sha256" : "6a4c6924112b490bdf1df5612ed793bfe888985dd37b7a70ccd49b95fef82505",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.image--bmp"
+    },
+    {
+      "bytes" : 2014,
+      "file" : "carbon-item-0-type-11.bin",
+      "item" : 0,
+      "position" : 11,
+      "sha256" : "6c3f295afb805bf16f2c64f633a56d1c4d6f2d7168527a46426ab197f60bf161",
+      "status" : 0,
+      "type" : "com.trolltech.anymime.WPS Drawing Shape Format"
+    },
+    {
+      "bytes" : 12360,
+      "file" : "carbon-item-0-type-12.bin",
+      "item" : 0,
+      "position" : 12,
+      "sha256" : "3b8a1e5f9699a96c76398c126ac5142224780668f539f29043e52c42c8e6c1a0",
+      "status" : 0,
+      "type" : "com.apple.atx"
+    },
+    {
+      "bytes" : 2002,
+      "file" : "carbon-item-0-type-13.bin",
+      "item" : 0,
+      "position" : 13,
+      "sha256" : "3406355c5a52e676aeacd04ab19a8dd3a666e3ed006864375cfdfa57d3e5c730",
+      "status" : 0,
+      "type" : "public.avif"
+    },
+    {
+      "bytes" : 2208,
+      "file" : "carbon-item-0-type-14.bin",
+      "item" : 0,
+      "position" : 14,
+      "sha256" : "19dab341b98d49487844183430150b772775c9e4dbe67994b021a1a5ee660efb",
+      "status" : 0,
+      "type" : "public.heic"
+    },
+    {
+      "bytes" : 8968,
+      "file" : "carbon-item-0-type-15.bin",
+      "item" : 0,
+      "position" : 15,
+      "sha256" : "060aca3f205d7e84f67e948c548a685c068d180713429ebcb68aa4ce7a11a773",
+      "status" : 0,
+      "type" : "com.adobe.photoshop-image"
+    },
+    {
+      "bytes" : 139472,
+      "file" : "carbon-item-0-type-16.bin",
+      "item" : 0,
+      "position" : 16,
+      "sha256" : "99033112d73b6f928bee0852bd0054b89d827602f44964ee24a49b68fb0af615",
+      "status" : 0,
+      "type" : "public.pbm"
+    },
+    {
+      "bytes" : 2809,
+      "file" : "carbon-item-0-type-17.bin",
+      "item" : 0,
+      "position" : 17,
+      "sha256" : "ccc3cafb185e0c70b58fdff681392600cc6d67be1d0609d784c8bb51b68f72df",
+      "status" : 0,
+      "type" : "com.ilm.openexr-image"
+    },
+    {
+      "item" : 0,
+      "position" : 18,
+      "status" : -25133,
+      "type" : "public.pvr"
+    },
+    {
+      "bytes" : 936,
+      "file" : "carbon-item-0-type-19.bin",
+      "item" : 0,
+      "position" : 19,
+      "sha256" : "4cc70fde78df715130b136906281e484cf3a2d7e88659b3b0280d667ae0d3527",
+      "status" : 0,
+      "type" : "com.compuserve.gif"
+    },
+    {
+      "bytes" : 5542,
+      "file" : "carbon-item-0-type-20.bin",
+      "item" : 0,
+      "position" : 20,
+      "sha256" : "28346882eabf7aea54882900f25a577740744ba57c664d6954991ea887a9ca05",
+      "status" : 0,
+      "type" : "public.jpeg-2000"
+    },
+    {
+      "bytes" : 4006,
+      "file" : "carbon-item-0-type-21.bin",
+      "item" : 0,
+      "position" : 21,
+      "sha256" : "ae8eabb411e6384123f0033f9a48afc0ad82bda10b187d9a764cb2ff64ec1e43",
+      "status" : 0,
+      "type" : "public.heics"
+    },
+    {
+      "bytes" : 93080,
+      "file" : "carbon-item-0-type-22.bin",
+      "item" : 0,
+      "position" : 22,
+      "sha256" : "fe0531e05f366d6c05567204b0510e06f6ada6f7095c17bf6d0be0c69d09e578",
+      "status" : 0,
+      "type" : "org.khronos.ktx"
+    },
+    {
+      "bytes" : 46618,
+      "file" : "carbon-item-0-type-23.bin",
+      "item" : 0,
+      "position" : 23,
+      "sha256" : "33d4c79bdf6e77f69e0283ef1805301deae226ac7f7caaf9a70b94c5306ecb0a",
+      "status" : 0,
+      "type" : "com.microsoft.bmp"
+    },
+    {
+      "bytes" : 93240,
+      "file" : "carbon-item-0-type-24.bin",
+      "item" : 0,
+      "position" : 24,
+      "sha256" : "f4521b2280cbebac7a63d1bd7ed23fb097e6667b935dbe87e568431606117972",
+      "status" : 0,
+      "type" : "org.khronos.ktx2"
+    },
+    {
+      "bytes" : 4029,
+      "file" : "carbon-item-0-type-25.bin",
+      "item" : 0,
+      "position" : 25,
+      "sha256" : "87d8da046a47f7477e4567339b9dce3e5c4cad275560427838676f5aafc323af",
+      "status" : 0,
+      "type" : "com.truevision.tga-image"
+    },
+    {
+      "bytes" : 12112,
+      "file" : "carbon-item-0-type-26.bin",
+      "item" : 0,
+      "position" : 26,
+      "sha256" : "c202b4cc9797d38f6eec6c72542b52edbc1e9badc3c1fc1468ac11c506dd5450",
+      "status" : 0,
+      "type" : "org.khronos.astc"
+    },
+    {
+      "bytes" : 0,
+      "file" : "carbon-item-0-type-27.bin",
+      "item" : 0,
+      "position" : 27,
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "status" : 0,
+      "type" : "com.microsoft.dds"
+    }
+  ],
+  "changeCountAfter" : 263,
+  "changeCountBefore" : 263,
+  "itemCount" : 1,
+  "representations" : [
+    {
+      "item" : 0,
+      "position" : 0,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Kingsoft Shapes Tag"
+    },
+    {
+      "item" : 0,
+      "position" : 1,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Art::GVML ClipFormat"
+    },
+    {
+      "item" : 0,
+      "position" : 2,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.Et Internal Shape"
+    },
+    {
+      "item" : 0,
+      "position" : 3,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.WPS Spreadsheets 6.0 Format"
+    },
+    {
+      "bytes" : 49846,
+      "file" : "item-0-type-4.bin",
+      "item" : 0,
+      "position" : 4,
+      "readAPI" : "NSPasteboardItem",
+      "registeredName" : "NeXT TIFF v4.0 pasteboard type",
+      "sha256" : "622d39c0cdd55fd31855fe71b1b827c4fae9cd5538cec3c86096b6445b61e590",
+      "type" : "public.tiff"
+    },
+    {
+      "bytes" : 0,
+      "file" : "item-0-type-5.bin",
+      "item" : 0,
+      "position" : 5,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "type" : "com.trolltech.anymime.application--x-qt-image"
+    },
+    {
+      "bytes" : 1612,
+      "file" : "item-0-type-6.bin",
+      "item" : 0,
+      "position" : 6,
+      "readAPI" : "NSPasteboardItem",
+      "registeredName" : "Apple PNG pasteboard type",
+      "sha256" : "731fb8b5f5eadfb1d9929fd285fce2d6b812f7cbe24f8bceb5a4196ea9439174",
+      "type" : "public.png"
+    },
+    {
+      "bytes" : 1612,
+      "file" : "item-0-type-7.bin",
+      "item" : 0,
+      "position" : 7,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "731fb8b5f5eadfb1d9929fd285fce2d6b812f7cbe24f8bceb5a4196ea9439174",
+      "type" : "com.trolltech.anymime.image--png"
+    },
+    {
+      "bytes" : 2323,
+      "file" : "item-0-type-8.bin",
+      "item" : 0,
+      "position" : 8,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "3db0c071aa65e537b978c0a12579bfdadbd3eaab6197c80ee2e988edb36774c1",
+      "type" : "public.jpeg"
+    },
+    {
+      "bytes" : 2323,
+      "file" : "item-0-type-9.bin",
+      "item" : 0,
+      "position" : 9,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "3db0c071aa65e537b978c0a12579bfdadbd3eaab6197c80ee2e988edb36774c1",
+      "type" : "com.trolltech.anymime.image--jpeg"
+    },
+    {
+      "bytes" : 35054,
+      "file" : "item-0-type-10.bin",
+      "item" : 0,
+      "position" : 10,
+      "readAPI" : "NSPasteboardItem",
+      "sha256" : "6a4c6924112b490bdf1df5612ed793bfe888985dd37b7a70ccd49b95fef82505",
+      "type" : "com.trolltech.anymime.image--bmp"
+    },
+    {
+      "item" : 0,
+      "position" : 11,
+      "readAPI" : "NSPasteboard (single item only)",
+      "readError" : "Advertised type returned no data",
+      "type" : "com.trolltech.anymime.WPS Drawing Shape Format"
+    }
+  ],
+  "stable" : true
+}
