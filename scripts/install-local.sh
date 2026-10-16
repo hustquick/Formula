@@ -51,7 +51,7 @@ cp web/completion-data/LICENSE.txt "$task_app/Contents/Resources/LaTeX-Workshop-
 cp web/vendor/latexlive/catalog.js "$task_app/Contents/Resources/web/vendor/latexlive/catalog.js"
 cp web/vendor/latexlive/map_input.json "$task_app/Contents/Resources/web/vendor/latexlive/map_input.json"
 ditto --noextattr --noqtn web/vendor "$task_app/Contents/Resources/web/vendor"
-for task_file in formula-ocr-runner.py formula-document-runner.py formula-latex-ooxml.py formula-wps-clipboard.py ocr-requirements.txt unimernet-requirements.txt document-requirements.txt; do cp "macos/$task_file" "$task_app/Contents/Resources/$task_file"; done
+for task_file in formula-ocr-runner.py formula-document-runner.py formula-latex-ooxml.py formula-wps-clipboard.py formula-wps-import.py ocr-requirements.txt unimernet-requirements.txt document-requirements.txt; do cp "macos/$task_file" "$task_app/Contents/Resources/$task_file"; done
 python3 - "$task_app" <<'PYVERIFY'
 import hashlib,sys
 from pathlib import Path

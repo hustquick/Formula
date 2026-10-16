@@ -284,6 +284,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, WKScriptMessageHandler
         case "copy":
             guard let text=data["text"] as? String else{return};let p=NSPasteboard.general;p.clearContents();p.setString(text,forType:.string)
             if data["format"] as? String == "svg",let bytes=text.data(using:.utf8) {p.setData(bytes,forType:NSPasteboard.PasteboardType("public.svg-image"))}
+        case "readEquation":readNativeEquation(data)
         case "prepareEquation":prepareSourceEquation(data)
         case "copyEquation":
             if !EquationClipboard.write(data){report("无法写入数学剪贴板，原公式已保留。",true)}

@@ -1,3 +1,18 @@
+# Formula 1.7.0
+
+- macOS：一次复制同时提供 WPS Writer OOXML 与 Slides/Sheets GVML 原生数学表示；三宿主已实测可整体编辑。
+- 支持从 WPS Writer、Slides、Sheets 导入单个原生公式，确认后进入统一公式对象；保留原始载荷和 OMML，支持撤销/重做，未编辑时复制回 WPS 保留原数学结构。
+- 修复 Writer 无横线分式 nobar / noBar 及二项式括号重复问题。
+- 保留现有 LaTeX、Typst、MathML、SVG、PDF、PNG 等复制表示。
+
+已人工验收 Writer 二项式、Slides/Sheets 含上下标和根号的分式及往返。未知数学结构明确拒绝，不能据此承诺任意公式或编辑后的通用无损转换。需要现有离线 Word 组件；该原生剪贴板能力本轮限 macOS。
+
+Pages 仍处于协议研究阶段：实验包重建源码可生成可编辑对象，但独立对象包尚未实现。当前 Formula → Pages 直接粘贴未通过；不将图片或文本当作可编辑公式支持。
+
+Windows 仅同步版本号和共享编辑器代码，本轮未进行 Windows 实机验收。macOS 产物采用 ad-hoc 签名，未进行 Apple 公证。
+
+---
+
 # Formula 1.6.2
 
 本轮仅处理 A26：精确原文历史、自动命令记录、重启版本连续性、未完成源码和可视化占位符恢复、独立清理与容量控制。具体测试和验收状态见 DEVELOPMENT_AUDIT.md 当前 B 表。

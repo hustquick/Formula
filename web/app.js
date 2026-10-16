@@ -243,7 +243,7 @@ async function copyEquation(editableOnly=false){
   let omml,gvml;
   try{
     if(bridge&&window.FormulaSourceEquationSupported){
-      const converted=await nativeRequest('prepareEquation',{latex,formulaId:object.identity.formulaId,revision:object.revision});
+      const converted=await nativeRequest('prepareEquation',{latex,originalOMML:content.originalNativeMath()?.omml,formulaId:object.identity.formulaId,revision:object.revision});
       if(converted.latex!==latex||typeof converted.omml!=='string')throw Error('转换结果与当前源码不匹配');
       omml=converted.omml;
       if(typeof converted.gvml!=='string')throw Error('缺少演示/表格原生公式载荷');
@@ -826,7 +826,38 @@ register('copy','复制','meta+c','编辑',()=>{
   return copyEquation();
 });
 const nativeEdit=action=>{if(bridge)send('nativeEdit',{edit:action});else {document.execCommand(action);}};
-for(const [id,title,key] of [['cut','剪切','x'],['paste','粘贴','v'],['selectAll','全选','a']])register(id,title,'meta+'+key,'编辑',()=>{if(document.activeElement===mf&&id==='selectAll'){mf.select();return;}return nativeEdit(id);});
+async function pasteNativeMath(){
+  if(!bridge||!window.FormulaSourceEquationSupported||auxiliaryInput())return nativeEdit('paste');
+  const before={id:content.identity.formulaId,revision:content.objectRevision,source:$('source').value};
+  const result=await nativeRequest('readEquation',{});
+  if(!result.handled)return nativeEdit('paste');
+  const candidate=result.candidate;
+  if(!candidate||typeof candidate.latex!=='string'||typeof candidate.omml!=='string')throw Error('原生公式解析结果无效');
+  if(before.id!==content.identity.formulaId||before.revision!==content.objectRevision||before.source!==$('source').value)throw Error('编辑内容已变化，未应用剪贴板公式，请重新粘贴');
+  const accepted=await new Promise(resolve=>{
+    const dialog=document.createElement('dialog'),heading=document.createElement('h3'),note=document.createElement('p'),code=document.createElement('pre'),apply=document.createElement('button'),cancel=document.createElement('button');
+    heading.textContent='导入 WPS 原生公式';note.textContent='确认后替换当前公式，可撤销。保留原始数学结构；不支持的结构不会降级导入。';code.textContent=candidate.latex;code.style.cssText='white-space:pre-wrap;max-width:65vw;max-height:40vh;overflow:auto';apply.textContent='替换当前公式';cancel.textContent='取消';
+    const finish=value=>{dialog.close();dialog.remove();resolve(value)};apply.onclick=()=>finish(true);cancel.onclick=()=>finish(false);dialog.addEventListener('cancel',event=>{event.preventDefault();finish(false)});dialog.append(heading,note,code,cancel,apply);document.body.append(dialog);dialog.showModal();cancel.focus();
+  });
+  if(!accepted)return;
+  if(before.id!==content.identity.formulaId||before.revision!==content.objectRevision||before.source!==$('source').value)throw Error('编辑内容已变化，未替换当前公式');
+  await registry.execute('importNativeMath',{candidate});
+}
+registry.register({id:'importNativeMath',title:'导入原生公式',mutation:'document',undoable:true,execute:async({candidate})=>editTransaction('粘贴 WPS 原生公式',async()=>{
+  // Keep the user's current mode. LaTeX is the editable projection, original
+  // OMML and package remain attached to the same FormulaObject revision.
+  const mode=state.editorMode,language=state.sourceLanguage;
+  const previous=content.snapshot();
+  try{
+    content.edit('latex',candidate.latex,'native-paste');
+    const source=contentSource(language);$('source').value=source;
+    state.editorMode=mode;applyUI();await readSource();await renderQueue;
+    if(!valid)throw Error('原生数学结构无法在当前编辑器中呈现，未应用');
+    content.attachNativeMath({...candidate,latex:content.get('latex').text});updateAlternates();persist();status('已导入 WPS 原生公式 · 原始数学结构已保留');
+  }catch(error){content=new FormulaObject(previous);$('source').value=beforeNativeSource(previous,language);applyUI();await readSource();throw error;}
+})});
+function beforeNativeSource(object,language){return object.content.representations[language]?.text??object.content.authority.text;}
+for(const [id,title,key] of [['cut','剪切','x'],['paste','粘贴','v'],['selectAll','全选','a']])register(id,title,'meta+'+key,'编辑',()=>{if(id==='paste')return pasteNativeMath();if(document.activeElement===mf&&id==='selectAll'){mf.select();return;}return nativeEdit(id);});
 register('tryLocalTypesetting','尝试本机排版',null,'视图',()=>{if(!bridge){status('本机环境需要在 Formula Mac 应用中使用',true);return;}const src=stripDelimiters($('source').value);localAttemptSource=state.sourceLanguage+':'+src;return readSource();},()=>!$('render-feedback').hidden&&$('render-feedback').dataset.category==='capability');
 register('switchLatex','转换为 LaTeX',null,'公式',()=>editTransaction('转换为 LaTeX',()=>changeEditorMode('latex')));
 register('switchTypst','转换为 Typst',null,'公式',()=>editTransaction('转换为 Typst',()=>changeEditorMode('typst')));
@@ -883,7 +914,7 @@ commandPanel.innerHTML='<input aria-label="搜索命令或历史" placeholder="�
 const commandSearch=commandPanel.querySelector('input'),commandList=commandPanel.querySelector('.command-list');let panelKind='commands',panelSelection=0,returnContext=null;
 function closeCommands(){commandPanel.hidden=true;restoreEditorContext(returnContext);}
 function showCommands(kind){commandPanel.querySelector('.find-replace').hidden=true;returnContext=captureEditorContext();revisions.flush();panelKind=kind;panelSelection=0;commandSearch.value='';commandSearch.placeholder=kind==='history'?'搜索编辑历史':'搜索命令';commandPanel.hidden=false;drawCommands();commandSearch.focus();}
-function drawCommands(){commandList.replaceChildren();const term=commandSearch.value.toLowerCase();const items=panelKind==='history'?revisions.entries.map((entry,i)=>({title:entry.title+' · '+new Date(entry.time).toLocaleTimeString(),enabled:true,execute:()=>revisions.go(i),active:i===revisions.index})).reverse():registry.list().filter(c=>!['tryLocalTypesetting','insertStructure','matrixEdit','sourceAccept','applyStyle','insertTemplate','importContent','restoreFavorite','removeFavorite','setDocumentSetting','setEditorZoom','switchVisual','batchExport','setToolbarDisplay','setToolbarItem','moveToolbarItem','resetToolbar','importFavoriteLibrary','backupFavoriteLibrary','clearFormulaHistory','removeFormulaHistory','scanLocalTools','chooseLocalTool','restoreFormulaVersion'].includes(c.id)).map(c=>({...c,title:c.title+(c.shortcut?' · '+shortcutLabel(c.shortcut):''),execute:()=>registry.execute(c.id)}));
+function drawCommands(){commandList.replaceChildren();const term=commandSearch.value.toLowerCase();const items=panelKind==='history'?revisions.entries.map((entry,i)=>({title:entry.title+' · '+new Date(entry.time).toLocaleTimeString(),enabled:true,execute:()=>revisions.go(i),active:i===revisions.index})).reverse():registry.list().filter(c=>!['tryLocalTypesetting','insertStructure','matrixEdit','sourceAccept','applyStyle','insertTemplate','importContent','restoreFavorite','removeFavorite','setDocumentSetting','setEditorZoom','switchVisual','batchExport','setToolbarDisplay','setToolbarItem','moveToolbarItem','resetToolbar','importFavoriteLibrary','backupFavoriteLibrary','clearFormulaHistory','removeFormulaHistory','scanLocalTools','chooseLocalTool','restoreFormulaVersion','importNativeMath'].includes(c.id)).map(c=>({...c,title:c.title+(c.shortcut?' · '+shortcutLabel(c.shortcut):''),execute:()=>registry.execute(c.id)}));
   for(const item of items.filter(c=>(c.title+' '+(c.id||'')).toLowerCase().includes(term))){const b=document.createElement('button');b.textContent=item.title;b.disabled=!item.enabled;if(item.active)b.classList.add('active');b.onpointerdown=e=>e.preventDefault();b.onclick=async()=>{closeCommands();await item.execute();};commandList.append(b);}
   const buttons=[...commandList.querySelectorAll('button:not(:disabled)')];panelSelection=Math.min(panelSelection,Math.max(0,buttons.length-1));buttons.forEach((b,i)=>b.classList.toggle('selected',i===panelSelection));
 }
@@ -969,7 +1000,7 @@ if(internal){const originalExecute=internal.executeCommand.bind(internal);intern
 document.addEventListener('focusin',()=>updateCommandState());
 window.FormulaAction=kind=>registry.execute(({import:'openFormula',copy:'copySource',project:'saveFormula'})[kind]||'exportFormula');
 for(const id of ['newFormula','switchLatex','switchTypst','switchVisual','switchToSource','switchToVisual','workspace1','workspace2','insertStructure','matrixEdit','sourceAccept','applyStyle','insertTemplate','importContent','replace','replaceAll']){registry.commands.get(id).undoable=true;registry.commands.get(id).mutation='document';}
-send('registerCommands',{commands:registry.list().filter(c=>!['tryLocalTypesetting','sourceAccept','applyStyle','insertTemplate','importContent','restoreFavorite','removeFavorite','setDocumentSetting','setEditorZoom','switchVisual','batchExport','setToolbarDisplay','setToolbarItem','moveToolbarItem','resetToolbar','importFavoriteLibrary','backupFavoriteLibrary','clearFormulaHistory','removeFormulaHistory','scanLocalTools','chooseLocalTool','restoreFormulaVersion'].includes(c.id))});
+send('registerCommands',{commands:registry.list().filter(c=>!['tryLocalTypesetting','sourceAccept','applyStyle','insertTemplate','importContent','restoreFavorite','removeFavorite','setDocumentSetting','setEditorZoom','switchVisual','batchExport','setToolbarDisplay','setToolbarItem','moveToolbarItem','resetToolbar','importFavoriteLibrary','backupFavoriteLibrary','clearFormulaHistory','removeFormulaHistory','scanLocalTools','chooseLocalTool','restoreFormulaVersion','importNativeMath'].includes(c.id))});
 document.querySelector('footer>span:last-child').textContent='⌘K 命令面板 · ⇧⌘E 导出 · ⇧⌘C 复制结果';
 
 for(const button of document.querySelectorAll('.editor-mode [role=radio]')){button.onkeydown=event=>{if(!['ArrowLeft','ArrowRight','Home','End'].includes(event.key))return;event.preventDefault();const modes=['visual','latex','typst'],at=modes.indexOf(state.editorMode),next=event.key==='Home'?0:event.key==='End'?2:(at+(event.key==='ArrowRight'?1:2))%3;registry.execute({visual:'switchToVisual',latex:'switchLatex',typst:'switchTypst'}[modes[next]]).then(()=>document.querySelector('.editor-mode [aria-checked=true]').focus());};}

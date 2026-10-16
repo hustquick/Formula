@@ -1,0 +1,15 @@
+{
+  "stable": true,
+  "carbonRepresentations": [
+    {
+      "bytes": 8248,
+      "file": "carbon-item-0-type-2.bin",
+      "item": 0,
+      "position": 2,
+      "sha256": "38508a1f41b46156ce2574518d1fc5aaebac9f45e20f7587fa861443154a684c",
+      "status": 0,
+      "type": "com.trolltech.anymime.Kingsoft WPS 9.0 Format"
+    }
+  ],
+  "note": "Reduced regression fixture: only native Writer equation package retained."
+}

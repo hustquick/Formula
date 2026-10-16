@@ -1,7 +1,7 @@
 import {captureDocumentSettings} from './document-settings.mjs';
 export function documentSignature(state){
  const object=state.formulaObject,authority=object?.content?.authority??state.formulaContent?.authority;
- return JSON.stringify([authority?.text??state.rawSource,authority?.language??state.editorMode,object?.presentation?.mode??state.editorMode,state.editorMode==='visual'?(object?.derived?.visual?.value??state.visualDraft):undefined,object?.formatting??captureDocumentSettings(state),object?.recognition]);
+ return JSON.stringify([authority?.text??state.rawSource,authority?.language??state.editorMode,object?.presentation?.mode??state.editorMode,state.editorMode==='visual'?(object?.derived?.visual?.value??state.visualDraft):undefined,object?.formatting??captureDocumentSettings(state),object?.recognition,object?.nativeMath]);
 }
 // File identity is session-owned by the native host, never restored from an
 // imported project's metadata. Draft recovery remains independent of that file.

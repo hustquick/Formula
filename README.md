@@ -6,9 +6,13 @@ Formula 是面向论文、教材和科研写作的 macOS 公式编辑器。提�
 
 [下载最新 Formula Mac 安装包](https://github.com/hustquick/Formula/releases/latest) · [所有版本](https://github.com/hustquick/Formula/releases)
 
-优先下载 Release 中已发布的 macOS DMG（`Formula-*.dmg`）。当前源码构建的文件名为 `Formula-1.6.2.dmg`；须待构建校验通过并发布后，Release 才会提供该文件。打开磁盘映像，将 `Formula.app` 拖入 Applications 即可。DMG 内是预编译通用应用，同时支持 Apple Silicon 与 Intel，最终用户无需安装 Node.js、npm 或编译工具。
+优先下载 Release 中已发布的 macOS DMG（`Formula-*.dmg`）。当前源码构建的文件名为 `Formula-1.7.0.dmg`；须待构建校验通过并发布后，Release 才会提供该文件。打开磁盘映像，将 `Formula.app` 拖入 Applications 即可。DMG 内是预编译通用应用，同时支持 Apple Silicon 与 Intel，最终用户无需安装 Node.js、npm 或编译工具。
 
 > 当前发布采用临时签名，尚未 Apple 开发者公证。首次启动如被 Gatekeeper 阻止，可在“系统设置 → 隐私与安全性”中选择“仍要打开”。
+
+## v1.7.0：WPS 原生公式双向互通
+
+macOS 已实测 Writer、Slides、Sheets 的原生可编辑公式复制、导入与往返。支持范围及限制见 [发布说明](docs/RELEASE_NOTES.md)。Pages 尚未完成直接粘贴支持。
 
 ## v1.6.2：连续且可恢复的公式历史
 

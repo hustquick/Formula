@@ -15,6 +15,45 @@ extension AppDelegate {
     private var wordReady:URL { ocrRoot.appendingPathComponent("ready-document-v2.txt") }
     private var documentRunner:URL { Bundle.main.resourceURL!.appendingPathComponent("formula-document-runner.py") }
 
+    func readNativeEquation(_ data:[String:Any]) {
+        let id=data["id"] as? String ?? ""
+        var board:Pasteboard?
+        guard PasteboardCreate(kPasteboardClipboard as CFString,&board)==noErr,let board=board else {reply(id,["error":"无法读取剪贴板。"]);return}
+        var count=0
+        guard PasteboardGetItemCount(board,&count)==noErr,count==1 else {reply(id,["handled":false]);return}
+        let before=NSPasteboard.general.changeCount
+        var item:PasteboardItemID?
+        guard PasteboardGetItemIdentifier(board,1,&item)==noErr,let item=item else {reply(id,["handled":false]);return}
+        var flavors:CFArray?
+        guard PasteboardCopyItemFlavors(board,item,&flavors)==noErr,let names=flavors as? [String] else {reply(id,["handled":false]);return}
+        let types=[("com.trolltech.anymime.Kingsoft WPS 9.0 Format","writer"),("com.trolltech.anymime.Art::GVML ClipFormat","gvml")]
+        guard let (type,kind)=types.first(where:{names.contains($0.0)}) else {reply(id,["handled":false]);return}
+        var raw:CFData?
+        guard PasteboardCopyItemFlavorData(board,item,type as CFString,&raw)==noErr,let raw=raw,before==NSPasteboard.general.changeCount else {reply(id,["error":"原生公式剪贴板读取失败或已变化；未使用图片或文本代替。"]);return}
+        let bytes=raw as Data
+        guard bytes.count<=16*1024*1024 else {reply(id,["error":"原生公式载荷过大。"]);return}
+        let python=wordPython,runner=Bundle.main.resourceURL!.appendingPathComponent("formula-wps-import.py")
+        guard FileManager.default.isExecutableFile(atPath:python.path) else {reply(id,["error":"需要现有离线 Word 组件解析原生公式。"]);return}
+        worker.async {
+            let folder=FileManager.default.temporaryDirectory.appendingPathComponent("formula-native-paste-"+UUID().uuidString,isDirectory:true)
+            var result:[String:Any]
+            do {
+                try FileManager.default.createDirectory(at:folder,withIntermediateDirectories:true,attributes:[.posixPermissions:0o700])
+                defer {try? FileManager.default.removeItem(at:folder)}
+                let input=folder.appendingPathComponent("native.zip"),output=folder.appendingPathComponent("result.json")
+                try bytes.write(to:input,options:.atomic)
+                let process=try self.run(python.path,[runner.path,input.path,kind,output.path],cwd:folder,timeout:20)
+                guard process.0==0 else {throw ToolFailure(message:"原生公式无法保真导入："+String(process.1.suffix(1500)))}
+                var record=try JSONSerialization.jsonObject(with:Data(contentsOf:output)) as! [String:Any]
+                if record["handled"] as? Bool == false {result=["handled":false]}
+                else {record["pasteboardType"]=type;result=["handled":true,"candidate":record]}
+            } catch let failure as ToolFailure {result=["error":failure.message]}
+            catch {result=["error":"原生公式解析失败："+error.localizedDescription]}
+            let completed=result
+            DispatchQueue.main.async {self.reply(id,completed)}
+        }
+    }
+
     // Conversion is read-only and runs off the main thread. The web layer
     // rechecks the captured entity revision before committing the clipboard.
     func prepareSourceEquation(_ data:[String:Any]) {
@@ -30,7 +69,12 @@ extension AppDelegate {
                 defer {try? FileManager.default.removeItem(at:folder)}
                 let source=folder.appendingPathComponent("input.tex"),output=folder.appendingPathComponent("output",isDirectory:true)
                 try Data(latex.utf8).write(to:source,options:.atomic)
-                let converted=try self.run(python.path,[runner.path,source.path,output.path],cwd:folder,timeout:30)
+                var arguments=[runner.path,source.path,output.path]
+                if let original=data["originalOMML"] as? String,original.utf8.count<=8*1024*1024 {
+                    let originalFile=folder.appendingPathComponent("original.omml")
+                    try Data(original.utf8).write(to:originalFile,options:.atomic);arguments.append(originalFile.path)
+                }
+                let converted=try self.run(python.path,arguments,cwd:folder,timeout:30)
                 guard converted.0==0 else {throw ToolFailure(message:"LaTeX 原生公式转换失败："+String(converted.1.suffix(2000)))}
                 let omml=try String(contentsOf:output.appendingPathComponent("candidate.omml"),encoding:.utf8)
                 guard omml.hasPrefix("<m:oMath ") else {throw ToolFailure(message:"转换结果不是有效原生数学对象。")}

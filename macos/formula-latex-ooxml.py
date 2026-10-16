@@ -17,6 +17,7 @@ import zipfile
 M = 'http://schemas.openxmlformats.org/officeDocument/2006/math'
 W = 'http://schemas.openxmlformats.org/wordprocessingml/2006/main'
 ET.register_namespace('m', M)
+ET.register_namespace('a', 'http://schemas.openxmlformats.org/drawingml/2006/main')
 ET.register_namespace('w', W)
 
 def tag(name):
@@ -50,19 +51,20 @@ def check_known_fidelity_limits(source):
             raise ValueError('当前转换器将 '+chr(92)+'mathbf 错误输出为粗斜体；原生公式复制已停止，原源码和剪贴板保留。')
 
 
-def convert(source, output):
+def convert(source, output, preserved_omml=None):
     import pypandoc
     if not source.strip() or len(source) > 100000:
         raise ValueError('Expected one nonempty LaTeX formula, up to 100000 characters')
-    check_known_fidelity_limits(source)
+    if preserved_omml is None: check_known_fidelity_limits(source)
     output = Path(output)
     output.mkdir(parents=True, exist_ok=False)
     (output / 'source.tex').write_text(source, encoding='utf-8')
     binary = pypandoc.get_pandoc_path()
     version = subprocess.run([binary, '--version'], check=True, capture_output=True, text=True, timeout=10).stdout.splitlines()[0]
     # A Math AST node prevents source from being interpreted as document commands.
+    conversion_source=source.replace(r'\genfrac{}{}{0pt}{}',r'\genfrac{.}{.}{0pt}{0}')
     ast = {'pandoc-api-version': [1, 23, 1], 'meta': {}, 'blocks': [
-        {'t': 'Para', 'c': [{'t': 'Math', 'c': [{'t': 'DisplayMath'}, source]}]}]}
+        {'t': 'Para', 'c': [{'t': 'Math', 'c': [{'t': 'DisplayMath'}, conversion_source]}]}]}
     with tempfile.TemporaryDirectory(prefix='formula-source-math-') as temporary:
         path = Path(temporary)
         (path / 'input.json').write_text(json.dumps(ast), encoding='utf-8')
@@ -78,9 +80,16 @@ def convert(source, output):
     maths = document.findall('.//' + tag('oMath'))
     if len(maths) != 1 or not list(maths[0]):
         raise ValueError('Converter did not produce exactly one native math object')
-    math = maths[0]
+    math = maths[0] if preserved_omml is None else ET.fromstring(preserved_omml)
+    if math.tag != tag('oMath'): raise ValueError('Invalid preserved native math')
     (output / 'original.omml').write_bytes(ET.tostring(math, encoding='utf-8'))
     changes = []
+    # TeX's dot delimiter denotes an absent delimiter, including genfrac's
+    # empty delimiters normalized above for texmath's parser.
+    for delimiter in math.iter():
+        if delimiter.tag in {tag('begChr'),tag('endChr')} and delimiter.get(tag('val'))=='.':
+            delimiter.set(tag('val'),'')
+            changes.append({'nullDelimiter': True})
     for run in math.iter(tag('r')):
         text = ''.join(t.text or '' for t in run.findall(tag('t')))
         props = run.find(tag('rPr'))
@@ -120,6 +129,9 @@ def convert(source, output):
             ET.SubElement(func, tag('e')).append(argument)
             parent.insert(position, func)
             changes.append({'function': text})
+    if preserved_omml is not None:
+        math = ET.fromstring(preserved_omml)
+        changes = [{'preservedNativeMath': True}]
     omml = ET.tostring(math, encoding='utf-8')
     (output / 'candidate.omml').write_bytes(omml)
     types = '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/></Types>'
@@ -145,6 +157,6 @@ def convert(source, output):
     return manifest
 
 if __name__ == '__main__':
-    if len(sys.argv) != 3:
+    if len(sys.argv) not in (3, 4):
         raise SystemExit('Usage: latex-ooxml-probe.py INPUT.tex NEW_OUTPUT_DIRECTORY')
-    print(json.dumps(convert(Path(sys.argv[1]).read_text(encoding='utf-8'), sys.argv[2]), ensure_ascii=False, indent=2))
+    print(json.dumps(convert(Path(sys.argv[1]).read_text(encoding='utf-8'), sys.argv[2], Path(sys.argv[3]).read_text(encoding='utf-8') if len(sys.argv)==4 else None), ensure_ascii=False, indent=2))
